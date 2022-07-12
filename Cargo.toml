@@ -9,8 +9,16 @@ keywords = ["Git", "Package management", "building", "testing", "development"]
 description = "A package manager for git repos"
 
 [dependencies]
-git2 = "0.14.4"
+git2 = "^0.14"
 serde = {version = "^1.0", features = ["derive"]}
 serde_json = "^1.0"
-directories = "^4.0"
-clap = { version = "^3.2", features = ["derive"] }
+
+
+tokio = {version = "1", features = ["full"]} # To be refined to the features that are eventually used. Probably sync and rt and rt-multi-thread, maybe also File, and io
+rayon = "^1.5" #paralel computing
+
+directories = "^4.0" # config and local and stuff
+clap = { version = "^3.2", features = ["derive"] } # arguments
+indicatif = "^0.16" # progress bars
+console = "^0.15" #color
+dialoguer = "^0.10" # general cli utils

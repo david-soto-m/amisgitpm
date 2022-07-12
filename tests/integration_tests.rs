@@ -1,7 +1,3 @@
-#![warn(missing_docs)]
-
-//! docs
-
 #[cfg(test)]
 mod tests {
     #[test]
@@ -10,10 +6,3 @@ mod tests {
         assert_eq!(result, 4);
     }
 }
-
-///
-pub fn silly() {
-    sillier()
-}
-
-fn sillier() {}

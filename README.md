@@ -1,5 +1,3 @@
-
-
 # Why
 
 There are several similar tools to this one. Depending on your use case you
