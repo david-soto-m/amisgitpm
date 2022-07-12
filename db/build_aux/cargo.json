@@ -1,0 +1,6 @@
+{
+    "file_types":["Cargo.toml"],
+    "build_suggestions":[[
+        "cargo install --path . --root ~/.local/"
+    ]]
+}

@@ -1,7 +1,11 @@
-#![warn(missing_docs)]
+use amisgitpm::args::Cli;
+use clap::Parser;
 
-//!
-
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("Hello, world!");
+    let p = Cli::parse();
+    println!("{p:?}");
 }
+
+/*Suggestions */

@@ -1,5 +1,3 @@
-#![warn(missing_docs)]
-
 //! docs
 
 #[cfg(test)]

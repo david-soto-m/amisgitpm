@@ -1,6 +1,17 @@
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 
-//! docs
+// pub mod dbmanager;
+pub mod args;
+pub mod dbs;
+pub mod gitutils;
+pub mod interaction;
+pub mod utils;
+
+pub fn silly() {
+    sillier();
+}
+
+fn sillier() {}
 
 #[cfg(test)]
 mod tests {
@@ -10,10 +21,3 @@ mod tests {
         assert_eq!(result, 4);
     }
 }
-
-///
-pub fn silly() {
-    sillier()
-}
-
-fn sillier() {}

@@ -24,3 +24,4 @@ clap = { version = "^3.2", features = ["derive"] } # arguments
 indicatif = "^0.16" # progress bars
 console = "^0.15" #color
 dialoguer = "^0.10" # general cli utils
+tokio-test = "0.4.2"
