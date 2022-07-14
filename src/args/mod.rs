@@ -21,22 +21,22 @@ pub enum Commands {
         package_name: Option<String>,
     },
     /// Update package(s)
-    Update{
+    Update {
         #[clap(value_parser)]
         /// An optional package name to update independently.
         /// If not provided all packages are updated
-        package: Option<String>
+        package: Option<String>,
     },
     /// Uninstall a package
-    Uninstall{
+    Uninstall {
         #[clap(value_parser)]
         /// The package name to uninstall
-        package: String
+        package: String,
     },
     /// get info about a package
-    Info{
+    Info {
         #[clap(value_parser)]
         /// The package name to get info about
-        package: String
+        package: String,
     },
 }

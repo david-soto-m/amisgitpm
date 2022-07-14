@@ -1,0 +1,10 @@
+{
+    "file_types":["meson.build"],
+    "build_suggestions":[
+        [
+            "meson setup build -Dprefix=${HOME}/.local",
+            "meson compile -C build",
+            "meson install -C build"
+        ]
+    ]
+}

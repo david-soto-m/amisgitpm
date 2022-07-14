@@ -3,9 +3,10 @@ use clap::Parser;
 
 #[tokio::main]
 async fn main() {
-    println!("Hello, world!");
     let p = Cli::parse();
     println!("{p:?}");
+    match p.com{
+    }
 }
 
 /*Suggestions */
