@@ -1,6 +1,6 @@
 BUILD_DIR = build
 INSTALL_DIR = $(HOME)/.local
-MAIN_TARGET = tomorse
+MAIN_TARGET = hola
 
 compileandrun:
 	meson compile -C $(BUILD_DIR)

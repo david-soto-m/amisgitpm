@@ -1,6 +1,6 @@
-project('tomorse', 'c')
+project('hola', 'c')
 executable(
-    'tomorse',
+    'hola',
     'main.c',
     install: true
 )

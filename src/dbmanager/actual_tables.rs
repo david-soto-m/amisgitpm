@@ -67,13 +67,13 @@ mod tests {
     use ::std::fs;
     #[tokio::test]
     async fn makes_suggestions() {
-        let table: Table<BuildAux> = Table::new("tests/db/three_elems", Permissions::Read).await;
+        let table: Table<BuildAux> = Table::new("db/build_aux", Permissions::Read).await;
         assert_eq!(
             table
-                .get_suggestions(fs::read_dir("tests/projects/meson_project").unwrap())
+                .get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
                 .await
                 .len(),
-            2
+            3
         );
     }
     #[tokio::test]
