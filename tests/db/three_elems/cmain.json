@@ -1,6 +1,6 @@
 {
     "file_types":["main.c"],
-    "build_suggestions":[[
+    "install_suggestions":[[
         "$(head -n1 main.c| cut -c2-)",
         "mv ~/.local/bin"
     ],
@@ -8,5 +8,6 @@
         "$(tail  -n1 hilos.c| cut -c2-)",
         "mv main ~/.local/bin"
     ]
-    ]
+    ],
+    "uninstall_suggestions": [[]]
 }

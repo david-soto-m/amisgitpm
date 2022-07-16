@@ -1,0 +1,12 @@
+{
+    "file_types":["Makefile"],
+    "install_suggestions":[
+        ["make"],
+        ["make install"],
+        ["make build",
+        "make install"],
+	["make",
+	"make install"]
+    ],
+    "uninstall_suggestions": [[]]
+}

@@ -1,6 +1,9 @@
 {
     "file_types":["Cargo.toml"],
-    "build_suggestions":[[
+    "install_suggestions":[[
         "cargo install --path . --root ~/.local/"
+    ]],
+    "uninstall_suggestions": [[
+        "cargo uninstall --path . --root ~/.local/"
     ]]
 }

@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 #[clap(version, about)]
 pub struct Cli {
     #[clap(subcommand)]
-    com: Commands,
+    pub com: Commands,
 }
 
 #[derive(Subcommand, Debug)]
@@ -17,7 +17,7 @@ pub enum Commands {
         #[clap(value_parser)]
         /// The optional name for the package.
         /// If not set the repo name is used if available,
-        ///if not a number will be appended to the repo name
+        ///if it isn't a number will be appended to the repo name
         package_name: Option<String>,
     },
     /// Update package(s)
@@ -38,5 +38,8 @@ pub enum Commands {
         #[clap(value_parser)]
         /// The package name to get info about
         package: String,
+    },
+    /// Show the list of installed applications with their version
+    List {
     },
 }

@@ -6,14 +6,15 @@ use std::fs::ReadDir;
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct BuildAux {
     pub file_types: Vec<String>,
-    pub build_suggestions: Vec<Vec<String>>,
+    pub install_suggestions: Vec<Vec<String>>,
+    pub uninstall_suggestions: Vec<Vec<String>>,
 }
 
 impl Table<BuildAux> {
     pub async fn get_table() -> Table<BuildAux> {
         Table::new("db/build_aux", Permissions::Read).await
     }
-    pub fn get_suggestions(&self, files: ReadDir) -> Vec<&BuildAux> {
+    pub async fn get_suggestions(&self, files: ReadDir) -> Vec<&BuildAux> {
         files
             .par_bridge()
             .filter_map(|file| {
@@ -38,6 +39,28 @@ impl Table<BuildAux> {
     }
 }
 
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
+pub enum UpdatePolicy{
+    Overwrite,
+    QueryOverwrite,
+    New,
+    QueryNew,
+    Query,
+    #[default]
+    Never
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Proyect{
+    pub name: String,
+    pub url: String,
+    pub branch: String,
+    pub update_policy: UpdatePolicy,
+    pub install_script: Vec<String>,
+    pub uninstall_script: Vec<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::dbmanager::{BuildAux, Permissions, Table};
@@ -48,8 +71,14 @@ mod tests {
         assert_eq!(
             table
                 .get_suggestions(fs::read_dir("tests/projects/meson_project").unwrap())
+                .await
                 .len(),
             2
         );
+    }
+    #[tokio::test]
+    async fn all_shipped_json_is_correct() {
+        Table::<BuildAux>::new("db/build_aux", Permissions::Read).await;
+        assert!(true)
     }
 }

@@ -1,0 +1,7 @@
+{
+    "file_types":["build.sh"],
+    "install_suggestions":[
+        ["bash build.sh"]
+    ],
+    "uninstall_suggestions": [[]]
+}
