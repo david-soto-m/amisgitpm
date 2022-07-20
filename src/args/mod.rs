@@ -40,6 +40,5 @@ pub enum Commands {
         package: String,
     },
     /// Show the list of installed applications with their version
-    List {
-    },
+    List {},
 }

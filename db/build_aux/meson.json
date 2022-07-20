@@ -5,14 +5,13 @@
             "meson setup build -Dprefix=${HOME}/.local",
             "meson compile -C build",
             "meson install -C build"
-        ],
-        [
-            "meson setup build -Dprefix=${HOME}/.local",
-            "meson compile -C build",
-            "meson compile {{project name}}-pot -C build",
-            "meson compile {{project name}}-update-po -C build",
-            "meson install -C build"
         ]
     ],
-    "uninstall_suggestions": [[]]
+    "uninstall_suggestions": [
+        ["rm ~/.local/bin/{{project_name}}"],
+        [
+            "rm ~/.local/bin/{{project_name}}",
+            "rm ~/.local/share/locale/{{languages}}/LC_MESSAGES/{{project_name.mo}}"
+        ]
+    ]
 }

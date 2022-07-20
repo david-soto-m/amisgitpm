@@ -1,7 +1,13 @@
 {
-    "file_types":["build.sh"],
+    "file_types":["build.sh", "make.sh", "make", "install.sh"],
     "install_suggestions":[
-        ["bash build.sh"]
+        ["bash {{build script}}"]
     ],
-    "uninstall_suggestions": [[]]
+    "uninstall_suggestions": [
+        ["rm ~/.local/bin/{{project_name}}"],
+        [
+            "rm ~/.local/bin/{{project_name}}",
+            "rm ~/.local/share/locale/{{languages}}/LC_MESSAGES/{{project_name.mo}}"
+        ]
+    ]
 }

@@ -1,11 +1,17 @@
 use rayon::prelude::*;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
-use std::ffi::OsStr;
-use std::fs::{self, File};
-use std::marker::Send;
+use std::{
+    ffi::OsStr,
+    fmt::Debug,
+    fs::{self, File},
+    marker::Send,
+};
+
 pub mod actual_tables;
 pub use actual_tables::*;
+pub mod table_error;
+pub use table_error::TableError;
 
 #[derive(Debug)]
 pub enum Permissions {
@@ -15,10 +21,10 @@ pub enum Permissions {
 
 #[derive(Debug)]
 pub struct Table<T> {
-    pub name: String,
-    pub files: Vec<File>,
-    pub elements: Vec<T>,
-    pub permissions: Permissions,
+    dir: String,
+    files: Vec<File>,
+    elements: Vec<T>,
+    permissions: Permissions,
 }
 
 trait TableExt<T> {
@@ -27,65 +33,125 @@ trait TableExt<T> {
 
 impl<T> Table<T>
 where
-    T: Serialize + DeserializeOwned + Send,
+    T: Serialize + DeserializeOwned + Send + Debug,
 {
-    pub async fn new(name: &str, permissions: Permissions) -> Table<T> {
-        let files: Vec<File> = fs::read_dir(name)
-            .unwrap_or_else(|error| panic!("The table {name} does not exist\n{error}"))
+    pub async fn new(dir: &str, permissions: Permissions) -> Result<Table<T>, TableError> {
+        let files: Vec<Result<File, TableError>> = fs::read_dir(dir)?
             .par_bridge()
-            .filter_map(|item| {
-                let path = item
-                    .as_ref()
-                    .unwrap_or_else(|error| {
-                        panic!("Having trouble reading the table {name}\n{error}")
-                    })
-                    .path();
+            .map(|dir_entry| {
+                let path = dir_entry.unwrap().path();
                 let jstr = OsStr::new("json");
                 if Some(jstr) == path.extension() {
-                    Some(
-                        File::open(&path)
-                            .unwrap_or_else(|error| panic!("Couldn't open {:?} \n{error}", path)),
-                    )
+                    let file = match permissions {
+                        Permissions::Read => File::open(path),
+                        Permissions::ReadWrite => File::options().write(true).open(path),
+                    };
+                    match file {
+                        Ok(fi) => Ok(fi),
+                        Err(e) => Err(TableError::FileOpError(e)),
+                    }
                 } else {
-                    None
+                    Err(TableError::JsonError)
                 }
             })
             .collect();
-        let elements: Vec<T> = files
+        let error = files
             .par_iter()
-            .map(|f| serde_json::from_reader(f).expect("Failed at parsing element {f} of table"))
+            .any(|elem| matches!(elem, Err(TableError::FileOpError(_))));
+        let files: Vec<File> = if error {
+            return Err(files
+                .into_par_iter()
+                .find_any(|elem| matches!(elem, Err(TableError::FileOpError(_))))
+                .unwrap()
+                .unwrap_err());
+        } else {
+            files
+                .into_par_iter()
+                .filter_map(|file_res| match file_res {
+                    Err(_) => None,
+                    Ok(file) => Some(file),
+                })
+                .collect()
+        };
+
+        let elements: Vec<Result<T, TableError>> = files
+            .par_iter()
+            .map(|file| match serde_json::from_reader(file) {
+                Ok(el) => Ok(el),
+                Err(err) => Err(TableError::SerdeError(err)),
+            })
             .collect();
-        Table {
-            name: name.to_string(),
+        let error = elements.iter().any(|el| el.is_err());
+
+        let elements: Vec<T> = if error {
+            let err: TableError = elements
+                .into_par_iter()
+                .find_any(|elem| elem.is_err())
+                .unwrap()
+                .unwrap_err();
+            return Err(err);
+        } else {
+            elements
+                .into_par_iter()
+                .filter_map(|file_res| match file_res {
+                    Err(_) => None,
+                    Ok(file) => Some(file),
+                })
+                .collect()
+        };
+
+        Ok(Table {
+            dir: dir.to_string(),
             permissions,
             files,
             elements,
-        }
+        })
+    }
+    pub async fn append(&mut self, el: T, fname: &str) -> Result<(), TableError> {
+        match self.permissions {
+            Permissions::ReadWrite => {}
+            _ => return Err(TableError::NoWritePermError),
+        };
+        let mut a = self.dir.clone();
+        a.push_str(fname);
+        a.push_str(".json");
+        let json_file = File::open(&a)?;
+        serde_json::to_writer(json_file, &el)?;
+        let json_file = File::open(&a)?;
+        self.files.push(json_file);
+
+        Err(TableError::NoWritePermError)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::dbmanager::{BuildAux, Permissions, Table};
+    use crate::dbmanager::{BuildAux, Permissions, Table, TableError};
     #[tokio::test]
     async fn detects_correctly() {
-        let table: Table<BuildAux> = Table::new("tests/db/three_elems", Permissions::Read).await;
-        assert_eq!(table.files.len(), 3)
+        let table: Table<BuildAux> = Table::new("tests/db/three_elems", Permissions::Read)
+            .await
+            .unwrap();
+        assert_eq!(table.files.len(), 3);
     }
 
     #[tokio::test]
-    #[should_panic(expected = "The table tests/db/two_elems does not exist")]
-    async fn panics_table_404() {
-        let _: Table<BuildAux> = Table::new("tests/db/two_elems", Permissions::Read).await;
+    async fn err_table_404() {
+        match Table::<BuildAux>::new("tests/db/two_elems", Permissions::Read).await {
+            Err(TableError::FileOpError(_)) => assert!(true),
+            _ => assert!(false),
+        }
     }
     #[tokio::test]
     async fn no_json() {
-        let table: Table<BuildAux> = Table::new("tests/db", Permissions::Read).await;
+        let table: Table<BuildAux> = Table::new("tests/db", Permissions::Read).await.unwrap();
         assert!(table.files.is_empty())
     }
     #[tokio::test]
     async fn gets_json() {
-        let table: Table<BuildAux> = Table::new("tests/db/three_elems", Permissions::Read).await;
+        let table: Table<BuildAux> = Table::new("tests/db/three_elems", Permissions::Read)
+            .await
+            .unwrap();
         assert_eq!(table.elements.len(), 3)
     }
 }

@@ -9,5 +9,7 @@
             "mv main ~/.local/bin"
         ]
     ],
-    "uninstall_suggestions": [[]]
+    "uninstall_suggestions": [
+        ["rm ~/.local/bin/{{project_name}}"]
+    ]
 }

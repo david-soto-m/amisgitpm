@@ -4,9 +4,13 @@
         ["make"],
         ["make install"],
         ["make build",
-        "make install"],
-	["make",
-	"make install"]
+        "make install"],["make", "make install"]
     ],
-    "uninstall_suggestions": [[]]
+    "uninstall_suggestions": [
+        ["rm ~/.local/bin/{{project_name}}"],
+        [
+            "rm ~/.local/bin/{{project_name}}",
+            "rm ~/.local/share/locale/{{languages}}/LC_MESSAGES/{{project_name.mo}}"
+        ]
+    ]
 }

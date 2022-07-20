@@ -1,12 +1,9 @@
+use crate::dbmanager::Project;
 use git2::Repository;
-use crate::dbmanager::Proyect;
 
-pub fn config_repo(_repo: Repository)-> Proyect{
+pub fn config_repo(_repo: Repository) -> Project {
     todo!()
 }
-
-
-
 
 #[cfg(test)]
 mod tests {

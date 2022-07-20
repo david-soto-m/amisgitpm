@@ -1,4 +1,4 @@
-use crate::dbmanager::{Permissions, Table};
+use crate::dbmanager::{Permissions, Table, TableError};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs::ReadDir;
@@ -11,7 +11,7 @@ pub struct BuildAux {
 }
 
 impl Table<BuildAux> {
-    pub async fn get_table() -> Table<BuildAux> {
+    pub async fn get_table() -> Result<Table<BuildAux>, TableError> {
         Table::new("db/build_aux", Permissions::Read).await
     }
     pub async fn get_suggestions(&self, files: ReadDir) -> Vec<&BuildAux> {
@@ -39,20 +39,19 @@ impl Table<BuildAux> {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
-pub enum UpdatePolicy{
+pub enum UpdatePolicy {
     Overwrite,
     QueryOverwrite,
     New,
     QueryNew,
     Query,
     #[default]
-    Never
+    Never,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Proyect{
+pub struct Project {
     pub name: String,
     pub url: String,
     pub branch: String,
@@ -61,13 +60,19 @@ pub struct Proyect{
     pub uninstall_script: Vec<String>,
 }
 
+impl Table<Project> {
+    pub async fn get_table() -> Result<Table<Project>, TableError> {
+        Table::new("db/projects", Permissions::ReadWrite).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::dbmanager::{BuildAux, Permissions, Table};
+    use crate::dbmanager::{BuildAux, Permissions, Project, Table};
     use ::std::fs;
     #[tokio::test]
     async fn makes_suggestions() {
-        let table: Table<BuildAux> = Table::new("db/build_aux", Permissions::Read).await;
+        let table: Table<BuildAux> = Table::new("db/build_aux", Permissions::Read).await.unwrap();
         assert_eq!(
             table
                 .get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
@@ -78,7 +83,20 @@ mod tests {
     }
     #[tokio::test]
     async fn all_shipped_json_is_correct() {
-        Table::<BuildAux>::new("db/build_aux", Permissions::Read).await;
+        Table::<BuildAux>::new("db/build_aux", Permissions::Read)
+            .await
+            .unwrap();
         assert!(true)
+    }
+    #[test]
+    fn serialize_projects() {
+        let a = serde_json::to_value(Project::default()).unwrap();
+        println!("{a}");
+    }
+    #[test]
+    fn deserialize() {
+        let _: Project =
+            serde_json::from_reader(fs::File::open("tests/db/proj/example_1.json").unwrap())
+                .unwrap();
     }
 }
