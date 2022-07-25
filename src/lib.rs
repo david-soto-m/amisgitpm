@@ -2,6 +2,7 @@
 
 pub mod args;
 pub mod dbmanager;
+pub mod dbs;
 pub mod gitutils;
 pub mod interaction;
 pub mod utils;

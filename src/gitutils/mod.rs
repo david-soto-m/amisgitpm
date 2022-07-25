@@ -1,31 +1,18 @@
-//! docs
 use crate::{interaction, utils};
 use git2::Repository;
 
-pub async fn install(url: &str, o_name: Option<String>) {
-    let name = match o_name {
-        Some(name) => name,
-        None => url
-            .split("/")
-            .last()
-            .unwrap()
-            .to_string()
-            .split(".")
-            .next()
-            .unwrap()
-            .to_string(),
-    };
+pub async fn install(url: &str) -> Result<(), interaction::InteractError> {
+    let proy = interaction::initial_config(url)?;
     let mut psite = utils::p_dirs()
         .data_local_dir()
         .to_str()
         .unwrap()
         .to_string();
     psite.push('/');
-    psite.push_str(&name);
+    psite.push_str(&proy.name);
     match Repository::clone(url, psite) {
-        Ok(repo) => {
-            let proy = interaction::config_repo(repo);
-            proy.branch;
+        Ok(_repo) => {
+            //             proy.branch;
             todo!("Set branch for project");
             //run build script
         }
@@ -33,6 +20,7 @@ pub async fn install(url: &str, o_name: Option<String>) {
             println!("{e}")
         }
     };
+    Ok(())
 }
 
 #[cfg(test)]

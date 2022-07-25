@@ -1,0 +1,18 @@
+{
+    "file_types":["meson.build"],
+    "install_suggestions":[
+        [
+            "meson setup build -Dprefix=${HOME}/.local",
+            "meson compile -C build",
+            "meson install -C build"
+        ],
+        [
+            "meson setup build -Dprefix=${HOME}/.local",
+            "meson compile -C build",
+            "meson compile {{project name}}-pot -C build",
+            "meson compile {{project name}}-update-po -C build",
+            "meson install -C build"
+        ]
+    ],
+    "uninstall_suggestions": [[]]
+}

@@ -1,24 +1,19 @@
 use clap::{Parser, Subcommand};
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[clap(version, about)]
 pub struct Cli {
     #[clap(subcommand)]
     pub com: Commands,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 pub enum Commands {
     /// Install a new git repo
     Install {
         #[clap(value_parser)]
         /// the git repo url
         url: String,
-        #[clap(value_parser)]
-        /// The optional name for the package.
-        /// If not set the repo name is used if available,
-        ///if it isn't a number will be appended to the repo name
-        package_name: Option<String>,
     },
     /// Update package(s)
     Update {
