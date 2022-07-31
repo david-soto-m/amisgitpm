@@ -1,7 +1,6 @@
 // #![warn(missing_docs)]
 
 pub mod args;
-pub mod dbmanager;
 pub mod dbs;
 pub mod gitutils;
 pub mod interaction;

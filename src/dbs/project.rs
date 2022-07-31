@@ -1,5 +1,5 @@
-use crate::dbmanager::{Permissions, Table, TableError};
-use serde::{Deserialize, Serialize};
+use json_tables::{Table, TableError, Deserialize, Serialize};
+
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum UpdatePolicy {
@@ -22,25 +22,15 @@ pub struct Project {
     pub uninstall_script: Vec<String>,
 }
 
-impl Table<Project> {
-    pub async fn get_table() -> Result<Table<Project>, TableError> {
-        Table::load("db/projects", Permissions::default()).await
+pub struct TableProject{
+    table: Table<Project>,
+}
+
+impl TableProject {
+    pub fn new() -> Result<TableProject, TableError> {
+        Ok(TableProject{
+            table: Table::builder("db/projects").load()?,
+        })
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::dbs::Project;
-    use std::fs;
-    #[test]
-    fn serialize_projects() {
-        let a = serde_json::to_value(Project::default()).unwrap();
-        println!("{a}");
-    }
-    #[test]
-    fn deserialize() {
-        let _: Project =
-            serde_json::from_reader(fs::File::open("tests/db/proj/example_1.json").unwrap())
-                .unwrap();
-    }
-}

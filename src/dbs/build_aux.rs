@@ -1,10 +1,10 @@
 //! This module contains the structure that stores build suggestions
 //! BuildAux, and the implementation for a table of such structures
 
-use crate::dbmanager::{Permissions, Table, TableError};
+use json_tables::{Table, TableError};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs::{DirEntry, ReadDir};
+use std::fs::ReadDir;
 
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
@@ -18,12 +18,18 @@ pub struct BuildAux {
     pub uninstall_suggestions: Vec<Vec<String>>,
 }
 
+pub struct TableBuildAux{
+    pub table: Table<BuildAux>,
+}
+
 /// Special functions for Tables of BuildAux structures, such as loading the tables
 /// or getting the suggestions for a repo.
-impl Table<BuildAux> {
+impl TableBuildAux {
     /// Get the table of pre-made suggestions for compilations.
-    pub async fn get_table() -> Result<Table<BuildAux>, TableError> {
-        Table::load("db/build_aux", Permissions::ReadOnly).await
+    pub fn new() -> Result<TableBuildAux, TableError> {
+        Ok(TableBuildAux{
+            table: Table::builder("db/build_aux").set_read_only().load()?,
+        })
     }
     /// Get the build suggestions from the table for the files examined in a directory
     ///```ignore
@@ -33,9 +39,8 @@ impl Table<BuildAux> {
     ///
     /// It doesn't panic, but ignores all errors, so it might return empty without
     /// information about why in cases in which it ought to return with something
-    pub async fn get_suggestions(&mut self, files: ReadDir) -> Vec<&BuildAux> {
-        let info_vec: Vec<&BuildAux> = self.get_info_iter().collect();
-
+    pub async fn get_suggestions(&self, files: ReadDir) -> Vec<&BuildAux> {
+        let info: Vec<&BuildAux> = self.table.get_info_iter().collect();
         files
             .par_bridge()
             .filter_map(|file| {
@@ -49,14 +54,16 @@ impl Table<BuildAux> {
                 }
                 .is_file();
                 if is_file {
-                    info_vec.par_iter().find_any(|b_aux| {
-                        b_aux.file_types.par_iter().any(|file_hint| {
-                            match f_entry.file_name().into_string() {
-                                Ok(f_entry_name) => *file_hint == f_entry_name,
-                                Err(_) => false,
-                            }
+                    info.par_iter()
+                        .find_any(|b_aux| {
+                            b_aux.file_types.par_iter().any(|file_hint| {
+                                match f_entry.file_name().into_string() {
+                                    Ok(f_entry_name) => *file_hint == f_entry_name,
+                                    Err(_) => false,
+                                }
+                            })
                         })
-                    }).copied()
+                        .copied()
                 } else {
                     None
                 }
@@ -67,24 +74,24 @@ impl Table<BuildAux> {
 
 #[cfg(test)]
 mod tests {
-    use crate::dbmanager::Table;
-    use crate::dbs::BuildAux;
+    use crate::dbs::TableBuildAux;
     use std::fs;
     #[tokio::test]
     async fn makes_suggestions() {
+        let table = TableBuildAux::new()
+                .unwrap();
+        let len = table.get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
+                .await
+                .len();
+
         assert_eq!(
-            Table::<BuildAux>::get_table()
-                .await
-                .unwrap()
-                .get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
-                .await
-                .len(),
+            len,
             3
         );
     }
     #[tokio::test]
     async fn all_build_aux_json_is_correct() {
-        Table::<BuildAux>::get_table().await.unwrap();
+        TableBuildAux::new().unwrap();
         assert!(true)
     }
 }

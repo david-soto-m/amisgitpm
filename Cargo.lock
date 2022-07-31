@@ -13,6 +13,7 @@ dependencies = [
  "futures",
  "git2",
  "indicatif",
+ "json_tables",
  "rayon",
  "serde",
  "serde_json",
@@ -437,6 +438,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af25a77299a7f711a01975c35a6a424eb6862092cc2d6c72c4ed6cbc56dfc1fa"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "json_tables"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9008f4b78e2096c8df80a26b7c9c1c632260f521a422125e6e7657480d727387"
+dependencies = [
+ "rayon",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
