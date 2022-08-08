@@ -34,6 +34,8 @@ pub enum Commands {
         /// The package name to get info about
         package: String,
     },
-    /// Show the list of installed applications with their version
+    /// Show the list of installed applications and their version
     List {},
+    /// Install amisgitpm with amisgitpm, check that everything is in place, try to do
+    Bootstrap {},
 }

@@ -1,10 +1,8 @@
 {
-    "file_types":["Makefile"],
+    "file_types":["CMakeLists.txt"],
     "install_suggestions":[
-        ["make"],
-        ["make install"],
-        ["make build","make install"],
-        ["make", "make install"]
+        ["cmake .", "make", "cp out/{{project_name}} ~/.local/bin/{{used_name}}"],
+        ["cmake -DCMAKE_INSTALL_PREFIX=/usr .", "make", "make install"]
     ],
     "uninstall_suggestions": [
         ["rm ~/.local/bin/{{used_name}}"],

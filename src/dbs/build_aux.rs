@@ -18,16 +18,16 @@ pub struct BuildAux {
     pub uninstall_suggestions: Vec<Vec<String>>,
 }
 
-pub struct TableBuildAux{
+pub struct BuildAuxTable {
     pub table: Table<BuildAux>,
 }
 
 /// Special functions for Tables of BuildAux structures, such as loading the tables
 /// or getting the suggestions for a repo.
-impl TableBuildAux {
+impl BuildAuxTable {
     /// Get the table of pre-made suggestions for compilations.
-    pub fn new() -> Result<TableBuildAux, TableError> {
-        Ok(TableBuildAux{
+    pub fn new() -> Result<Self, TableError> {
+        Ok(Self {
             table: Table::builder("db/build_aux").set_read_only().load()?,
         })
     }
@@ -74,24 +74,21 @@ impl TableBuildAux {
 
 #[cfg(test)]
 mod tests {
-    use crate::dbs::TableBuildAux;
+    use crate::dbs::BuildAuxTable;
     use std::fs;
     #[tokio::test]
     async fn makes_suggestions() {
-        let table = TableBuildAux::new()
-                .unwrap();
-        let len = table.get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
-                .await
-                .len();
+        let table = BuildAuxTable::new().unwrap();
+        let len = table
+            .get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
+            .await
+            .len();
 
-        assert_eq!(
-            len,
-            3
-        );
+        assert_eq!(len, 3);
     }
     #[tokio::test]
     async fn all_build_aux_json_is_correct() {
-        TableBuildAux::new().unwrap();
+        BuildAuxTable::new().unwrap();
         assert!(true)
     }
 }

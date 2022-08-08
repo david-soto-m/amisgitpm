@@ -3,6 +3,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum InteractError {
     ConfigError(std::io::Error),
+    GitError(git2::Error),
 }
 
 impl fmt::Display for InteractError {
@@ -18,5 +19,11 @@ impl std::error::Error for InteractError {}
 impl From<std::io::Error> for InteractError {
     fn from(e: std::io::Error) -> Self {
         InteractError::ConfigError(e)
+    }
+}
+
+impl From<git2::Error> for InteractError {
+    fn from(e: git2::Error) -> Self {
+        InteractError::GitError(e)
     }
 }
