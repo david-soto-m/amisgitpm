@@ -442,9 +442,9 @@ dependencies = [
 
 [[package]]
 name = "json_tables"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9008f4b78e2096c8df80a26b7c9c1c632260f521a422125e6e7657480d727387"
+checksum = "136fee3402bd0c3346dfa1e87a136bccfcac2441f0c7d9361069ce9fb3ba82ed"
 dependencies = [
  "rayon",
  "serde",

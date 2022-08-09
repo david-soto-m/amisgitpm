@@ -1,11 +1,11 @@
 //! This module contains the structure that stores build suggestions
 //! BuildAux, and the implementation for a table of such structures
 
+use crate::utils;
 use json_tables::{Table, TableError};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs::ReadDir;
-
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -28,7 +28,9 @@ impl BuildAuxTable {
     /// Get the table of pre-made suggestions for compilations.
     pub fn new() -> Result<Self, TableError> {
         Ok(Self {
-            table: Table::builder("db/build_aux").set_read_only().load()?,
+            table: Table::builder(utils::suggestions_db())
+                .set_read_only()
+                .load()?,
         })
     }
     /// Get the build suggestions from the table for the files examined in a directory

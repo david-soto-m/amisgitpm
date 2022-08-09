@@ -36,6 +36,6 @@ pub enum Commands {
     },
     /// Show the list of installed applications and their version
     List {},
-    /// Install amisgitpm with amisgitpm, check that everything is in place, try to do
+    /// Install amisgitpm with amisgitpm, check that everything is in place
     Bootstrap {},
 }

@@ -1,3 +1,4 @@
+use crate::utils;
 use json_tables::{Deserialize, Serialize, Table, TableError};
 use rayon::prelude::*;
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
@@ -67,7 +68,7 @@ pub struct ProjectTable {
 impl ProjectTable {
     pub fn new() -> Result<Self, TableError> {
         Ok(Self {
-            table: Table::builder("db/projects").load()?,
+            table: Table::builder(utils::projects_db()).load()?,
         })
     }
     pub fn check_if_used_name(&self, name: &str) -> bool {

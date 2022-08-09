@@ -1,26 +1,26 @@
-use crate::{dbs::ProjectTable, interaction, utils};
+use crate::{dbs::ProjectTable, interaction::InstallInteractions, utils};
 use git2::Repository;
 
 mod gitutil_error;
 pub use gitutil_error::GitUtilError;
 
-pub async fn install(url: &str) -> Result<(), GitUtilError> {
+pub fn interactive_install<Q: InstallInteractions>(url: &str) -> Result<(), GitUtilError> {
     let mut project_table = ProjectTable::new()?;
-    let proj_stub = interaction::initial_config(url, &project_table)?;
-    let mut psite = utils::src_dirs();
-    psite.push('/');
-    psite.push_str(&proj_stub.name);
+    let proj_stub = <Q as InstallInteractions>::initial(url, &project_table)?;
+    let psite = utils::src_dirs().join(&proj_stub.name);
     println!("Starting download, please, wait a bit");
     match Repository::clone(url, psite) {
         Ok(repo) => {
-            let ref_name = interaction::ref_config(&repo)?;
+            let ref_name = <Q as InstallInteractions>::refs(&repo)?;
             let (obj, refe) = repo.revparse_ext(&ref_name)?;
             repo.checkout_tree(&obj, None)?;
             match refe {
                 Some(gref) => repo.set_head(gref.name().unwrap()),
                 None => repo.set_head_detached(obj.id()),
             }?;
-            interaction::finish_config(proj_stub);
+            let name = proj_stub.name.to_owned();
+            let proj = <Q as InstallInteractions>::finish(proj_stub);
+            project_table.table.push(&name, proj)?;
         }
         Err(e) => {
             println!("Couldn't get the repository due to:\n {e}")

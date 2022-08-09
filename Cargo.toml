@@ -29,4 +29,7 @@ console = "^0.15" #color
 dialoguer = "^0.10" # general cli utils
 
 
-json_tables = "^0.0.1" # table management
+json_tables = "^0.0.2" # table management
+
+[build-dependencies]
+directories = "^4.0" # config and local and stuff
