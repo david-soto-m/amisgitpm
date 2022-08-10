@@ -1,11 +1,11 @@
 // #![warn(missing_docs)]
 
 pub mod args;
-pub mod dbs;
 pub mod gitutils;
 pub mod interaction;
+pub mod projects;
+pub mod suggestions;
 pub mod utils;
-
 #[cfg(test)]
 mod tests {
     #[test]

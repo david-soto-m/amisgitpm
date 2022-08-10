@@ -41,7 +41,7 @@ impl BuildAuxTable {
     ///
     /// It doesn't panic, but ignores all errors, so it might return empty without
     /// information about why in cases in which it ought to return with something
-    pub async fn get_suggestions(&self, files: ReadDir) -> Vec<&BuildAux> {
+    pub fn get_suggestions(&self, files: ReadDir) -> Vec<&BuildAux> {
         let info: Vec<&BuildAux> = self.table.get_info_iter().collect();
         files
             .par_bridge()
@@ -78,12 +78,11 @@ impl BuildAuxTable {
 mod tests {
     use crate::dbs::BuildAuxTable;
     use std::fs;
-    #[tokio::test]
-    async fn makes_suggestions() {
+    #[test]
+    fn makes_suggestions() {
         let table = BuildAuxTable::new().unwrap();
         let len = table
             .get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
-            .await
             .len();
 
         assert_eq!(len, 3);

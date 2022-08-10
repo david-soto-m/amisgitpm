@@ -1,4 +1,4 @@
-use crate::dbs::{Project, ProjectStub, ProjectTable, UpdatePolicy};
+use crate::projects::{Project, ProjectStub, ProjectTable, UpdatePolicy};
 use dialoguer::{Confirm, Input, Select};
 use git2::Repository;
 
