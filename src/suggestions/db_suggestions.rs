@@ -1,7 +1,7 @@
 //! This module contains the structure that stores build suggestions
-//! BuildAux, and the implementation for a table of such structures
+//! DBSuggestions, and the implementation for a table of such structures
 
-use crate::utils;
+use crate::dirutils;
 use json_tables::{Table, TableError};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,7 @@ use std::fs::ReadDir;
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct BuildAux {
+pub struct DBSuggestions {
     /// File names to detect in order to make the suggestions contained bellow
     pub file_types: Vec<String>,
     /// The set of suggestions in order to build & install a project
@@ -18,17 +18,17 @@ pub struct BuildAux {
     pub uninstall_suggestions: Vec<Vec<String>>,
 }
 
-pub struct BuildAuxTable {
-    pub table: Table<BuildAux>,
+pub struct DBSuggestionsTable {
+    pub table: Table<DBSuggestions>,
 }
 
-/// Special functions for Tables of BuildAux structures, such as loading the tables
+/// Special functions for Tables of DBSuggestions structures, such as loading the tables
 /// or getting the suggestions for a repo.
-impl BuildAuxTable {
+impl DBSuggestionsTable {
     /// Get the table of pre-made suggestions for compilations.
     pub fn new() -> Result<Self, TableError> {
         Ok(Self {
-            table: Table::builder(utils::suggestions_db())
+            table: Table::builder(dirutils::suggestions_db())
                 .set_read_only()
                 .load()?,
         })
@@ -36,13 +36,13 @@ impl BuildAuxTable {
     /// Get the build suggestions from the table for the files examined in a directory
     ///```ignore
     /// let project_dir = std::fs::read_dir("tests/projects/mess_project")?;
-    /// Table::<BuildAux>::get_table().await?.get_suggestions(project_dir);
+    /// Table::<DBSuggestions>::get_table().await?.get_suggestions(project_dir);
     ///```
     ///
     /// It doesn't panic, but ignores all errors, so it might return empty without
     /// information about why in cases in which it ought to return with something
-    pub fn get_suggestions(&self, files: ReadDir) -> Vec<&BuildAux> {
-        let info: Vec<&BuildAux> = self.table.get_info_iter().collect();
+    pub fn get_suggestions(&self, files: ReadDir) -> Vec<&DBSuggestions> {
+        let info: Vec<&DBSuggestions> = self.table.get_info_iter().collect();
         files
             .par_bridge()
             .filter_map(|file| {
@@ -76,11 +76,11 @@ impl BuildAuxTable {
 
 #[cfg(test)]
 mod tests {
-    use crate::dbs::BuildAuxTable;
+    use crate::suggestions::DBSuggestionsTable;
     use std::fs;
     #[test]
     fn makes_suggestions() {
-        let table = BuildAuxTable::new().unwrap();
+        let table = DBSuggestionsTable::new().unwrap();
         let len = table
             .get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
             .len();
@@ -89,7 +89,7 @@ mod tests {
     }
     #[tokio::test]
     async fn all_build_aux_json_is_correct() {
-        BuildAuxTable::new().unwrap();
+        DBSuggestionsTable::new().unwrap();
         assert!(true)
     }
 }

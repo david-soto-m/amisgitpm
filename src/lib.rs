@@ -5,7 +5,7 @@ pub mod gitutils;
 pub mod interaction;
 pub mod projects;
 pub mod suggestions;
-pub mod utils;
+pub mod dirutils;
 #[cfg(test)]
 mod tests {
     #[test]

@@ -1,4 +1,4 @@
-use crate::{interaction::InstallInteractions, projects::ProjectTable, utils};
+use crate::{interaction::InstallInteractions, projects::ProjectTable, dirutils};
 use git2::Repository;
 
 mod gitutil_error;
@@ -7,7 +7,7 @@ pub use gitutil_error::GitUtilError;
 pub fn interactive_install<Q: InstallInteractions>(url: &str) -> Result<(), GitUtilError> {
     let mut project_table = ProjectTable::new()?;
     let proj_stub = <Q as InstallInteractions>::initial(url, &project_table)?;
-    let psite = utils::src_dirs().join(&proj_stub.name);
+    let psite = dirutils::src_dirs().join(&proj_stub.name);
 
     println!("Starting download, please, wait a bit");
 
