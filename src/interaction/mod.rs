@@ -11,7 +11,7 @@ pub trait InstallInteractions {
     fn finish(pr: ProjectStub) -> Project;
 }
 
-pub struct UserInstallInteractions();
+pub type UserInstallInteractions = ();
 
 impl InstallInteractions for UserInstallInteractions {
     fn initial(url: &str, table: &ProjectTable) -> Result<ProjectStub, InteractError> {

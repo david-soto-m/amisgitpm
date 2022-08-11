@@ -1,6 +1,9 @@
-use amisgitpm::args::{Cli, Commands};
-use amisgitpm::gitutils;
-use amisgitpm::interaction::UserInstallInteractions;
+use amisgitpm::{
+    args::{Cli, Commands},
+    build_suggestions::BuildSuggestions,
+    gitutils,
+    interaction::UserInstallInteractions,
+};
 use clap::Parser;
 
 #[tokio::main]
@@ -9,7 +12,8 @@ async fn main() {
     println!("{p:?}");
     match p.com {
         Commands::Install { url } => {
-            gitutils::interactive_install::<UserInstallInteractions>(&url).unwrap()
+            gitutils::interactive_install::<BuildSuggestions, UserInstallInteractions>(&url)
+                .unwrap()
         }
         _ => todo!(),
     };

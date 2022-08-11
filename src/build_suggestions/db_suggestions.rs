@@ -76,7 +76,7 @@ impl DBSuggestionsTable {
 
 #[cfg(test)]
 mod tests {
-    use crate::suggestions::DBSuggestionsTable;
+    use crate::build_suggestions::DBSuggestionsTable;
     use std::fs;
     #[test]
     fn makes_suggestions() {
