@@ -1,5 +1,8 @@
-use crate::projects::{Project, ProjectStub, ProjectTable, UpdatePolicy};
-use dialoguer::{Confirm, Input, Select};
+use crate::{
+    build_suggestions::BuildSuggester,
+    projects::{Project, ProjectStub, ProjectTable, UpdatePolicy},
+};
+use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::Repository;
 
 pub mod interact_error;
@@ -8,7 +11,7 @@ pub use interact_error::InteractError;
 pub trait InstallInteractions {
     fn initial(url: &str, pr_table: &ProjectTable) -> Result<ProjectStub, InteractError>;
     fn refs(repo: &Repository) -> Result<String, InteractError>;
-    fn finish(pr: ProjectStub) -> Project;
+    fn finish<T: BuildSuggester>(pr: ProjectStub, sug: T) -> Result<Project, InteractError>;
 }
 
 pub type UserInstallInteractions = ();
@@ -76,16 +79,84 @@ impl InstallInteractions for UserInstallInteractions {
             .interact()?;
         Ok(branch_arr[branch_idx].to_owned())
     }
-    fn finish(pr: ProjectStub) -> Project {
-        pr.into()
-    }
-}
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+    fn finish<T: BuildSuggester>(pr: ProjectStub, sugg: T) -> Result<Project, InteractError> {
+        let mut pr: Project = pr.into();
+        {
+            let sug = sugg.get_install();
+            let sug_len = sug.len() as isize;
+            let mut idx: isize = sug_len - 1; // if there are no suggestions idx is -1;
+            let mut edit_string = String::new();
+            if idx >= 0 {
+                println!(
+                    "Now we are trying to establish build instructions. To help with that we have
+compiled some suggestions. These come from previous knowledge about build
+systems or the README.md file"
+                );
+                let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
+
+                choices.push("Stop previews".into());
+                while idx != sug_len {
+                    idx = Select::new()
+                        .items(&choices)
+                        .with_prompt("Please select one of these to preview")
+                        .interact()? as isize;
+                    if idx != sug_len {
+                        println!("{:#?}", sug[idx as usize]);
+                    }
+                }
+                choices.pop().unwrap();
+                let choices = MultiSelect::new()
+                    .items(&choices)
+                    .with_prompt(
+"Please select all the suggestions you'd like to edit, press space next to all that apply"
+                    )
+                    .interact()?;
+                choices.iter().for_each(|&i| {
+                    sug[i]
+                        .iter()
+                        .for_each(|string| edit_string.push_str(string))
+                });
+            }
+            if let Some(final_install) = Editor::new().edit(&edit_string)? {
+                pr.install_script = final_install.split('\n').map(|e| e.to_string()).collect()
+            }
+        }
+        {
+            let sug = sugg.get_uninstall();
+            let sug_len = sug.len() as isize;
+            let mut idx: isize = sug_len - 1; // if there are no suggestions idx is -1;
+            let mut edit_string = String::new();
+            if idx >= 0 {
+                println!("Now we are doing the same for the uninstall process");
+                let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
+                choices.push("Stop previews".into());
+                while idx != sug_len {
+                    idx = Select::new()
+                        .items(&choices)
+                        .with_prompt("Please select one of these to preview")
+                        .interact()? as isize;
+                    if idx != sug_len {
+                        println!("{:#?}", sug[idx as usize]);
+                    }
+                }
+                choices.pop().unwrap();
+                let choices = MultiSelect::new()
+                    .items(&choices)
+                    .with_prompt(
+    "Please select all the suggestions you'd like to edit, press space next to all that apply"
+                    )
+                    .interact()?;
+                choices.iter().for_each(|&i| {
+                    sug[i]
+                        .iter()
+                        .for_each(|string| edit_string.push_str(string))
+                });
+            }
+            if let Some(final_install) = Editor::new().edit(&edit_string)? {
+                pr.uninstall_script = final_install.split('\n').map(|e| e.to_string()).collect()
+            }
+        }
+        Ok(pr)
     }
 }

@@ -2,10 +2,12 @@
 //! DBSuggestions, and the implementation for a table of such structures
 
 use crate::dirutils;
-use json_tables::{Table, TableError};
+use json_tables::Table;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs::ReadDir;
+
+use crate::build_suggestions::SuggestionsError;
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -26,7 +28,7 @@ pub struct DBSuggestionsTable {
 /// or getting the suggestions for a repo.
 impl DBSuggestionsTable {
     /// Get the table of pre-made suggestions for compilations.
-    pub fn new() -> Result<Self, TableError> {
+    pub fn new() -> Result<Self, SuggestionsError> {
         Ok(Self {
             table: Table::builder(dirutils::suggestions_db())
                 .set_read_only()

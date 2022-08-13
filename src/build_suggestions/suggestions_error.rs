@@ -1,8 +1,10 @@
+use json_tables::TableError;
 use std::fmt::Display;
-
 #[derive(Debug)]
 pub enum SuggestionsError {
     FileOpError(std::io::Error),
+    TableError(TableError),
+    PathError,
 }
 
 impl Display for SuggestionsError {
@@ -18,5 +20,11 @@ impl std::error::Error for SuggestionsError {}
 impl From<std::io::Error> for SuggestionsError {
     fn from(a: std::io::Error) -> Self {
         Self::FileOpError(a)
+    }
+}
+
+impl From<TableError> for SuggestionsError {
+    fn from(e: TableError) -> Self {
+        Self::TableError(e)
     }
 }

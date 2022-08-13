@@ -28,8 +28,8 @@ where
     }?;
 
     let name = proj_stub.name.to_owned();
-    let _a = <T as BuildSuggester>::new(psite);
-    let proj = <Q as InstallInteractions>::finish(proj_stub);
+    let a = <T as BuildSuggester>::new(&psite)?;
+    let proj = <Q as InstallInteractions>::finish(proj_stub, a)?;
     project_table.table.push(&name, proj)?;
 
     Ok(())

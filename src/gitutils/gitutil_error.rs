@@ -1,3 +1,4 @@
+use crate::build_suggestions::SuggestionsError;
 use crate::interaction::InteractError;
 use json_tables::TableError;
 use std::fmt;
@@ -7,6 +8,7 @@ pub enum GitUtilError {
     InteractError(InteractError),
     GitError(git2::Error),
     TableError(TableError),
+    SuggestionsError(SuggestionsError),
 }
 
 impl fmt::Display for GitUtilError {
@@ -32,5 +34,11 @@ impl From<TableError> for GitUtilError {
 impl From<git2::Error> for GitUtilError {
     fn from(e: git2::Error) -> Self {
         GitUtilError::GitError(e)
+    }
+}
+
+impl From<SuggestionsError> for GitUtilError {
+    fn from(a: SuggestionsError) -> Self {
+        GitUtilError::SuggestionsError(a)
     }
 }
