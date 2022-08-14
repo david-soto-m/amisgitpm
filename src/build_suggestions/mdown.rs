@@ -1,8 +1,14 @@
+#![warn(missing_docs)]
+
+//! A module to facilitate the interactions with the `README.md`
+
 use crate::build_suggestions::SuggestionsError;
 use markdown_extract;
 use regex::Regex;
 use std::path::PathBuf;
 
+/// This function examines a given markdown file for headers that matches with
+/// the case insensitive regex `(compil|instal|build)`
 pub fn get_build_suggestions(readme_file: &PathBuf) -> Result<Vec<Vec<String>>, SuggestionsError> {
     let re = Regex::new(r"((?i)compil|instal|build)").unwrap();
     markdown_extract::extract_from_path(readme_file, &re).map_err(|e| e.into())

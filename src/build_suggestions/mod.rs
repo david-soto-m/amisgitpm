@@ -1,25 +1,24 @@
 use std::path::Path;
 
 mod db_suggestions;
-mod mdown;
+pub use db_suggestions::{SuggestionsItem, SuggestionsTable};
+pub mod mdown;
 mod suggestions_error;
-
-pub use db_suggestions::{DBSuggestions, DBSuggestionsTable};
 pub use suggestions_error::SuggestionsError;
 
+/// A structure that implements the `BuildSuggester` trait
 pub struct BuildSuggestions {
     install: Vec<Vec<String>>,
     uninstall: Vec<Vec<String>>,
 }
 
-impl BuildSuggestions {}
-
 impl BuildSuggester for BuildSuggestions {
+    type Error = SuggestionsError;
     fn new(path: &Path) -> Result<Self, SuggestionsError> {
         let dir = std::fs::read_dir(path)?;
         let readme_path = path.join("README.md");
-        let readme = mdown::get_build_suggestions(&readme_path).unwrap_or(vec![]);
-        let db = DBSuggestionsTable::new()?;
+        let readme = mdown::get_build_suggestions(&readme_path).unwrap_or_default();
+        let db = SuggestionsTable::new()?;
         let db_sug = db.get_suggestions(dir);
         Ok(Self {
             install: db_sug
@@ -41,11 +40,17 @@ impl BuildSuggester for BuildSuggestions {
     }
 }
 
+/// A trait that standardizes how to provide build suggestions for the install process
 pub trait BuildSuggester
 where
     Self: Sized,
 {
-    fn new(path: &Path) -> Result<Self, SuggestionsError>;
+    /// The error type associated to the creation of a new structure that implements the trait
+    type Error: std::error::Error;
+    /// The declaration of a new structure that implements the trait
+    fn new(path: &Path) -> Result<Self, Self::Error>;
+    /// Get a reference to a list of install suggestions, these being a list of strings
     fn get_install(&self) -> &Vec<Vec<String>>;
+    /// Get a reference to a list of uninstall suggestions, these being a list of strings
     fn get_uninstall(&self) -> &Vec<Vec<String>>;
 }

@@ -1,7 +1,7 @@
 use amisgitpm::{
     args::{Cli, Commands},
     build_suggestions::BuildSuggestions,
-    gitutils,
+    gitutils::{GitUtilImpl, GitUtils},
     interaction::UserInstallInteractions,
 };
 use clap::Parser;
@@ -12,7 +12,7 @@ async fn main() {
     println!("{p:?}");
     match p.com {
         Commands::Install { url } => {
-            gitutils::interactive_install::<BuildSuggestions, UserInstallInteractions>(&url)
+            GitUtilImpl::interactive_install::<BuildSuggestions, UserInstallInteractions>(&url)
                 .unwrap()
         }
         _ => todo!(),

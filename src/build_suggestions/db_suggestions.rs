@@ -1,6 +1,3 @@
-//! This module contains the structure that stores build suggestions
-//! DBSuggestions, and the implementation for a table of such structures
-
 use crate::dirutils;
 use json_tables::Table;
 use rayon::prelude::*;
@@ -11,22 +8,26 @@ use crate::build_suggestions::SuggestionsError;
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct DBSuggestions {
+pub struct SuggestionsItem {
     /// File names to detect in order to make the suggestions contained bellow
     pub file_types: Vec<String>,
-    /// The set of suggestions in order to build & install a project
+    /// The set of suggestions in order to build and install a project
     pub install_suggestions: Vec<Vec<String>>,
     /// The set of suggestion in order to uninstall a project
     pub uninstall_suggestions: Vec<Vec<String>>,
 }
 
-pub struct DBSuggestionsTable {
-    pub table: Table<DBSuggestions>,
+/// A wrapper structure for a json_tables of `SuggestionsItem`
+///
+/// It allows for some extra methods to be defined
+pub struct SuggestionsTable {
+    /// The table that holds the different suggestions for projects
+    pub table: Table<SuggestionsItem>,
 }
 
 /// Special functions for Tables of DBSuggestions structures, such as loading the tables
 /// or getting the suggestions for a repo.
-impl DBSuggestionsTable {
+impl SuggestionsTable {
     /// Get the table of pre-made suggestions for compilations.
     pub fn new() -> Result<Self, SuggestionsError> {
         Ok(Self {
@@ -43,8 +44,8 @@ impl DBSuggestionsTable {
     ///
     /// It doesn't panic, but ignores all errors, so it might return empty without
     /// information about why in cases in which it ought to return with something
-    pub fn get_suggestions(&self, files: ReadDir) -> Vec<&DBSuggestions> {
-        let info: Vec<&DBSuggestions> = self.table.get_info_iter().collect();
+    pub fn get_suggestions(&self, files: ReadDir) -> Vec<&SuggestionsItem> {
+        let info: Vec<&SuggestionsItem> = self.table.get_info_iter().collect();
         files
             .par_bridge()
             .filter_map(|file| {
@@ -78,11 +79,11 @@ impl DBSuggestionsTable {
 
 #[cfg(test)]
 mod tests {
-    use crate::build_suggestions::DBSuggestionsTable;
+    use crate::build_suggestions::SuggestionsTable;
     use std::fs;
     #[test]
     fn makes_suggestions() {
-        let table = DBSuggestionsTable::new().unwrap();
+        let table = SuggestionsTable::new().unwrap();
         let len = table
             .get_suggestions(fs::read_dir("tests/projects/mess_project").unwrap())
             .len();
@@ -91,7 +92,7 @@ mod tests {
     }
     #[tokio::test]
     async fn all_build_aux_json_is_correct() {
-        DBSuggestionsTable::new().unwrap();
+        SuggestionsTable::new().unwrap();
         assert!(true)
     }
 }
