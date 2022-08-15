@@ -8,11 +8,6 @@
 //! trait based interfaces.
 
 pub mod args;
-
-/// This module defines the trait that enables getting build suggestions.
-///
-/// It also defines a struct that implements the trait and the auxiliary
-/// structs and functions that are needed for that.
 pub mod build_suggestions;
 pub mod dirutils;
 pub mod gitutils;
