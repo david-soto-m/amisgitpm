@@ -3,9 +3,9 @@ use crate::{
     projects::ProjectTable,
 };
 use git2::Repository;
-
 mod gitutil_error;
 pub use gitutil_error::GitUtilError;
+use subprocess::Exec;
 
 pub trait GitUtils {
     type Error: std::error::Error;
@@ -46,9 +46,16 @@ impl GitUtils for GitUtilImpl {
             .map_err(|e| Self::Error::Suggestions(e.to_string()))?;
         let proj = <Q as InstallInteractions>::finish(proj_stub, a)
             .map_err(|e| Self::Error::Interact(e.to_string()))?;
-        project_table.table.push(&name, proj)?;
 
-        Ok(())
+        let mut src_dir = dirutils::src_dirs();
+        src_dir.push(&name);
+        let i_script = proj.install_script.join("&&");
+        std::env::set_current_dir(src_dir).map_err(Self::Error::Path)?;
+        Exec::shell(i_script).join()?;
+        project_table
+            .table
+            .push(&name, proj)
+            .map_err(Self::Error::Table)
     }
 }
 

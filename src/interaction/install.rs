@@ -83,7 +83,8 @@ impl InstallInteractions for UserInstallInteractions {
                 println!(
                     "Now we are trying to establish build instructions. To help with that we have
 compiled some suggestions. These come from previous knowledge about build
-systems or the README.md file"
+systems or the README.md file. Assume the commands you leave will start
+executing in the root directory of the project."
                 );
                 let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
 
@@ -92,6 +93,7 @@ systems or the README.md file"
                     idx = Select::new()
                         .items(&choices)
                         .with_prompt("Please select one of these to preview")
+                        .default(sug_len as usize)
                         .interact()? as isize;
                     if idx != sug_len {
                         println!("{:#?}", sug[idx as usize]);
@@ -103,6 +105,7 @@ systems or the README.md file"
                     .with_prompt(
 "Please select all the suggestions you'd like to edit, press space next to all that apply"
                     )
+                    .report(false)
                     .interact()?;
                 choices.iter().for_each(|&i| {
                     sug[i]
@@ -126,6 +129,7 @@ systems or the README.md file"
                 while idx != sug_len {
                     idx = Select::new()
                         .items(&choices)
+                        .default(sug_len as usize)
                         .with_prompt("Please select one of these to preview")
                         .interact()? as isize;
                     if idx != sug_len {
@@ -138,6 +142,7 @@ systems or the README.md file"
                     .with_prompt(
     "Please select all the suggestions you'd like to edit, press space next to all that apply"
                     )
+                    .report(false)
                     .interact()?;
                 choices.iter().for_each(|&i| {
                     sug[i]
