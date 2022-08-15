@@ -39,6 +39,8 @@ pub enum Commands {
         /// The package name to uninstall
         package: String,
     },
+    /// Remove all srcs with no project associated
+    Cleanup {},
     /// Get info about a package
     Info {
         #[clap(value_parser)]

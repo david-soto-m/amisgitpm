@@ -110,7 +110,12 @@ executing in the root directory of the project."
                 choices.iter().for_each(|&i| {
                     sug[i]
                         .iter()
-                        .for_each(|string| edit_string.push_str(string))
+                        .for_each(|string| {
+                            if !edit_string.is_empty(){
+                                edit_string.push('\n');
+                            }
+                            edit_string.push_str(string)
+                        })
                 });
             }
             if let Some(final_install) = Editor::new().edit(&edit_string)? {

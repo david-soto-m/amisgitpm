@@ -9,7 +9,8 @@ pub enum GitUtilError {
     Table(TableError),
     Suggestions(String),
     Path(std::io::Error),
-    BuildProcess(PopenError),
+    Process(PopenError),
+    BuildProcess
 }
 
 impl std::error::Error for GitUtilError {}
@@ -22,7 +23,9 @@ impl fmt::Display for GitUtilError {
             Self::Table(e) => write!(f, "{e}"),
             Self::Suggestions(e) => write!(f, "{e}"),
             Self::Path(e)=> write!(f, "{e}"),
-            Self::BuildProcess(e)=> write!(f, "{e}"),
+            Self::Process(e)=> write!(f, "{e}"),
+            Self::BuildProcess=> write!(f, "Failed to build the project"),
+
         }
     }
 }
@@ -41,6 +44,6 @@ impl From<git2::Error> for GitUtilError {
 
 impl From<PopenError> for GitUtilError {
     fn from(e: PopenError) -> Self {
-        Self::BuildProcess(e)
+        Self::Process(e)
     }
 }

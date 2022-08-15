@@ -51,7 +51,9 @@ impl GitUtils for GitUtilImpl {
         src_dir.push(&name);
         let i_script = proj.install_script.join("&&");
         std::env::set_current_dir(src_dir).map_err(Self::Error::Path)?;
-        Exec::shell(i_script).join()?;
+        if ! Exec::shell(i_script).join()?.success(){
+            return Err(Self::Error::BuildProcess)
+        }
         project_table
             .table
             .push(&name, proj)
