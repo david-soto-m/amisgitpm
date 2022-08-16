@@ -63,11 +63,13 @@ pub enum Commands {
         package: String,
     },
     /// Remove all srcs with no project associated
+    ///
+    /// It is `O(N^2)`, with `N` the number of installed packages
     Cleanup {},
-    /// Get info about a package
-    Info {
+    /// Edit the configuration of a project
+    Edit {
         #[clap(value_parser)]
-        /// The package name to get info about
+        /// The name of package to edit
         package: String,
     },
     /// Show the list of installed applications and their version

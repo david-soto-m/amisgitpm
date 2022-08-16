@@ -1,28 +1,25 @@
 use amisgitpm::{
     args::{Cli, Commands},
     build_suggestions::BuildSuggestions,
-    gitutils::{GitUtilImpl, GitUtils},
-    interaction::UserInstallInteractions,
+    interaction::{MinorInteractionsImpl, UserInstallInteractions},
+    package_management::{PackageManagement, PackageManager},
 };
 use clap::Parser;
 
 #[tokio::main]
 async fn main() {
     let p = Cli::parse();
-    println!("{p:?}");
-    match p.com {
+    match dbg!(p).com {
         Commands::Install { url, .. } => {
-            GitUtilImpl::interactive_install::<BuildSuggestions, UserInstallInteractions>(&url)
-                .unwrap()
-        },
-        Commands::Uninstall { package } =>{
-            GitUtilImpl::uninstall(&package).unwrap()
+            PackageManager::interactive_install::<BuildSuggestions, UserInstallInteractions>(&url)
         }
-        Commands::List {  } =>{
-            GitUtilImpl::list().unwrap();
-        }
+        Commands::Uninstall { package } => PackageManager::uninstall(&package),
+        Commands::List {} => PackageManager::list::<MinorInteractionsImpl>(),
+        Commands::Edit { package } => PackageManager::edit::<MinorInteractionsImpl>(&package),
+        Commands::Cleanup {  } => PackageManager::cleanup(),
         _ => todo!(),
-    };
+    }
+    .unwrap();
 }
 
 /*Suggestions */

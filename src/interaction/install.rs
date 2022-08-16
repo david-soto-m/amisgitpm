@@ -1,6 +1,6 @@
 use crate::{
     build_suggestions::BuildSuggester,
-    interaction::{InstallInteractions, InteractError},
+    interaction::{InstallError, InstallInteractions},
     projects::{Project, ProjectTable, UpdatePolicy},
 };
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
@@ -8,7 +8,7 @@ use git2::Repository;
 pub type UserInstallInteractions = ();
 
 impl InstallInteractions for UserInstallInteractions {
-    type Error = InteractError;
+    type Error = InstallError;
     fn initial(url: &str, table: &ProjectTable) -> Result<Project, Self::Error> {
         let name = url.split('/').last().map_or("".into(), |potential_name| {
             potential_name
@@ -50,7 +50,7 @@ impl InstallInteractions for UserInstallInteractions {
             .default(2)
             .items(update_arr)
             .interact()?;
-        Ok(Project{
+        Ok(Project {
             name,
             url: url.into(),
             update_policy: update_arr[update_idx],

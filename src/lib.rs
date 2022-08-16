@@ -10,8 +10,8 @@
 pub mod args;
 pub mod build_suggestions;
 pub mod dirutils;
-pub mod gitutils;
 pub mod interaction;
+pub mod package_management;
 pub mod projects;
 #[cfg(test)]
 mod tests {

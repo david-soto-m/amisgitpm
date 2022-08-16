@@ -56,13 +56,18 @@ impl ProjectTable {
     }
 }
 
-impl std::fmt::Display for ProjectTable{
+impl std::fmt::Display for ProjectTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use prettytable as pt;
         use prettytable::row;
         let mut table = pt::Table::new();
-        self.table.get_table_content().for_each(|e|{
-            table.add_row(row![e.info.name, e.info.url, e.info.ref_string, e.info.update_policy]);
+        self.table.get_table_content().for_each(|e| {
+            table.add_row(row![
+                e.info.name,
+                e.info.url,
+                e.info.ref_string,
+                e.info.update_policy
+            ]);
         });
         write!(f, "{table}")
     }

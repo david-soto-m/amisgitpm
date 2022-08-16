@@ -4,6 +4,6 @@
         "cargo install --path . --root ~/.local/"
     ]],
     "uninstall_suggestions": [[
-        "cargo uninstall --path . --root ~/.local/"
+        "cargo uninstall {{project name}} --root ~/.local/"
     ]]
 }
