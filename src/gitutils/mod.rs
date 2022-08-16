@@ -17,6 +17,7 @@ pub trait GitUtils {
         Q: InstallInteractions;
     fn install(prj: Project) -> Result<(), Self::Error>;
     fn uninstall(string: &str) -> Result<(), Self::Error>;
+    fn list()->Result<(), Self::Error>;
 }
 
 pub struct GitUtilImpl {}
@@ -104,13 +105,33 @@ impl GitUtils for GitUtilImpl {
             Err(UninstallError::NonExistant.into())
         }
     }
+    fn list()->Result<(), Self::Error>{
+        let project_table = ProjectTable::load()?;
+        println!("{project_table}");
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::projects::{Project, UpdatePolicy};
+    use crate::gitutils::{GitUtilImpl, GitUtils};
     #[test]
-    fn install_project() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+    fn install_uninstall_project() {
+        let prj = Project{
+            name:"Hello-crate".into(),
+            url:"https://github.com/zwang20/rust-hello-world.git".into(),
+            ref_string:"refs/heads/master".into(),
+            update_policy: UpdatePolicy::Always,
+            install_script: vec![
+                "cargo install --path .".into()
+            ],
+            uninstall_script: vec![
+                "cargo uninstall rust-hello-world".into()
+            ]
+        };
+        GitUtilImpl::install(prj).unwrap();
+        GitUtilImpl::uninstall("Hello-crate").unwrap();
     }
 }
+

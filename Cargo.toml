@@ -26,7 +26,6 @@ tokio-test = "^0.4" # testing
 
 # UI
 clap = { version = "^3.2", features = ["derive"] } # arguments
-indicatif = "^0.16" # progress bars
 console = "^0.15" # color
 dialoguer = "^0.10" # general cli utils
 
@@ -34,8 +33,9 @@ dialoguer = "^0.10" # general cli utils
 directories = "^4.0" # config and local and stuff
 json_tables = "^0.0.2" # table management
 regex = "^1.6"
-markdown-extract = "2.0.0"
-subprocess = "0.2.9"
+markdown-extract = "^2.0"
+subprocess = "^0.2"
+prettytable-rs = {version = "^0.9", default-features = false}
 
 
 [build-dependencies]

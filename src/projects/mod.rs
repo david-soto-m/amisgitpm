@@ -35,30 +35,7 @@ pub struct Project {
     pub ref_string: String,
     pub update_policy: UpdatePolicy,
     pub install_script: Vec<String>,
-    pub run_script: Vec<String>,
     pub uninstall_script: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ProjectStub {
-    pub name: String,
-    pub url: String,
-    pub update_policy: UpdatePolicy,
-    pub ref_string: String,
-}
-
-impl From<ProjectStub> for Project {
-    fn from(a: ProjectStub) -> Self {
-        Self {
-            name: a.name,
-            url: a.url,
-            ref_string: a.ref_string,
-            update_policy: a.update_policy,
-            install_script: vec![],
-            run_script: vec![],
-            uninstall_script: vec![],
-        }
-    }
 }
 
 pub struct ProjectTable {
@@ -76,5 +53,17 @@ impl ProjectTable {
             .get_table_keys()
             .par_bridge()
             .any(|p_name| p_name == name)
+    }
+}
+
+impl std::fmt::Display for ProjectTable{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use prettytable as pt;
+        use prettytable::row;
+        let mut table = pt::Table::new();
+        self.table.get_table_content().for_each(|e|{
+            table.add_row(row![e.info.name, e.info.url, e.info.ref_string, e.info.update_policy]);
+        });
+        write!(f, "{table}")
     }
 }
