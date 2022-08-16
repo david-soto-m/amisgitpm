@@ -10,6 +10,7 @@
     "uninstall_suggestions": [
         ["rm ~/.local/bin/{{project_name}}"],
         [
+            "# Uninstall with translations DELETE THIS LINE",
             "rm ~/.local/bin/{{project_name}}",
             "rm ~/.local/share/locale/{{languages}}/LC_MESSAGES/{{project_name.mo}}"
         ]

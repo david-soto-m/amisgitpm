@@ -14,6 +14,9 @@ async fn main() {
         Commands::Install { url } => {
             GitUtilImpl::interactive_install::<BuildSuggestions, UserInstallInteractions>(&url)
                 .unwrap()
+        },
+        Commands::Uninstall { package } =>{
+            GitUtilImpl::uninstall(&package).unwrap()
         }
         _ => todo!(),
     };

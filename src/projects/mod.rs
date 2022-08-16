@@ -66,7 +66,7 @@ pub struct ProjectTable {
 }
 
 impl ProjectTable {
-    pub fn new() -> Result<Self, TableError> {
+    pub fn load() -> Result<Self, TableError> {
         Ok(Self {
             table: Table::builder(dirutils::projects_db()).load()?,
         })

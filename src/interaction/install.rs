@@ -108,14 +108,12 @@ executing in the root directory of the project."
                     .report(false)
                     .interact()?;
                 choices.iter().for_each(|&i| {
-                    sug[i]
-                        .iter()
-                        .for_each(|string| {
-                            if !edit_string.is_empty(){
-                                edit_string.push('\n');
-                            }
-                            edit_string.push_str(string)
-                        })
+                    sug[i].iter().for_each(|string| {
+                        if !edit_string.is_empty() {
+                            edit_string.push('\n');
+                        }
+                        edit_string.push_str(string)
+                    })
                 });
             }
             if let Some(final_install) = Editor::new().edit(&edit_string)? {
