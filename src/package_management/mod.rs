@@ -5,7 +5,9 @@ use crate::{
 };
 
 mod pm_error;
-pub use pm_error::{CommonError, EditError, InstallError, ListError, PMError, UninstallError, CleanupError};
+pub use pm_error::{
+    CleanupError, CommonError, EditError, InstallError, ListError, PMError, UninstallError,
+};
 mod pm;
 pub use pm::PackageManager;
 

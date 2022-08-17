@@ -3,7 +3,8 @@ use crate::{
     dirutils,
     interaction::{InstallInteractions, MinorInteractions},
     package_management::{
-        CommonError, EditError, InstallError, ListError, PMError, PackageManagement, UninstallError, CleanupError
+        CleanupError, CommonError, EditError, InstallError, ListError, PMError, PackageManagement,
+        UninstallError,
     },
     projects::{Project, ProjectTable},
 };
@@ -11,7 +12,23 @@ use git2::Repository;
 use rayon::prelude::*;
 use subprocess::Exec;
 
-pub type PackageManager = ();
+pub struct PackageManager{}
+
+impl PackageManager{
+    pub fn bootstrap()-> Result<(), PMError>{
+        use crate::projects::UpdatePolicy;
+        let prj = Project {
+            name: "amisgitpm".into(),
+            url: "https://github.com/david-soto-m/amisgitpm.git".into(),
+            ref_string: "refs/heads/master".into(),
+            update_policy: UpdatePolicy::Always,
+            install_script: vec!["cargo install --path . --root ~/.local/".into()],
+            uninstall_script: vec!["cargo uninstall amisgitpm --root ~/.local/".into()],
+        };
+        PackageManager::install(prj.clone())
+
+    }
+}
 
 impl PackageManagement for PackageManager {
     type Error = PMError;
@@ -120,29 +137,31 @@ impl PackageManagement for PackageManager {
     fn cleanup() -> Result<(), Self::Error> {
         let project_table = ProjectTable::load()?;
         let new_dir = dirutils::new_src_dirs();
-        if new_dir.exists(){
+        if new_dir.exists() {
             std::fs::remove_dir_all(new_dir).map_err(CleanupError::FileOp)?;
         }
         let src_dir = dirutils::src_dirs();
-        if src_dir.exists(){
-            std::fs::read_dir(src_dir).map_err(CleanupError::FileOp)?
+        if src_dir.exists() {
+            std::fs::read_dir(src_dir)
+                .map_err(CleanupError::FileOp)?
                 .par_bridge()
                 .for_each(|e| {
-                    if let Ok(entry) = e{
-                        if ! project_table.check_if_used_name(entry.file_name().to_str().unwrap()){
+                    if let Ok(entry) = e {
+                        if !project_table.check_if_used_name(entry.file_name().to_str().unwrap()) {
                             std::fs::remove_dir_all(entry.path()).unwrap();
                         }
                     }
                 });
         }
         let old_dir = dirutils::old_src_dirs();
-        if old_dir.exists(){
+        if old_dir.exists() {
             std::fs::remove_dir_all(old_dir).map_err(CleanupError::FileOp)?;
-            std::fs::read_dir(dirutils::src_dirs()).map_err(CleanupError::FileOp)?
+            std::fs::read_dir(dirutils::src_dirs())
+                .map_err(CleanupError::FileOp)?
                 .par_bridge()
                 .for_each(|e| {
-                    if let Ok(entry) = e{
-                        if ! project_table.check_if_used_name(entry.file_name().to_str().unwrap()){
+                    if let Ok(entry) = e {
+                        if !project_table.check_if_used_name(entry.file_name().to_str().unwrap()) {
                             std::fs::remove_dir_all(entry.path()).unwrap();
                         }
                     }

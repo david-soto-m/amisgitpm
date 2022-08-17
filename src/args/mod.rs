@@ -25,15 +25,17 @@ pub enum Commands {
         #[clap(value_parser)]
         /// the git repo url
         url: String,
-        /// When the url points to a git directory rather than a url
-        ///
+    },
+    /// Install from a git repo you have already downloaded.
+    /// Mainly used with failed builds
+    InstallFromLocal {
         /// Use absolute paths or starting with `~` for local repos
         /// that you wish to install using this package manager
         /// For example:
         ///
         ///```bash
         ///
-        ///amisgitpm install -p ~/rust-programs/hello-world
+        ///amisgitpm install-from-local  ~/rust-programs/hello-world https://github.com/my-user/hello-world.git
         ///
         ///```
         ///
@@ -43,11 +45,14 @@ pub enum Commands {
         ///
         ///```bash
         ///
-        ///amisgitpm install -p bad-build-example
+        ///amisgitpm install-from-local bad-build-example https://github.com/my-user/bad-build-example.git
         ///
         ///```
-        #[clap(short, long)]
-        path: bool,
+        #[clap(value_parser)]
+        path: String,
+        /// the git repo url
+        #[clap(value_parser)]
+        url: String,
     },
     /// Update package(s)
     Update {
@@ -62,10 +67,17 @@ pub enum Commands {
         /// The package name to uninstall
         package: String,
     },
+    /// Uninstall then install a package
+    Reinstall {
+        #[clap(value_parser)]
+        /// The package name to reinstall
+        package: String,
+    },
     /// Remove all srcs with no project associated
     ///
     /// It is `O(N^2)`, with `N` the number of installed packages
-    Cleanup {},
+    /// It is parallelized, and therefore is panicky rather than reporting
+    Cleanup,
     /// Edit the configuration of a project
     Edit {
         #[clap(value_parser)]
@@ -73,7 +85,7 @@ pub enum Commands {
         package: String,
     },
     /// Show the list of installed applications and their version
-    List {},
+    List,
     /// Install amisgitpm with amisgitpm, check that everything is in place
-    Bootstrap {},
+    Bootstrap,
 }

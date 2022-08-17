@@ -21,7 +21,7 @@ pub trait MinorInteractions {
 }
 
 mod install;
-pub use install::UserInstallInteractions;
+pub use install::InstallInteractionsImpl;
 
 mod minor;
 pub use minor::MinorInteractionsImpl;
