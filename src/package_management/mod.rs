@@ -3,7 +3,6 @@ use crate::{
     interaction::{InstallInteractions, MinorInteractions},
     projects::Project,
 };
-
 mod pm_error;
 pub use pm_error::*;
 mod pm;
@@ -11,14 +10,10 @@ pub use pm::PackageManager;
 
 pub trait PackageManagement {
     type Error: std::error::Error;
-    fn interactive_install<T, Q>(url: &str) -> Result<(), Self::Error>
+    fn interactive_install<T, Q>(url: &str, path: Option<String>) -> Result<(), Self::Error>
     where
         T: BuildSuggester,
         Q: InstallInteractions;
-    //     fn install_from_local<T, Q>(path: &str, url: &str) -> Result<(), Self::Error>
-    //     where
-    //         T: BuildSuggester,
-    //         Q: InstallInteractions;
     fn install(prj: Project) -> Result<(), Self::Error>;
     fn uninstall(package: &str) -> Result<(), Self::Error>;
     fn reinstall(package: &str) -> Result<(), Self::Error>;

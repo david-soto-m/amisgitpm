@@ -9,8 +9,8 @@ use clap::Parser;
 fn main() {
     let p = Cli::parse();
     match p.com {
-        Commands::Install { url } => {
-            PackageManager::interactive_install::<BuildSuggestions, InstallInteractionsImpl>(&url)
+        Commands::Install { url, path } => {
+            PackageManager::interactive_install::<BuildSuggestions, InstallInteractionsImpl>(&url, path )
         }
         Commands::Uninstall { package } => PackageManager::uninstall(&package),
         Commands::Reinstall { package } => PackageManager::reinstall(&package),

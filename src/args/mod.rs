@@ -25,17 +25,14 @@ pub enum Commands {
         #[clap(value_parser)]
         /// the git repo url
         url: String,
-    },
-    /// Install from a git repo you have already downloaded.
-    /// Mainly used with failed builds
-    InstallFromLocal {
+
         /// Use absolute paths or starting with `~` for local repos
         /// that you wish to install using this package manager
         /// For example:
         ///
         ///```bash
         ///
-        ///amisgitpm install-from-local  ~/rust-programs/hello-world https://github.com/my-user/hello-world.git
+        ///amisgitpm install https://github.com/my-user/hello-world.git ~/rust-programs/hello-world
         ///
         ///```
         ///
@@ -45,14 +42,11 @@ pub enum Commands {
         ///
         ///```bash
         ///
-        ///amisgitpm install-from-local bad-build-example https://github.com/my-user/bad-build-example.git
+        ///amisgitpm install https://github.com/my-user/bad-build-example.git bad-build-example
         ///
         ///```
         #[clap(value_parser)]
-        path: String,
-        /// the git repo url
-        #[clap(value_parser)]
-        url: String,
+        path: Option<String>,
     },
     /// Update package(s)
     Update {
