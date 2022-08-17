@@ -51,6 +51,7 @@ impl InstallInteractions for InstallInteractionsImpl {
             .default(2)
             .items(update_arr)
             .interact()?;
+        println!("The download will start shortly, please wait");
         Ok(Project {
             name,
             url: url.into(),

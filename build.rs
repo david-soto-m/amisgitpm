@@ -3,6 +3,8 @@ use std::fs;
 const PROJECT_INFO: (&str, &str, &str) = ("org", "amisoft", "amisgitpm");
 pub const PROJECT_CONFIG_DIR: &str = "projects";
 pub const SUGGESTION_DIR: &str = "suggestions";
+pub const SRC_DIR: &str = "src";
+
 
 fn main() {
     let dirs = ProjectDirs::from(PROJECT_INFO.0, PROJECT_INFO.1, PROJECT_INFO.2).unwrap();
@@ -10,6 +12,8 @@ fn main() {
     fs::create_dir_all(config_dir.join(PROJECT_CONFIG_DIR)).unwrap();
     let sugg_dir = config_dir.join(SUGGESTION_DIR);
     fs::create_dir_all(sugg_dir.clone()).unwrap();
+    let src_dir = dirs.data_local_dir().join(SRC_DIR);
+    std::fs::create_dir_all(src_dir).unwrap();
     fs::read_dir("db/suggestions").unwrap().for_each(|file| {
         let file = file.unwrap();
         println!("{:?}", file.file_name());

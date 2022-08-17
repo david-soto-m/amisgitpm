@@ -2,31 +2,30 @@ use crate::{
     build_suggestions::BuildSuggester,
     dirutils,
     interaction::{InstallInteractions, MinorInteractions},
-    package_management::{
-        CleanupError, CommonError, EditError, InstallError, ListError, PMError, PackageManagement,
-        UninstallError,
-    },
+    package_management::*,
     projects::{Project, ProjectTable},
 };
 use git2::Repository;
 use rayon::prelude::*;
 use subprocess::Exec;
 
-pub struct PackageManager{}
+pub struct PackageManager {}
 
-impl PackageManager{
-    pub fn bootstrap()-> Result<(), PMError>{
+impl PackageManager {
+    pub fn bootstrap() -> Result<(), PMError> {
         use crate::projects::UpdatePolicy;
+        std::fs::create_dir_all(dirutils::projects_db()).unwrap();
+        std::fs::create_dir_all(dirutils::suggestions_db()).unwrap();
+        std::fs::create_dir_all(dirutils::src_dirs()).unwrap();
         let prj = Project {
             name: "amisgitpm".into(),
             url: "https://github.com/david-soto-m/amisgitpm.git".into(),
-            ref_string: "refs/heads/master".into(),
+            ref_string: "refs/heads/main".into(),
             update_policy: UpdatePolicy::Always,
             install_script: vec!["cargo install --path . --root ~/.local/".into()],
             uninstall_script: vec!["cargo uninstall amisgitpm --root ~/.local/".into()],
         };
-        PackageManager::install(prj.clone())
-
+        PackageManager::install(prj)
     }
 }
 
@@ -41,7 +40,6 @@ impl PackageManagement for PackageManager {
         let mut proj_stub = <Q as InstallInteractions>::initial(url, &project_table)
             .map_err(|e| InstallError::Interact(e.to_string()))?;
         let new_dir = dirutils::new_src_dirs().join(&proj_stub.name);
-        println!("Starting download, please, wait a bit");
         let repo = Repository::clone(url, &new_dir)?;
         let ref_name = <Q as InstallInteractions>::refs(&repo)
             .map_err(|e| InstallError::Interact(e.to_string()))?;
@@ -97,25 +95,48 @@ impl PackageManagement for PackageManager {
     }
     fn uninstall(project: &str) -> Result<(), Self::Error> {
         let mut project_table = ProjectTable::load()?;
-        if let Some(prj) = project_table.table.get_element(project) {
-            let src_dir = dirutils::src_dirs().join(&project);
-            std::env::set_current_dir(&src_dir).map_err(CommonError::Path)?;
-            let rm_script = prj.info.uninstall_script.join("&&");
-            if !Exec::shell(rm_script).join()?.success() {
-                return Err(UninstallError::Process.into());
-            }
-            std::fs::remove_dir_all(src_dir).map_err(UninstallError::Remove)?;
-            let old_dir = dirutils::old_src_dirs().join(&project);
-            if old_dir.exists() {
-                std::fs::remove_dir_all(old_dir).map_err(UninstallError::Remove)?;
-            }
-            project_table
-                .table
-                .pop(project)
-                .map_err(|e| CommonError::Table(e).into())
-        } else {
-            Err(UninstallError::NonExistant.into())
+        let prj = project_table.table.get_element(project).ok_or(UninstallError::NonExistant)?;
+        let src_dir = dirutils::src_dirs().join(&project);
+        std::env::set_current_dir(&src_dir).map_err(CommonError::Path)?;
+        let rm_script = prj.info.uninstall_script.join("&&");
+        if !Exec::shell(rm_script).join()?.success() {
+            return Err(UninstallError::Process.into());
         }
+        std::fs::remove_dir_all(src_dir).map_err(UninstallError::Remove)?;
+        let old_dir = dirutils::old_src_dirs().join(&project);
+        if old_dir.exists() {
+            std::fs::remove_dir_all(old_dir).map_err(UninstallError::Remove)?;
+        }
+        project_table
+            .table
+            .pop(project)
+            .map_err(|e| CommonError::Table(e).into())
+    }
+    fn reinstall(package: &str) -> Result<(), Self::Error>{
+        let prj = ProjectTable::load()?
+            .table
+            .get_element(package)
+            .ok_or(ReinstallError::NonExistant)?
+            .info
+            .clone();
+        Self::uninstall(&prj.name)?;
+        Self::install(prj)?;
+        Ok(())
+    }
+    fn rebuild(package: &str) -> Result<(), Self::Error> {
+        let prj = ProjectTable::load()?
+            .table
+            .get_element(package)
+            .ok_or(RebuildError::NonExistant)?
+            .info.clone();
+        let src_dir = dirutils::src_dirs().join(&prj.name);
+        let i_script = prj.install_script.join("&&");
+        std::env::set_current_dir(&src_dir).map_err(CommonError::Path)?;
+        if !Exec::shell(i_script).join()?.success() {
+            return Err(RebuildError::Process.into());
+        }
+        Ok(())
+
     }
     fn list<Q: MinorInteractions>() -> Result<(), Self::Error> {
         let project_table = ProjectTable::load()?;
@@ -131,9 +152,6 @@ impl PackageManagement for PackageManager {
         }
         Ok(())
     }
-    /// ## Panics
-    /// for speed when the function remove_dir_all panics
-    /// and when there is non utf-8 characters in your project path
     fn cleanup() -> Result<(), Self::Error> {
         let project_table = ProjectTable::load()?;
         let new_dir = dirutils::new_src_dirs();
@@ -145,29 +163,34 @@ impl PackageManagement for PackageManager {
             std::fs::read_dir(src_dir)
                 .map_err(CleanupError::FileOp)?
                 .par_bridge()
-                .for_each(|e| {
+                .try_for_each(|e| {
                     if let Ok(entry) = e {
-                        if !project_table.check_if_used_name(entry.file_name().to_str().unwrap()) {
-                            std::fs::remove_dir_all(entry.path()).unwrap();
+                        if !project_table.check_if_used_name(
+                            entry.file_name().to_str().ok_or(CleanupError::String)?,
+                        ) {
+                            std::fs::remove_dir_all(entry.path()).map_err(CleanupError::FileOp)?;
                         }
                     }
-                });
+                    Ok::<(), CleanupError>(())
+                })?;
         }
         let old_dir = dirutils::old_src_dirs();
         if old_dir.exists() {
-            std::fs::remove_dir_all(old_dir).map_err(CleanupError::FileOp)?;
-            std::fs::read_dir(dirutils::src_dirs())
+            std::fs::remove_dir_all(&old_dir).map_err(CleanupError::FileOp)?;
+            std::fs::read_dir(&old_dir)
                 .map_err(CleanupError::FileOp)?
                 .par_bridge()
-                .for_each(|e| {
+                .try_for_each(|e| {
                     if let Ok(entry) = e {
-                        if !project_table.check_if_used_name(entry.file_name().to_str().unwrap()) {
-                            std::fs::remove_dir_all(entry.path()).unwrap();
+                        if !project_table.check_if_used_name(
+                            entry.file_name().to_str().ok_or(CleanupError::String)?,
+                        ) {
+                            std::fs::remove_dir_all(entry.path()).map_err(CleanupError::FileOp)?;
                         }
                     }
-                });
+                    Ok::<(), CleanupError>(())
+                })?;
         }
-
         Ok(())
     }
 }

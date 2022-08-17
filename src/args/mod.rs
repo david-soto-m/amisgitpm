@@ -73,6 +73,12 @@ pub enum Commands {
         /// The package name to reinstall
         package: String,
     },
+    /// Run the build instructions of a package
+    Rebuild {
+        #[clap(value_parser)]
+        /// The package name to rebuild
+        package: String,
+    },
     /// Remove all srcs with no project associated
     ///
     /// It is `O(N^2)`, with `N` the number of installed packages

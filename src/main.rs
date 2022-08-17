@@ -6,14 +6,15 @@ use amisgitpm::{
 };
 use clap::Parser;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let p = Cli::parse();
     match p.com {
         Commands::Install { url } => {
             PackageManager::interactive_install::<BuildSuggestions, InstallInteractionsImpl>(&url)
         }
         Commands::Uninstall { package } => PackageManager::uninstall(&package),
+        Commands::Reinstall { package } => PackageManager::reinstall(&package),
+        Commands::Rebuild { package } => PackageManager::rebuild(&package),
         Commands::List => PackageManager::list::<MinorInteractionsImpl>(),
         Commands::Edit { package } => PackageManager::edit::<MinorInteractionsImpl>(&package),
         Commands::Cleanup => PackageManager::cleanup(),

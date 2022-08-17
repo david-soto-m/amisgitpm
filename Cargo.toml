@@ -19,10 +19,6 @@ serde_json = "^1.0"
 
 # Paralelization and async
 rayon = "^1.5" #paralel computing
-tokio = {version = "1", features = ["full"]}
-# To be refined to the features that are eventually used.
-# Probably sync and rt and rt-multi-thread, maybe also File, and io
-tokio-test = "^0.4" # testing
 
 # UI
 clap = { version = "^3.2", features = ["derive"] } # arguments

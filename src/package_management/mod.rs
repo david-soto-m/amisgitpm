@@ -5,9 +5,7 @@ use crate::{
 };
 
 mod pm_error;
-pub use pm_error::{
-    CleanupError, CommonError, EditError, InstallError, ListError, PMError, UninstallError,
-};
+pub use pm_error::*;
 mod pm;
 pub use pm::PackageManager;
 
@@ -17,8 +15,14 @@ pub trait PackageManagement {
     where
         T: BuildSuggester,
         Q: InstallInteractions;
+    //     fn install_from_local<T, Q>(path: &str, url: &str) -> Result<(), Self::Error>
+    //     where
+    //         T: BuildSuggester,
+    //         Q: InstallInteractions;
     fn install(prj: Project) -> Result<(), Self::Error>;
     fn uninstall(package: &str) -> Result<(), Self::Error>;
+    fn reinstall(package: &str) -> Result<(), Self::Error>;
+    fn rebuild(package: &str) -> Result<(), Self::Error>;
     fn list<Q: MinorInteractions>() -> Result<(), Self::Error>;
     fn edit<Q: MinorInteractions>(package: &str) -> Result<(), Self::Error>;
     fn cleanup() -> Result<(), Self::Error>;
