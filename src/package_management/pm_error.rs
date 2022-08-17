@@ -35,7 +35,6 @@ pub enum CommonError {
     Table(TableError),
     Path(std::io::Error),
     Process(PopenError),
-    CopyDir(fs_extra::error::Error),
 }
 impl std::error::Error for CommonError {}
 impl fmt::Display for CommonError {
@@ -45,7 +44,6 @@ impl fmt::Display for CommonError {
             Self::Table(e) => write!(f, "{e}"),
             Self::Path(e) => write!(f, "{e}"),
             Self::Process(e) => write!(f, "{e}"),
-            Self::CopyDir(e) => write!(f, "{e}"),
         }
     }
 }
@@ -67,11 +65,6 @@ impl From<git2::Error> for PMError {
 impl From<PopenError> for PMError {
     fn from(e: PopenError) -> Self {
         Self::Common(CommonError::Process(e))
-    }
-}
-impl From<fs_extra::error::Error> for PMError{
-    fn from(e: fs_extra::error::Error) -> Self {
-        Self::Common(CommonError::CopyDir(e))
     }
 }
 

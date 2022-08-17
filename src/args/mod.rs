@@ -25,18 +25,7 @@ pub enum Commands {
         #[clap(value_parser)]
         /// the git repo url
         url: String,
-
-        /// Use absolute paths or starting with `~` for local repos
-        /// that you wish to install using this package manager
-        /// For example:
-        ///
-        ///```bash
-        ///
-        ///amisgitpm install https://github.com/my-user/hello-world.git ~/rust-programs/hello-world
-        ///
-        ///```
-        ///
-        /// Use relative paths for repos that you know are downloaded in new.
+        /// Use relative paths for repos that you know are downloaded by `amisgitpm`.
         /// If you gave bad build instructions for a package, then you might
         /// want to do:
         ///

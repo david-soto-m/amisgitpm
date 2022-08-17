@@ -32,7 +32,6 @@ regex = "^1.6"
 markdown-extract = "^2.0"
 subprocess = "^0.2"
 prettytable-rs = {version = "^0.9", default-features = false}
-fs_extra = "1.2.0"
 
 
 [build-dependencies]

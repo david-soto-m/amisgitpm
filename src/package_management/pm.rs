@@ -8,7 +8,6 @@ use crate::{
 use git2::Repository;
 use rayon::prelude::*;
 use subprocess::Exec;
-use fs_extra::{self, dir::CopyOptions};
 use std::path::Path;
 pub struct PackageManager {}
 
@@ -45,14 +44,8 @@ impl PackageManagement for PackageManager {
         let repo = match path{
             Some(path) =>{
                 let path = Path::new(&path);
-                if path.is_absolute(){
-                    let opts= CopyOptions { overwrite: true,..Default::default()};
-                    fs_extra::dir::copy(path, &new_dir, &opts)?;
-                    Repository::open(&new_dir)?
-                } else {
-                    let new_dir = dirutils::new_src_dirs().join(path);
-                    Repository::open(&new_dir)?
-                }
+                let new_dir = dirutils::new_src_dirs().join(path);
+                Repository::open(&new_dir)?
             }
             None=> Repository::clone(url, &new_dir)?
         };
