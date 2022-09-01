@@ -9,7 +9,8 @@ use std::path::Path;
 
 mod db_suggestions;
 pub use db_suggestions::{SuggestionsItem, SuggestionsTable};
-pub mod mdown;
+mod mdown;
+pub use mdown::*;
 mod suggestions_error;
 pub use suggestions_error::SuggestionsError;
 

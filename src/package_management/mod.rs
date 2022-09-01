@@ -1,24 +1,37 @@
 use crate::{
     build_suggestions::BuildSuggester,
-    interaction::{InstallInteractions, MinorInteractions},
+    dirutils,
+    interaction::{InstallInteractions, MinorInteractions, UpdateInteractions},
     projects::Project,
 };
+mod core;
+mod ext;
+mod inter;
 mod pm_error;
-pub use pm_error::*;
-mod pm;
-pub use pm::PackageManager;
 
-pub trait PackageManagement {
+pub trait PackageManagementCore {
     type Error: std::error::Error;
-    fn interactive_install<T, Q>(url: &str, path: Option<String>) -> Result<(), Self::Error>
+    fn install(prj: &Project) -> Result<(), Self::Error>;
+    fn update(prj: &str) -> Result<(), Self::Error>;
+    fn uninstall(prj: &str) -> Result<(), Self::Error>;
+    fn restore(package: &str) -> Result<(), Self::Error>;
+}
+
+pub trait PackageManagementInteractive: PackageManagementCore {
+    fn inter_install<T, Q>(url: &str, path: Option<String>) -> Result<(), Self::Error>
     where
         T: BuildSuggester,
         Q: InstallInteractions;
-    fn install(prj: Project) -> Result<(), Self::Error>;
-    fn uninstall(package: &str) -> Result<(), Self::Error>;
-    fn reinstall(package: &str) -> Result<(), Self::Error>;
-    fn rebuild(package: &str) -> Result<(), Self::Error>;
+    fn inter_update<Q: UpdateInteractions>(package: Option<String>) -> Result<(), Self::Error>;
     fn list<Q: MinorInteractions>() -> Result<(), Self::Error>;
     fn edit<Q: MinorInteractions>(package: &str) -> Result<(), Self::Error>;
-    fn cleanup() -> Result<(), Self::Error>;
 }
+
+pub trait PackageManagementExt: PackageManagementCore {
+    fn reinstall(package: &str) -> Result<(), Self::Error>;
+    fn rebuild(package: &str) -> Result<(), Self::Error>;
+    fn cleanup() -> Result<(), Self::Error>;
+    fn bootstrap() -> Result<(), Self::Error>;
+}
+
+pub struct PackageManager {}

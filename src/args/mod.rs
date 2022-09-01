@@ -44,6 +44,14 @@ pub enum Commands {
         /// If not provided all packages are updated
         package: Option<String>,
     },
+    /// Get the last version of the package
+    Restore {
+        #[clap(value_parser)]
+        /// An optional package name to update independently.
+        /// If not provided all packages are updated
+        package: String,
+    },
+
     /// Uninstall a package
     Uninstall {
         #[clap(value_parser)]

@@ -6,9 +6,9 @@ use crate::{
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::Repository;
 
-pub type InstallInteractionsImpl = ();
+pub type InstallInterImpl = ();
 
-impl InstallInteractions for InstallInteractionsImpl {
+impl InstallInteractions for InstallInterImpl {
     type Error = InstallError;
     fn initial(url: &str, table: &ProjectTable) -> Result<Project, Self::Error> {
         let name = url.split('/').last().map_or("".into(), |potential_name| {

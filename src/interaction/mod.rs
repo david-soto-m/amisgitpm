@@ -5,7 +5,7 @@ use crate::{
 use git2::Repository;
 
 mod interact_error;
-pub use interact_error::{InstallError, MinorError};
+pub use interact_error::*;
 
 pub trait InstallInteractions {
     type Error: std::error::Error;
@@ -20,8 +20,16 @@ pub trait MinorInteractions {
     fn list(prj: &ProjectTable) -> Result<(), Self::Error>;
 }
 
+pub trait UpdateInteractions {
+    type Error: std::error::Error;
+    fn confirm(package_name: &str) -> Result<bool, UpdateError>;
+}
+
 mod install;
-pub use install::InstallInteractionsImpl;
+pub use install::InstallInterImpl;
 
 mod minor;
-pub use minor::MinorInteractionsImpl;
+pub use minor::MinorInterImpl;
+
+mod update;
+pub use update::UpdateInterImpl;

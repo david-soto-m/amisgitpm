@@ -5,7 +5,6 @@ pub const PROJECT_CONFIG_DIR: &str = "projects";
 pub const SUGGESTION_DIR: &str = "suggestions";
 pub const SRC_DIR: &str = "src";
 
-
 fn main() {
     let dirs = ProjectDirs::from(PROJECT_INFO.0, PROJECT_INFO.1, PROJECT_INFO.2).unwrap();
     let config_dir = dirs.config_dir();

@@ -6,6 +6,7 @@ use subprocess::PopenError;
 pub enum PMError {
     Common(CommonError),
     Install(InstallError),
+    Update(UpdateError),
     Reinstall(ReinstallError),
     Rebuild(RebuildError),
     Uninstall(UninstallError),
@@ -19,6 +20,7 @@ impl fmt::Display for PMError {
         match self {
             Self::Common(e) => write!(f, "{e}"),
             Self::Install(e) => write!(f, "{e}"),
+            Self::Update(e) => write!(f, "{e}"),
             Self::Uninstall(e) => write!(f, "{e}"),
             Self::Reinstall(e) => write!(f, "{e}"),
             Self::Rebuild(e) => write!(f, "{e}"),
@@ -67,7 +69,6 @@ impl From<PopenError> for PMError {
         Self::Common(CommonError::Process(e))
     }
 }
-
 
 #[derive(Debug)]
 pub enum InstallError {
@@ -208,5 +209,30 @@ impl fmt::Display for RebuildError {
 impl From<RebuildError> for PMError {
     fn from(e: RebuildError) -> Self {
         Self::Rebuild(e)
+    }
+}
+
+#[derive(Debug)]
+pub enum UpdateError {
+    NonExistant,
+    Interact(String),
+    Process,
+}
+impl std::error::Error for UpdateError {}
+impl fmt::Display for UpdateError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Interact(e) => write!(f, "{e}"),
+            Self::Process => write!(f, "Failed to build the project"),
+            Self::NonExistant => write!(
+                f,
+                "Tried to update a package that hasn't been registred in amisgitpm"
+            ),
+        }
+    }
+}
+impl From<UpdateError> for PMError {
+    fn from(e: UpdateError) -> Self {
+        Self::Update(e)
     }
 }

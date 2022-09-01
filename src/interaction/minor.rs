@@ -6,9 +6,9 @@ use crate::{
 use dialoguer::Editor;
 use serde_json;
 
-pub type MinorInteractionsImpl = ();
+pub type MinorInterImpl = ();
 
-impl MinorInteractions for MinorInteractionsImpl {
+impl MinorInteractions for MinorInterImpl {
     type Error = MinorError;
     fn edit(prj: &mut Project) -> Result<(), Self::Error> {
         let path = dirutils::projects_db().join(format!("{}.json", &prj.name));
