@@ -52,8 +52,8 @@ impl PackageManagementExt for PackageManager {
             .ok_or(ReinstallError::NonExistant)?
             .info
             .clone();
-        Self::uninstall(&prj.dir)?;
-        Self::install(&prj)?;
+        Self::uninstall(package)?;
+        Self::install(package, &prj)?;
         Ok(())
     }
     fn rebuild(package: &str) -> Result<(), Self::Error> {
@@ -84,6 +84,13 @@ impl PackageManagementExt for PackageManager {
             install_script: vec!["cargo install --path . --root ~/.local/".into()],
             uninstall_script: vec!["cargo uninstall amisgitpm --root ~/.local/".into()],
         };
-        Self::install(&prj)
+        Self::install("amisgitpm", &prj)
+    }
+
+    fn rename(old_package_name: &str, new_package_name: &str) -> Result<(), Self::Error> {
+        ProjectTable::load()?
+            .table
+            .rename(old_package_name, new_package_name)?;
+        Ok(())
     }
 }

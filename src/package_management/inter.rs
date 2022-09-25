@@ -18,7 +18,7 @@ impl PackageManagementInteractive for PackageManager {
         Q: InstallInteractions,
     {
         let mut project_table = ProjectTable::load()?;
-        let mut proj_stub = <Q as InstallInteractions>::initial(url, &project_table)
+        let (pkg_name,mut proj_stub) = <Q as InstallInteractions>::initial(url, &project_table)
             .map_err(|e| InstallError::Interact(e.to_string()))?;
         let new_dir = dirutils::new_src_dirs().join(&proj_stub.dir);
 
@@ -45,22 +45,26 @@ impl PackageManagementInteractive for PackageManager {
             Some(gref) => repo.set_head(gref.name().unwrap()),
             None => repo.set_head_detached(obj.id()),
         }?;
-        let dir = proj_stub.dir.to_owned();
-        let a = <T as BuildSuggester>::new(&new_dir)
+
+
+        let src_dir = dirutils::src_dirs().join(&proj_stub.dir);
+        std::fs::rename(&new_dir, &src_dir).map_err(InstallError::Move)?;
+        let a = <T as BuildSuggester>::new(&src_dir)
             .map_err(|e| InstallError::Suggestions(e.to_string()))?;
         let prj = <Q as InstallInteractions>::finish(proj_stub, a)
             .map_err(|e| InstallError::Interact(e.to_string()))?;
-        let i_script = prj.install_script.join("&&");
-        std::env::set_current_dir(&new_dir).map_err(CommonError::Path)?;
-        if !Exec::shell(i_script).join()?.success() {
-            return Err(InstallError::Process.into());
-        }
-        let src_dir = dirutils::src_dirs().join(&prj.dir);
-        std::fs::rename(new_dir, src_dir).map_err(InstallError::Move)?;
+
         project_table
             .table
-            .push(&dir, prj)
-            .map_err(|e| CommonError::Table(e).into())
+            .push(pkg_name, prj.clone())?;
+
+        let i_script = prj.install_script.join("&&");
+        std::env::set_current_dir(&src_dir).map_err(CommonError::Path)?;
+        if !Exec::shell(i_script).join()?.success() {
+            return Err(InstallError::Process.into());
+        } else {
+            Ok(())
+        }
     }
 
     fn list<Q: MinorInteractions>() -> Result<(), Self::Error> {
@@ -91,7 +95,7 @@ impl PackageManagementInteractive for PackageManager {
                 project_table
                     .table
                     .iter()
-                    .filter(|(name,e)| match e.info.update_policy {
+                    .filter(|(name, e)| match e.info.update_policy {
                         UpdatePolicy::Always => true,
                         UpdatePolicy::Ask => {
                             <Q as UpdateInteractions>::confirm(name).unwrap_or_default()

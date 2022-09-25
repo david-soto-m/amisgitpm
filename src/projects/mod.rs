@@ -47,10 +47,18 @@ impl ProjectTable {
             table: Table::builder(dirutils::projects_db()).load()?,
         })
     }
+    pub fn check_if_used_name(&self, pkg_name: &str) -> bool {
+        self.table.get_table_keys().any(|s| s == pkg_name)
+    }
     pub fn check_if_used_dir(&self, dir: &str) -> bool {
         self.table
             .get_table_content()
             .any(|p_name| p_name.info.dir == dir)
+    }
+    pub fn check_if_used_name_dir(&self, pkg_name: &str, dir: &str) -> bool{
+        self.table.iter().any(|(name, element)|{
+            element.info.dir == dir || name == pkg_name
+        })
     }
 }
 

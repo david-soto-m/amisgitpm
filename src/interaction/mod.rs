@@ -9,7 +9,7 @@ pub use interact_error::*;
 
 pub trait InstallInteractions {
     type Error: std::error::Error;
-    fn initial(url: &str, pr_table: &ProjectTable) -> Result<Project, Self::Error>;
+    fn initial(url: &str, pr_table: &ProjectTable) -> Result<(String ,Project), Self::Error>;
     fn refs(repo: &Repository) -> Result<String, Self::Error>;
     fn finish<T: BuildSuggester>(pr: Project, sug: T) -> Result<Project, Self::Error>;
 }

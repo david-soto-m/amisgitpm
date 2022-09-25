@@ -11,10 +11,10 @@ mod pm_error;
 
 pub trait PackageManagementCore {
     type Error: std::error::Error;
-    fn install(prj: &Project) -> Result<(), Self::Error>;
-    fn update(prj: &str) -> Result<(), Self::Error>;
-    fn uninstall(prj: &str) -> Result<(), Self::Error>;
-    fn restore(package: &str) -> Result<(), Self::Error>;
+    fn install(pkg_name: &str, prj: &Project) -> Result<(), Self::Error>;
+    fn update(pkg_name: &str) -> Result<(), Self::Error>;
+    fn uninstall(pkg_name: &str) -> Result<(), Self::Error>;
+    fn restore(pkg_name: &str) -> Result<(), Self::Error>;
 }
 
 pub trait PackageManagementInteractive: PackageManagementCore {
@@ -30,6 +30,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
 pub trait PackageManagementExt: PackageManagementCore {
     fn reinstall(package: &str) -> Result<(), Self::Error>;
     fn rebuild(package: &str) -> Result<(), Self::Error>;
+    fn rename(old_package_name: &str, new_package_name: &str) -> Result<(), Self::Error>;
     fn cleanup() -> Result<(), Self::Error>;
     fn bootstrap() -> Result<(), Self::Error>;
 }

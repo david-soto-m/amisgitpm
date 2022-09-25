@@ -10,7 +10,7 @@ pub type InstallInterImpl = ();
 
 impl InstallInteractions for InstallInterImpl {
     type Error = InstallError;
-    fn initial(url: &str, table: &ProjectTable) -> Result<Project, Self::Error> {
+    fn initial(url: &str, table: &ProjectTable) -> Result<(String, Project), Self::Error> {
         let dir = url.split('/').last().map_or("".into(), |potential_dir| {
             potential_dir
                 .to_string()
@@ -52,12 +52,12 @@ impl InstallInteractions for InstallInterImpl {
             .items(update_arr)
             .interact()?;
         println!("The download will start shortly, please wait");
-        Ok(Project {
+        Ok((dir.clone(), Project {
             dir,
             url: url.into(),
             update_policy: update_arr[update_idx],
             ..Default::default()
-        })
+        }))
     }
 
     fn refs(repo: &Repository) -> Result<String, Self::Error> {

@@ -45,7 +45,7 @@ impl SuggestionsTable {
     /// It doesn't panic, but ignores all errors, so it might return empty without
     /// information about why in cases in which it ought to return with something
     pub fn get_suggestions(&self, files: ReadDir) -> Vec<&SuggestionsItem> {
-        let info: Vec<&SuggestionsItem> = self.table.get_table_content().map(|e|&e.info).collect();
+        let info: Vec<&SuggestionsItem> = self.table.get_table_content().map(|e| &e.info).collect();
         files
             .par_bridge()
             .filter_map(|file| {
