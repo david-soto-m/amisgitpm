@@ -5,6 +5,7 @@
 //! It also defines a struct that implements the trait and the auxiliary
 //! structs and functions that are needed for that.
 
+use glob;
 use std::path::Path;
 
 mod db_suggestions;
@@ -24,21 +25,35 @@ impl BuildSuggester for BuildSuggestions {
     type Error = SuggestionsError;
     fn new(path: &Path) -> Result<Self, SuggestionsError> {
         let dir = std::fs::read_dir(path)?;
-        let readme_path = path.join("README.md");
-        let readme = mdown::get_build_suggestions(&readme_path).unwrap_or_default();
-        let db = SuggestionsTable::new()?;
-        let db_sug = db.get_suggestions(dir);
-        Ok(Self {
-            install: db_sug
-                .iter()
-                .flat_map(|&e| e.install_suggestions.to_owned())
-                .chain(readme)
-                .collect(),
-            uninstall: db_sug
-                .iter()
-                .flat_map(|e| e.uninstall_suggestions.to_owned())
-                .collect(),
-        })
+        let mut readme: Vec<Vec<String>> = vec![];
+        for each in glob::glob(
+            path.join("*.md")
+                .as_os_str()
+                .to_str()
+                .ok_or(Self::Error::Path)?,
+        )? {
+            readme.append(&mut mdown::get_build_suggestions(&each?).unwrap_or_default());
+        }
+        match SuggestionsTable::new() {
+            Ok(db) => {
+                let db_sug = db.get_suggestions(dir);
+                Ok(Self {
+                    install: db_sug
+                        .iter()
+                        .flat_map(|&e| e.install_suggestions.to_owned())
+                        .chain(readme)
+                        .collect(),
+                    uninstall: db_sug
+                        .iter()
+                        .flat_map(|e| e.uninstall_suggestions.to_owned())
+                        .collect(),
+                })
+            }
+            Err(_) => Ok(Self {
+                install: readme,
+                uninstall: vec![],
+            }),
+        }
     }
     fn get_install(&self) -> &Vec<Vec<String>> {
         &self.install

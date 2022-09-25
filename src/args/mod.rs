@@ -24,19 +24,28 @@ pub enum Commands {
     Install {
         #[clap(value_parser)]
         /// the git repo url
-        url: String,
-        /// Use relative paths for repos that you know are downloaded by `amisgitpm`.
-        /// If you gave bad build instructions for a package, then you might
-        /// want to do:
+        ///amisgitpm To install a local repo with amisgitpm you can pass something like this
         ///
         ///```bash
         ///
-        ///amisgitpm install https://github.com/my-user/bad-build-example.git bad-build-example
+        ///amisgitpm install file:///home/user/Path/to/git/project
+        ///
+        ///```
+        url: String,
+
+        /// Use relative paths for repositories that you know are downloaded by `amisgitpm`.
+        /// If you gave bad build instructions for a package, then you might
+        /// want to do on Linux.
+        ///
+        ///```bash
+        ///
+        ///amisgitpm install https://github.com/my-user/bad-build-example.git ~/.local/share/amisgitpm/new/bad-build-example
         ///
         ///```
         #[clap(value_parser)]
         path: Option<String>,
     },
+
     /// Update package(s)
     Update {
         #[clap(value_parser)]
@@ -44,6 +53,7 @@ pub enum Commands {
         /// If not provided all packages are updated
         package: Option<String>,
     },
+
     /// Get the last version of the package
     Restore {
         #[clap(value_parser)]
@@ -58,31 +68,37 @@ pub enum Commands {
         /// The package name to uninstall
         package: String,
     },
+
     /// Uninstall then install a package
     Reinstall {
         #[clap(value_parser)]
         /// The package name to reinstall
         package: String,
     },
+
     /// Run the build instructions of a package
     Rebuild {
         #[clap(value_parser)]
         /// The package name to rebuild
         package: String,
     },
+
     /// Remove all srcs with no project associated
     ///
     /// It is `O(N^2)`, with `N` the number of installed packages
     /// It is parallelized, and therefore is panicky rather than reporting
     Cleanup,
+
     /// Edit the configuration of a project
     Edit {
         #[clap(value_parser)]
         /// The name of package to edit
         package: String,
     },
+
     /// Show the list of installed applications and their version
     List,
+
     /// Install amisgitpm with amisgitpm, check that everything is in place
     Bootstrap,
 }

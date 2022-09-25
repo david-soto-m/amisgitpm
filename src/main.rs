@@ -8,7 +8,7 @@ use clap::Parser;
 
 fn main() {
     let p = Cli::parse();
-    match p.com {
+    match {match p.com {
         Commands::Install { url, path } => {
             PackageManager::inter_install::<BuildSuggestions, InstallInterImpl>(&url, path)
         }
@@ -21,8 +21,10 @@ fn main() {
         Commands::Edit { package } => PackageManager::edit::<MinorInterImpl>(&package),
         Commands::Cleanup => PackageManager::cleanup(),
         Commands::Bootstrap => PackageManager::bootstrap(),
-    }
-    .unwrap();
+    }}{
+        Err(e)=> println!("{e}"),
+        _=>{},
+    };
 }
 
 /*Suggestions */

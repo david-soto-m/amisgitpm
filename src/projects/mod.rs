@@ -1,13 +1,12 @@
 use crate::dirutils;
 use json_tables::{Deserialize, Serialize, Table, TableError};
-use rayon::prelude::*;
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum UpdatePolicy {
     /// Update the project to the newest version every time
     Always,
     /// Ask whether to update or not
     Ask,
-    /// Do not update the repo
+    /// Do not update the repo, **default** value
     #[default]
     Never,
 }
@@ -30,7 +29,7 @@ impl std::fmt::Display for UpdatePolicy {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Project {
-    pub name: String,
+    pub dir: String,
     pub url: String,
     pub ref_string: String,
     pub update_policy: UpdatePolicy,
@@ -48,11 +47,10 @@ impl ProjectTable {
             table: Table::builder(dirutils::projects_db()).load()?,
         })
     }
-    pub fn check_if_used_name(&self, name: &str) -> bool {
+    pub fn check_if_used_dir(&self, dir: &str) -> bool {
         self.table
-            .get_table_keys()
-            .par_bridge()
-            .any(|p_name| p_name == name)
+            .get_table_content()
+            .any(|p_name| p_name.info.dir == dir)
     }
 }
 
@@ -60,15 +58,23 @@ impl std::fmt::Display for ProjectTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use prettytable as pt;
         use prettytable::row;
-        let mut table = pt::Table::new();
-        self.table.get_table_content().for_each(|e| {
-            table.add_row(row![
-                e.info.name,
+        let mut show_table = pt::Table::new();
+        show_table.set_titles(row![
+            "Name",
+            "Directory name",
+            "Project URL",
+            "Reference",
+            "Update policy"
+        ]);
+        self.table.iter().for_each(|(name, e)| {
+            show_table.add_row(row![
+                name,
+                e.info.dir,
                 e.info.url,
                 e.info.ref_string,
                 e.info.update_policy
             ]);
         });
-        write!(f, "{table}")
+        write!(f, "{show_table}")
     }
 }

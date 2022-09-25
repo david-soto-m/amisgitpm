@@ -45,7 +45,7 @@ impl SuggestionsTable {
     /// It doesn't panic, but ignores all errors, so it might return empty without
     /// information about why in cases in which it ought to return with something
     pub fn get_suggestions(&self, files: ReadDir) -> Vec<&SuggestionsItem> {
-        let info: Vec<&SuggestionsItem> = self.table.get_info_iter().collect();
+        let info: Vec<&SuggestionsItem> = self.table.get_table_content().map(|e|&e.info).collect();
         files
             .par_bridge()
             .filter_map(|file| {
@@ -90,8 +90,8 @@ mod tests {
 
         assert_eq!(len, 3);
     }
-    #[tokio::test]
-    async fn all_build_aux_json_is_correct() {
+    #[test]
+    fn all_build_aux_json_is_correct() {
         SuggestionsTable::new().unwrap();
         assert!(true)
     }

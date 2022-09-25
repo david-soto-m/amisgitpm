@@ -1,5 +1,4 @@
 use crate::{
-    dirutils,
     interaction::{MinorError, MinorInteractions},
     projects::{Project, ProjectTable},
 };
@@ -11,8 +10,7 @@ pub type MinorInterImpl = ();
 impl MinorInteractions for MinorInterImpl {
     type Error = MinorError;
     fn edit(prj: &mut Project) -> Result<(), Self::Error> {
-        let path = dirutils::projects_db().join(format!("{}.json", &prj.name));
-        if let Some(e) = Editor::new().edit(&std::fs::read_to_string(path)?)? {
+        if let Some(e) = Editor::new().edit(&serde_json::to_string_pretty(prj)?)? {
             *prj = serde_json::from_str::<Project>(&e)?;
         }
         Ok(())

@@ -11,30 +11,30 @@ pub type InstallInterImpl = ();
 impl InstallInteractions for InstallInterImpl {
     type Error = InstallError;
     fn initial(url: &str, table: &ProjectTable) -> Result<Project, Self::Error> {
-        let name = url.split('/').last().map_or("".into(), |potential_name| {
-            potential_name
+        let dir = url.split('/').last().map_or("".into(), |potential_dir| {
+            potential_dir
                 .to_string()
                 .rsplit_once('.')
-                .map_or("".into(), |(name, _)| name.to_string())
+                .map_or("".into(), |(dir, _)| dir.to_string())
         });
-        let name = if name.is_empty()
-            || table.check_if_used_name(&name)
+        let dir = if dir.is_empty()
+            || table.check_if_used_dir(&dir)
             || !Confirm::new()
                 .with_prompt(format!(
-                    "Do you want to use {name} as the name of this project"
+                    "Do you want to use {dir} as the directory name of this project"
                 ))
                 .interact()?
         {
             loop {
                 let input: Result<String, _> = Input::new()
-                    .with_prompt("Please provide a name for the project")
+                    .with_prompt("Please provide a directory name for the project")
                     .interact();
                 match input {
-                    Ok(name_candidate) => {
-                        if table.check_if_used_name(&name_candidate) {
+                    Ok(dir_candidate) => {
+                        if table.check_if_used_dir(&dir_candidate) {
                             println!("That name is already in use, please try another")
                         } else {
-                            break name_candidate;
+                            break dir_candidate;
                         }
                     }
                     Err(e) => {
@@ -43,7 +43,7 @@ impl InstallInteractions for InstallInterImpl {
                 }
             }
         } else {
-            name
+            dir
         };
         let update_arr = &[UpdatePolicy::Always, UpdatePolicy::Ask, UpdatePolicy::Never];
         let update_idx = Select::new()
@@ -53,7 +53,7 @@ impl InstallInteractions for InstallInterImpl {
             .interact()?;
         println!("The download will start shortly, please wait");
         Ok(Project {
-            name,
+            dir,
             url: url.into(),
             update_policy: update_arr[update_idx],
             ..Default::default()
@@ -116,6 +116,8 @@ executing in the root directory of the project."
                         edit_string.push_str(string)
                     })
                 });
+            } else {
+                println!("There were no suggestions, please provide a build script")
             }
             if let Some(final_install) = Editor::new().edit(&edit_string)? {
                 pr.install_script = final_install.split('\n').map(|e| e.to_string()).collect()

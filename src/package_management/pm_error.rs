@@ -1,7 +1,7 @@
+use fs_extra;
 use json_tables::TableError;
 use std::fmt;
 use subprocess::PopenError;
-
 #[derive(Debug)]
 pub enum PMError {
     Common(CommonError),
@@ -13,6 +13,7 @@ pub enum PMError {
     Edit(EditError),
     List(ListError),
     Cleanup(CleanupError),
+    Restore(RestoreError),
 }
 impl std::error::Error for PMError {}
 impl fmt::Display for PMError {
@@ -27,6 +28,7 @@ impl fmt::Display for PMError {
             Self::Edit(e) => write!(f, "{e}"),
             Self::List(e) => write!(f, "{e}"),
             Self::Cleanup(e) => write!(f, "{e}"),
+            Self::Restore(e) => write!(f, "{e}"),
         }
     }
 }
@@ -76,6 +78,7 @@ pub enum InstallError {
     Process,
     Suggestions(String),
     Move(std::io::Error),
+    Copy(fs_extra::error::Error),
     AlreadyExisting,
 }
 impl std::error::Error for InstallError {}
@@ -87,6 +90,7 @@ impl fmt::Display for InstallError {
             Self::Process => write!(f, "Failed to build the project"),
             Self::AlreadyExisting => write!(f, "A project with the same name already exists"),
             Self::Move(e) => write!(f, "{e}"),
+            Self::Copy(e) => write!(f, "{e}"),
         }
     }
 }
@@ -234,5 +238,30 @@ impl fmt::Display for UpdateError {
 impl From<UpdateError> for PMError {
     fn from(e: UpdateError) -> Self {
         Self::Update(e)
+    }
+}
+
+#[derive(Debug)]
+pub enum RestoreError {
+    NonExistant,
+    Interact(String),
+    Process,
+}
+impl std::error::Error for RestoreError {}
+impl fmt::Display for RestoreError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Interact(e) => write!(f, "{e}"),
+            Self::Process => write!(f, "Failed to build the project"),
+            Self::NonExistant => write!(
+                f,
+                "Tried to update a package that hasn't been registred in amisgitpm"
+            ),
+        }
+    }
+}
+impl From<RestoreError> for PMError {
+    fn from(e: RestoreError) -> Self {
+        Self::Restore(e)
     }
 }

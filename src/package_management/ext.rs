@@ -17,7 +17,7 @@ impl PackageManagementExt for PackageManager {
                 .par_bridge()
                 .try_for_each(|e| {
                     if let Ok(entry) = e {
-                        if !project_table.check_if_used_name(
+                        if !project_table.check_if_used_dir(
                             entry.file_name().to_str().ok_or(CleanupError::String)?,
                         ) {
                             std::fs::remove_dir_all(entry.path()).map_err(CleanupError::FileOp)?;
@@ -34,7 +34,7 @@ impl PackageManagementExt for PackageManager {
                 .par_bridge()
                 .try_for_each(|e| {
                     if let Ok(entry) = e {
-                        if !project_table.check_if_used_name(
+                        if !project_table.check_if_used_dir(
                             entry.file_name().to_str().ok_or(CleanupError::String)?,
                         ) {
                             std::fs::remove_dir_all(entry.path()).map_err(CleanupError::FileOp)?;
@@ -52,7 +52,7 @@ impl PackageManagementExt for PackageManager {
             .ok_or(ReinstallError::NonExistant)?
             .info
             .clone();
-        Self::uninstall(&prj.name)?;
+        Self::uninstall(&prj.dir)?;
         Self::install(&prj)?;
         Ok(())
     }
@@ -63,7 +63,7 @@ impl PackageManagementExt for PackageManager {
             .ok_or(RebuildError::NonExistant)?
             .info
             .clone();
-        let src_dir = dirutils::src_dirs().join(&prj.name);
+        let src_dir = dirutils::src_dirs().join(&prj.dir);
         let i_script = prj.install_script.join("&&");
         std::env::set_current_dir(&src_dir).map_err(CommonError::Path)?;
         if !Exec::shell(i_script).join()?.success() {
@@ -77,7 +77,7 @@ impl PackageManagementExt for PackageManager {
         std::fs::create_dir_all(dirutils::suggestions_db()).unwrap();
         std::fs::create_dir_all(dirutils::src_dirs()).unwrap();
         let prj = Project {
-            name: "amisgitpm".into(),
+            dir: "amisgitpm".into(),
             url: "https://github.com/david-soto-m/amisgitpm.git".into(),
             ref_string: "refs/heads/main".into(),
             update_policy: UpdatePolicy::Always,

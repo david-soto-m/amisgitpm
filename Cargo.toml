@@ -22,17 +22,18 @@ rayon = "^1.5" #paralel computing
 
 # UI
 clap = { version = "^3.2", features = ["derive"] } # arguments
-console = "^0.15" # color
+console = "^0.15" # color Mark for elimination
 dialoguer = "^0.10" # general cli utils
 
 # Utils
 directories = "^4.0" # config and local and stuff
-json_tables = "^0.0.2" # table management
+json_tables = "^0.0" # table management
 regex = "^1.6"
+glob = "0.3.0"
 markdown-extract = "^2.0"
 subprocess = "^0.2"
 prettytable-rs = {version = "^0.9", default-features = false}
-fs_extra = "1.2.0"
+fs_extra = "^1.2"
 
 
 [build-dependencies]
