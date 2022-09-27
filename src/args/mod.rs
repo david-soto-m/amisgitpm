@@ -52,6 +52,9 @@ pub enum Commands {
         /// An optional package name to update independently.
         /// If not provided all packages are updated
         package: Option<String>,
+         #[clap(short, long)]
+         // A flag to force update all packages configured to ask
+        force: bool
     },
 
     /// Get the last version of the package
@@ -108,7 +111,11 @@ pub enum Commands {
     },
 
     /// Show the list of installed applications and their version
-    List,
+    List{
+        #[clap(value_parser)]
+        /// Package from which to get detailed information
+        package: Option<String>,
+    },
 
     /// Install amisgitpm with amisgitpm, check that everything is in place
     Bootstrap,

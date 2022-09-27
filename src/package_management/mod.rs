@@ -22,15 +22,18 @@ pub trait PackageManagementInteractive: PackageManagementCore {
     where
         T: BuildSuggester,
         Q: InstallInteractions;
-    fn inter_update<Q: UpdateInteractions>(package: Option<String>) -> Result<(), Self::Error>;
-    fn list<Q: MinorInteractions>() -> Result<(), Self::Error>;
-    fn edit<Q: MinorInteractions>(package: &str) -> Result<(), Self::Error>;
+    fn inter_update<Q: UpdateInteractions>(
+        pkg_name: Option<String>,
+        force: bool,
+    ) -> Result<(), Self::Error>;
+    fn list<Q: MinorInteractions>(pkg_name: Option<String>) -> Result<(), Self::Error>;
+    fn edit<Q: MinorInteractions>(pkg_name: &str) -> Result<(), Self::Error>;
 }
 
 pub trait PackageManagementExt: PackageManagementCore {
-    fn reinstall(package: &str) -> Result<(), Self::Error>;
-    fn rebuild(package: &str) -> Result<(), Self::Error>;
-    fn rename(old_package_name: &str, new_package_name: &str) -> Result<(), Self::Error>;
+    fn reinstall(pkg_name: &str) -> Result<(), Self::Error>;
+    fn rebuild(pkg_name: &str) -> Result<(), Self::Error>;
+    fn rename(old_pkg_name: &str, new_pkg_name: &str) -> Result<(), Self::Error>;
     fn cleanup() -> Result<(), Self::Error>;
     fn bootstrap() -> Result<(), Self::Error>;
 }

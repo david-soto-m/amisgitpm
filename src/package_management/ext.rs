@@ -45,21 +45,21 @@ impl PackageManagementExt for PackageManager {
         }
         Ok(())
     }
-    fn reinstall(package: &str) -> Result<(), Self::Error> {
+    fn reinstall(pkg_name: &str) -> Result<(), Self::Error> {
         let prj = ProjectTable::load()?
             .table
-            .get_element(package)
+            .get_element(pkg_name)
             .ok_or(ReinstallError::NonExistant)?
             .info
             .clone();
-        Self::uninstall(package)?;
-        Self::install(package, &prj)?;
+        Self::uninstall(pkg_name)?;
+        Self::install(pkg_name, &prj)?;
         Ok(())
     }
-    fn rebuild(package: &str) -> Result<(), Self::Error> {
+    fn rebuild(pkg_name: &str) -> Result<(), Self::Error> {
         let prj = ProjectTable::load()?
             .table
-            .get_element(package)
+            .get_element(pkg_name)
             .ok_or(RebuildError::NonExistant)?
             .info
             .clone();

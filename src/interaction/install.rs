@@ -52,12 +52,15 @@ impl InstallInteractions for InstallInterImpl {
             .items(update_arr)
             .interact()?;
         println!("The download will start shortly, please wait");
-        Ok((dir.clone(), Project {
-            dir,
-            url: url.into(),
-            update_policy: update_arr[update_idx],
-            ..Default::default()
-        }))
+        Ok((
+            dir.clone(),
+            Project {
+                dir,
+                url: url.into(),
+                update_policy: update_arr[update_idx],
+                ..Default::default()
+            },
+        ))
     }
 
     fn refs(repo: &Repository) -> Result<String, Self::Error> {

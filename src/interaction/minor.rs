@@ -19,4 +19,9 @@ impl MinorInteractions for MinorInterImpl {
         println!("{prj}");
         Ok(())
     }
+    fn list_one(pkg_name: &str, prj: &Project)->Result<(), Self::Error> {
+        println!("Name: {pkg_name}");
+        println!("{:#?}", prj);
+        Ok(())
+    }
 }

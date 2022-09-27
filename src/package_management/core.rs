@@ -40,11 +40,11 @@ impl PackageManagementCore for PackageManager {
         }
     }
 
-    fn uninstall(name: &str) -> Result<(), Self::Error> {
+    fn uninstall(pkg_name: &str) -> Result<(), Self::Error> {
         let mut project_table = ProjectTable::load()?;
         let project = project_table
             .table
-            .get_element(name)
+            .get_element(pkg_name)
             .ok_or(UninstallError::NonExistant)?;
         let src_dir = dirutils::src_dirs().join(&project.info.dir);
         std::env::set_current_dir(&src_dir).map_err(CommonError::Path)?;
@@ -53,25 +53,25 @@ impl PackageManagementCore for PackageManager {
             return Err(UninstallError::Process.into());
         }
         std::fs::remove_dir_all(src_dir).map_err(UninstallError::Remove)?;
-        let old_dir = dirutils::old_src_dirs().join(&name);
+        let old_dir = dirutils::old_src_dirs().join(&project.info.dir);
         if old_dir.exists() {
             std::fs::remove_dir_all(old_dir).map_err(UninstallError::Remove)?;
         }
         project_table
             .table
-            .pop(name)
+            .pop(pkg_name)
             .map_err(|e| CommonError::Table(e).into())
     }
 
-    fn update(name: &str) -> Result<(), Self::Error> {
+    fn update(pkg_name: &str) -> Result<(), Self::Error> {
         todo!()
     }
 
-    fn restore(name: &str) -> Result<(), Self::Error> {
+    fn restore(pkg_name: &str) -> Result<(), Self::Error> {
         let project_table = ProjectTable::load()?;
         let project = &project_table
             .table
-            .get_element(name)
+            .get_element(pkg_name)
             .ok_or(RestoreError::NonExistant)?
             .info;
         let old_dir = dirutils::old_src_dirs().join(&project.dir);
