@@ -22,7 +22,6 @@ pub struct BuildSuggestions {
 }
 
 impl BuildSuggester for BuildSuggestions {
-    type Error = SuggestionsError;
     fn new(path: &Path) -> Result<Self, SuggestionsError> {
         let dir = std::fs::read_dir(path)?;
         let mut readme: Vec<Vec<String>> = vec![];
@@ -30,7 +29,7 @@ impl BuildSuggester for BuildSuggestions {
             path.join("*.md")
                 .as_os_str()
                 .to_str()
-                .ok_or(Self::Error::Path)?,
+                .ok_or(SuggestionsError::Path)?,
         )? {
             readme.append(&mut mdown::get_build_suggestions(&each?).unwrap_or_default());
         }
@@ -68,10 +67,8 @@ pub trait BuildSuggester
 where
     Self: Sized,
 {
-    /// The error type associated to the creation of a new structure that implements the trait
-    type Error: std::error::Error;
     /// The declaration of a new structure that implements the trait
-    fn new(path: &Path) -> Result<Self, Self::Error>;
+    fn new(path: &Path) -> Result<Self, SuggestionsError>;
     /// Get a reference to a list of install suggestions, these being a list of strings
     fn get_install(&self) -> &Vec<Vec<String>>;
     /// Get a reference to a list of uninstall suggestions, these being a list of strings

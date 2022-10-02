@@ -6,7 +6,6 @@
 //!```bash
 //!$ amisgitpm install https://github.com/helix-editor/helix
 //!```
-
 use clap::{Parser, Subcommand};
 #[derive(Parser, Debug, Clone)]
 #[clap(version, about)]
@@ -20,11 +19,19 @@ pub struct Cli {
 #[derive(Subcommand, Debug, Clone)]
 /// This are the possible commands
 pub enum Commands {
-    /// Install a new git repo
+    /// Install a new git repo. It installs from URLs of two kinds.
+    /// 1. git clone URL eg. `https://github.com/helix-editor/helix.git`
+    /// 2. Local git repo URL. `///file:///home/user/Path/to/git/project`
     Install {
         #[clap(value_parser)]
         /// the git repo url
-        ///amisgitpm To install a local repo with amisgitpm you can pass something like this
+        /// To install a remote repo
+        ///```bash
+        ///
+        ///amisgitpm install https://github.com/helix-editor/helix.git
+        ///
+        ///```
+        /// To install a local repo
         ///
         ///```bash
         ///
@@ -32,18 +39,6 @@ pub enum Commands {
         ///
         ///```
         url: String,
-
-        /// Use relative paths for repositories that you know are downloaded by `amisgitpm`.
-        /// If you gave bad build instructions for a package, then you might
-        /// want to do on Linux.
-        ///
-        ///```bash
-        ///
-        ///amisgitpm install https://github.com/my-user/bad-build-example.git ~/.local/share/amisgitpm/new/bad-build-example
-        ///
-        ///```
-        #[clap(value_parser)]
-        path: Option<String>,
     },
 
     /// Update package(s)
@@ -52,9 +47,9 @@ pub enum Commands {
         /// An optional package name to update independently.
         /// If not provided all packages are updated
         package: Option<String>,
-         #[clap(short, long)]
-         // A flag to force update all packages configured to ask
-        force: bool
+        #[clap(short, long)]
+        // A flag to force update all packages configured to ask
+        force: bool,
     },
 
     /// Get the last version of the package
@@ -111,7 +106,7 @@ pub enum Commands {
     },
 
     /// Show the list of installed applications and their version
-    List{
+    List {
         #[clap(value_parser)]
         /// Package from which to get detailed information
         package: Option<String>,

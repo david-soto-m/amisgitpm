@@ -1,16 +1,17 @@
 use crate::{
     build_suggestions::BuildSuggester,
-    interaction::{InstallError, InstallInteractions},
+    interaction::interact_error::InstallInteractError,
     projects::{Project, ProjectTable, UpdatePolicy},
 };
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::Repository;
 
-pub type InstallInterImpl = ();
-
-impl InstallInteractions for InstallInterImpl {
-    type Error = InstallError;
-    fn initial(url: &str, table: &ProjectTable) -> Result<(String, Project), Self::Error> {
+pub trait InstallInteractions {
+    fn initial(
+        &self,
+        url: &str,
+        table: &ProjectTable,
+    ) -> Result<(String, Project), InstallInteractError> {
         let dir = url.split('/').last().map_or("".into(), |potential_dir| {
             potential_dir
                 .to_string()
@@ -63,7 +64,7 @@ impl InstallInteractions for InstallInterImpl {
         ))
     }
 
-    fn refs(repo: &Repository) -> Result<String, Self::Error> {
+    fn refs(&self, repo: &Repository) -> Result<String, InstallInteractError> {
         let branch_arr: Vec<String> = repo
             .references()?
             .filter_map(|res| res.ok())
@@ -77,7 +78,11 @@ impl InstallInteractions for InstallInterImpl {
         Ok(branch_arr[branch_idx].to_owned())
     }
 
-    fn finish<T: BuildSuggester>(mut pr: Project, sugg: T) -> Result<Project, Self::Error> {
+    fn finish<T: BuildSuggester>(
+        &self,
+        mut pr: Project,
+        sugg: T,
+    ) -> Result<Project, InstallInteractError> {
         {
             let sug = sugg.get_install();
             let sug_len = sug.len() as isize;

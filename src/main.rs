@@ -1,35 +1,52 @@
 use amisgitpm::{
     args::{Cli, Commands},
     build_suggestions::BuildSuggestions,
-    interaction::{InstallInterImpl, MinorInterImpl, UpdateInterImpl},
-    package_management::*,
+    interaction::Interactor,
+    package_management::{
+        PackageManagementCore, PackageManagementExt, PackageManagementInteractive, PackageManager,
+    },
 };
 use clap::Parser;
 
 fn main() {
-    let p = Cli::parse();
-    match {
-        match p.com {
-            Commands::Install { url, path } => {
-                PackageManager::inter_install::<BuildSuggestions, InstallInterImpl>(&url, path)
-            }
-            Commands::Uninstall { package } => PackageManager::uninstall(&package),
-            Commands::Update { package, force } => {
-                PackageManager::inter_update::<UpdateInterImpl>(package, force)
-            }
-            Commands::Restore { package } => PackageManager::restore(&package),
-            Commands::Reinstall { package } => PackageManager::reinstall(&package),
-            Commands::Rebuild { package } => PackageManager::rebuild(&package),
-            Commands::Rename { old_name, new_name } => PackageManager::rename(&old_name, &new_name),
-            Commands::List{package} => PackageManager::list::<MinorInterImpl>(package),
-            Commands::Edit { package } => PackageManager::edit::<MinorInterImpl>(&package),
-            Commands::Cleanup => PackageManager::cleanup(),
-            Commands::Bootstrap => PackageManager::bootstrap(),
+    let args = Cli::parse();
+    let pm = PackageManager {};
+    let inter = Interactor{};
+    match args.com {
+        Commands::Install { url } => {
+            pm.inter_install::<Interactor, BuildSuggestions>(&url, inter)
+                .unwrap_or_else(|e| println!("{e}"));
         }
-    } {
-        Err(e) => println!("{e}"),
-        _ => {}
-    };
+        Commands::Uninstall { package } => {
+            pm.uninstall(&package).unwrap_or_else(|e| println!("{e}"))
+        }
+        Commands::Update { package, force } => pm
+            .inter_update(package, force, inter)
+            .unwrap_or_else(|e| println!("{e}")),
+        Commands::Restore { package } => pm.restore(&package).unwrap_or_else(|e| println!("{e}")),
+        Commands::Reinstall { package } => {
+            pm.reinstall(&package).unwrap_or_else(|e| println!("{e}"))
+        }
+        Commands::Rebuild { package } => pm.rebuild(&package).unwrap_or_else(|e| println!("{e}")),
+        Commands::Rename { old_name, new_name } => {
+            pm.rename(&old_name, &new_name)
+                .unwrap_or_else(|e| println!("{e}"));
+        }
+        Commands::List { package } => {
+            pm.list(package, inter)
+                .unwrap_or_else(|e| println!("{e}"));
+        }
+        Commands::Edit { package } => {
+            pm.edit(&package, inter)
+                .unwrap_or_else(|e| println!("{e}"));
+        }
+        Commands::Cleanup => {
+            pm.cleanup().unwrap_or_else(|e| println!("{e}"));
+        }
+        Commands::Bootstrap => {
+            pm.bootstrap().unwrap_or_else(|e| println!("{e}"));
+        }
+    }
 }
 
 /*Suggestions */

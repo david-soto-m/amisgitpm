@@ -1,8 +1,8 @@
 use glob::{GlobError, PatternError};
 use json_tables::TableError;
 use std::fmt::Display;
-#[derive(Debug)]
 
+#[derive(Debug)]
 /// An error type for the BuildSuggestions struct.
 pub enum SuggestionsError {
     /// The creation has had an error with some file operation

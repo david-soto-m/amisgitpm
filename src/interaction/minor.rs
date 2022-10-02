@@ -1,27 +1,33 @@
 use crate::{
-    interaction::{MinorError, MinorInteractions},
+    interaction::interact_error::*,
     projects::{Project, ProjectTable},
 };
-use dialoguer::Editor;
+use dialoguer::{Confirm, Editor};
 use serde_json;
 
-pub type MinorInterImpl = ();
-
-impl MinorInteractions for MinorInterImpl {
-    type Error = MinorError;
-    fn edit(prj: &mut Project) -> Result<(), Self::Error> {
-        if let Some(e) = Editor::new().edit(&serde_json::to_string_pretty(prj)?)? {
+pub trait MinorInteractions {
+    fn edit(&self, prj: &mut Project) -> Result<(), MinorInteractError> {
+        if let Some(e) = Editor::new()
+            .edit(&serde_json::to_string_pretty(prj)?)
+            .map_err(MinorInteractError::File)?
+        {
             *prj = serde_json::from_str::<Project>(&e)?;
         }
         Ok(())
     }
-    fn list(prj: &ProjectTable) -> Result<(), Self::Error> {
+    fn list(&self, prj: &ProjectTable) -> Result<(), MinorInteractError> {
         println!("{prj}");
         Ok(())
     }
-    fn list_one(pkg_name: &str, prj: &Project)->Result<(), Self::Error> {
+    fn list_one(&self, pkg_name: &str, prj: &Project) -> Result<(), MinorInteractError> {
         println!("Name: {pkg_name}");
         println!("{:#?}", prj);
         Ok(())
+    }
+    fn update_confirm(&self, package_name: &str) -> Result<bool, MinorInteractError> {
+        Confirm::new()
+            .with_prompt(format!("Would you like to update {}", package_name))
+            .interact()
+            .map_err(|e| MinorInteractError::Confirm(e))
     }
 }
