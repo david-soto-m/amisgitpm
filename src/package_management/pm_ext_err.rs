@@ -3,10 +3,11 @@ use json_tables::TableError;
 
 #[derive(Debug)]
 pub enum CleanupError {
+    Os2str,
     Table(TableError),
     Read(std::io::Error),
     Remove(std::io::Error),
-    Os2str,
+    Other(String)
 }
 
 impl std::error::Error for CleanupError {}
@@ -18,6 +19,7 @@ impl std::fmt::Display for CleanupError {
             Self::Read(e) => write!(f, "{} {e}", READ),
             Self::Remove(e) => write!(f, "{} {e}", REMOVE),
             Self::Os2str => write!(f, "{}", OS_2_STR),
+            Self::Other(e) => write!(f, "{e}"),
         }
     }
 }

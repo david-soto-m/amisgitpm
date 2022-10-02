@@ -7,6 +7,7 @@ pub enum ListError {
     NonExistant,
     Interaction(MinorInteractError),
     Table(TableError),
+    Other(String)
 }
 
 impl std::error::Error for ListError {}
@@ -15,7 +16,8 @@ impl std::fmt::Display for ListError {
         match self {
             Self::NonExistant => write!(f, "{} {} {}", NON_EXISTANT.0, "uninstall", NON_EXISTANT.1),
             Self::Table(e) => write!(f, "{} {e}", TABLE),
-            Self::Interaction(e) => write!(f, "Interaction failed: {e}"),
+            Self::Interaction(e) => write!(f, "{} {e}", INTERACTION),
+            Self::Other(e) => write!(f, "{e}"),
         }
     }
 }
@@ -30,6 +32,8 @@ impl From<TableError> for ListError {
 pub enum EditError {
     Table(TableError),
     Interaction(MinorInteractError),
+    Other(String)
+
 }
 
 impl std::error::Error for EditError {}
@@ -37,7 +41,8 @@ impl std::fmt::Display for EditError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Table(e) => write!(f, "{} {e}", TABLE),
-            Self::Interaction(e) => write!(f, "Interaction failed: {e}"),
+            Self::Interaction(e) => write!(f, "{} {e}", INTERACTION),
+            Self::Other(e) => write!(f, "{e}"),
         }
     }
 }

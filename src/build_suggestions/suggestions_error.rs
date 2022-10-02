@@ -15,6 +15,9 @@ pub enum SuggestionsError {
     Pattern(PatternError),
     /// The path is not utf-8
     Path,
+    /// A field to place errors that don't fit in with the other variants when
+    /// re-implementing the BuildSuggestions
+    Other(String)
 }
 
 impl Display for SuggestionsError {
@@ -25,6 +28,7 @@ impl Display for SuggestionsError {
             Self::Glob(e) => write!(f, "{e}"),
             Self::Pattern(e) => write!(f, "{e}"),
             Self::Path => write!(f, "The path provided is not utf-8 compatible"),
+            Self::Other(e) => write!(f, "{e}")
         }
     }
 }

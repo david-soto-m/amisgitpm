@@ -12,6 +12,7 @@ pub const GIT: (&str, &str) = (
     "
 Use the command `amisgitpm cleanup` and try again.",
 );
+pub const INTERACTION: &str = "Interaction failed:";
 pub const MOVE: &str = "Had an error while moving files:";
 pub const NON_EXISTANT: (&str, &str) = (
     "You tried to",
