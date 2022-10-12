@@ -11,7 +11,7 @@ description = "A package manager for git repos"
 [dependencies]
 
 # Main dep
-git2 = "^0.14"
+git2 = "^0.15"
 
 # Serialization
 serde = {version = "^1.0", features = ["derive"]}
@@ -21,8 +21,7 @@ serde_json = "^1.0"
 rayon = "^1.5" #paralel computing
 
 # UI
-clap = { version = "^3.2", features = ["derive"] } # arguments
-console = "^0.15" # color Mark for elimination
+clap = { version = "^4", features = ["derive"] } # arguments
 dialoguer = "^0.10" # general cli utils
 
 # Utils

@@ -16,10 +16,10 @@ pub enum ScriptType {
 
 pub trait PackageManagementCore {
     type Store: ProjectStore;
-    fn install(&self, pkg_name: &str, prj: &Project) -> Result<(), PMError> {
+    fn install(&self, prj: &Project) -> Result<(), PMError> {
         // Check there is directory is really new
         let mut project_store = Self::Store::load()?;
-        if project_store.check_unique(pkg_name, &prj.dir) {
+        if project_store.check_unique(&prj.name, &prj.dir) {
             return Err(PMError::AlreadyExisting);
         }
         // Create and clone the repo
@@ -46,7 +46,7 @@ pub trait PackageManagementCore {
             .table
             .get_element(pkg_name)
             .ok_or(PMError::NonExisting)?;
-        self.script_runner(&project.info, ScriptType::IScript)?;
+        self.script_runner(&project.info, ScriptType::UnIScript)?;
         let src_dir = dirutils::src_dirs().join(&project.info.dir);
         std::fs::remove_dir_all(src_dir)?;
         let old_dir = dirutils::old_src_dirs().join(&project.info.dir);
@@ -153,17 +153,18 @@ mod tests {
             url: "https://github.com/zwang20/rust-hello-world.git".into(),
             ref_string: "refs/heads/master".into(),
             update_policy: UpdatePolicy::Always,
-            install_script: vec!["cargo install --path . --root ~/.local/".into()],
-            uninstall_script: vec!["cargo uninstall rust-hello-world --root ~/.local/".into()],
+            install_script: vec!["cargo install --path . --root ~/.local".into()],
+            uninstall_script: vec!["cargo uninstall --root ~/.local".into()],
         };
-        pm.install("Hello", &prj).unwrap();
+        pm.install(&prj).unwrap();
+        assert!(directories::BaseDirs::new().unwrap().home_dir().join(".local/bin/rust-hello-world").exists());
         assert!(
-            if let Err(PMError::AlreadyExisting) = pm.install("Hello", &prj) {
+            if let Err(PMError::AlreadyExisting) = pm.install(&prj) {
                 true
             } else {
                 false
             }
         );
-        pm.uninstall("Hello").unwrap();
+        pm.uninstall(&prj.name).unwrap();
     }
 }

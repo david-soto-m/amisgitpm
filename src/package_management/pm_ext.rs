@@ -10,7 +10,7 @@ pub trait PackageManagementExt: PackageManagementCore {
             .get_clone(pkg_name)
             .ok_or(PMError::NonExisting)?;
         self.uninstall(pkg_name)?;
-        self.install(pkg_name, &prj)?;
+        self.install(&prj)?;
         Ok(())
     }
 
@@ -34,6 +34,6 @@ pub trait PackageManagementExt: PackageManagementCore {
             install_script: vec!["cargo install --path . --root ~/.local/".into()],
             uninstall_script: vec!["cargo uninstall amisgitpm --root ~/.local/".into()],
         };
-        self.install("amisgitpm", &prj)
+        self.install(&prj)
     }
 }
