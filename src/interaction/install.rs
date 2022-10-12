@@ -1,6 +1,6 @@
 use crate::{
     build_suggestions::BuildSuggester,
-    dirutils,
+    dirutils::{PMDirs, PMDirsImpl},
     interaction::interact_error::InteractError,
     projects::{Project, ProjectStore, UpdatePolicy},
 };
@@ -75,7 +75,7 @@ pub trait InstallInteractions {
     }
 
     fn finish(&self, mut pr: Project) -> Result<Project, InteractError> {
-        let suggestions_dir = dirutils::src_dirs().join(&pr.dir);
+        let suggestions_dir = PMDirsImpl::new().src_dirs().join(&pr.dir);
         let sugg = Self::Suggester::new(&suggestions_dir).unwrap();
 
         {

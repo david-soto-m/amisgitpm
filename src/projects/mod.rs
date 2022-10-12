@@ -1,4 +1,4 @@
-use crate::dirutils;
+use crate::dirutils::{PMDirsImpl, PMDirs};
 use json_tables::{Deserialize, Serialize, Table, TableBuilderError, TableError};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -43,7 +43,7 @@ pub trait ProjectStore
 where
     Self: Sized,
 {
-    fn load() -> Result<Self, ProjectStoreError>;
+    fn new() -> Result<Self, ProjectStoreError>;
     fn add(&mut self, prj: Project) -> Result<(), ProjectStoreError>;
     fn remove(&mut self, pkg_name: &str) -> Result<(), ProjectStoreError>;
     fn get_ref<'a>(&'a self, pkg_name: &str) -> Option<&'a Project>;
@@ -53,10 +53,10 @@ where
         self.add(new_prj)?;
         Ok(())
     }
-
     fn check_dir(&self, dir: &str) -> bool;
     fn check_name(&self, pkg_name: &str) -> bool;
     fn check_unique(&self, pkg_name: &str, dir: &str) -> bool;
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a>;
 }
 
 #[derive(Debug)]
@@ -89,17 +89,18 @@ impl From<TableBuilderError> for ProjectStoreError {
 }
 
 pub struct ProjectTable {
-    pub table: Table<Project>,
+    table: Table<Project>,
 }
 
 impl ProjectStore for ProjectTable {
-    fn load() -> Result<Self, ProjectStoreError> {
-        match Table::builder(dirutils::projects_db()).load() {
+    fn new() -> Result<Self, ProjectStoreError> {
+        let dirs = PMDirsImpl::new();
+        match Table::builder(dirs.projects_db()).load() {
             Ok(table) => Ok(ProjectTable { table }),
             Err(e) => match e {
                 TableError::FileOpError(io_err) => match io_err.kind() {
                     std::io::ErrorKind::NotFound => Ok(ProjectTable {
-                        table: Table::builder(dirutils::projects_db())
+                        table: Table::builder(dirs.projects_db())
                             .set_auto_write()
                             .build()?,
                     }),
@@ -138,5 +139,8 @@ impl ProjectStore for ProjectTable {
     fn remove(&mut self, prj_name: &str) -> Result<(), ProjectStoreError> {
         self.table.pop(prj_name)?;
         Ok(())
+    }
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a> {
+        Box::new(self.table.get_table_content().map(|e| &e.info))
     }
 }

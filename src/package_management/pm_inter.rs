@@ -1,8 +1,8 @@
 use crate::{
-    dirutils,
+    dirutils::PMDirs,
     interaction::{InstallInteractions, MinorInteractions},
     package_management::{PMError, PackageManagementCore, ScriptType},
-    projects::{ProjectStore, ProjectTable, UpdatePolicy},
+    projects::{ProjectStore, UpdatePolicy},
 };
 use git2::Repository;
 
@@ -11,9 +11,10 @@ pub trait PackageManagementInteractive: PackageManagementCore {
     where
         T: InstallInteractions,
     {
-        let mut project_store = Self::Store::load()?;
+        let dirs = Self::Dirs::new();
+        let mut project_store = Self::Store::new()?;
         let mut proj_stub = inter.initial(url, &project_store)?;
-        let new_dir = dirutils::new_src_dirs().join(&proj_stub.dir);
+        let new_dir = dirs.git_dirs().join(&proj_stub.dir);
 
         let repo = Repository::clone(url, &new_dir)?;
 
@@ -26,7 +27,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
             None => repo.set_head_detached(obj.id()),
         }?;
 
-        let src_dir = dirutils::src_dirs().join(&proj_stub.dir);
+        let src_dir = dirs.src_dirs().join(&proj_stub.dir);
         std::fs::rename(&new_dir, &src_dir)?;
         let prj = inter.finish(proj_stub)?;
 
@@ -40,14 +41,11 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         pkg_name: Option<String>,
         inter: Q,
     ) -> Result<(), PMError> {
-        let project_store = ProjectTable::load()?;
+        let project_store = Self::Store::new()?;
         match pkg_name {
             Some(pkg) => {
-                let project = project_store
-                    .table
-                    .get_element(&pkg)
-                    .ok_or(PMError::NonExisting)?;
-                inter.list_one(&pkg, &project.info)?;
+                let project = project_store.get_ref(&pkg).ok_or(PMError::NonExisting)?;
+                inter.list_one(&pkg, &project)?;
                 Ok(())
             }
             None => {
@@ -57,7 +55,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         }
     }
     fn inter_edit<Q: MinorInteractions>(&self, package: &str, inter: Q) -> Result<(), PMError> {
-        let project_store = Self::Store::load()?;
+        let project_store = Self::Store::new()?;
         if let Some(element) = project_store.get_clone(package) {
             let old_name = element.name.clone();
             let prj = inter.edit(element)?;
@@ -71,31 +69,29 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         force: bool,
         inter: Q,
     ) -> Result<(), PMError> {
-        let project_store = ProjectTable::load()?;
+        let project_store = Self::Store::new()?;
         match pkg_name {
             Some(package) => {
                 project_store
-                    .table
-                    .get_element(&package)
+                    .get_ref(&package)
                     .ok_or(PMError::NonExisting)?;
                 self.update(&package)
             }
             None => {
                 project_store
-                    .table
                     .iter()
-                    .filter(|(name, e)| match e.info.update_policy {
+                    .filter(|e| match e.update_policy {
                         UpdatePolicy::Always => true,
                         UpdatePolicy::Ask => {
                             if !force {
-                                inter.update_confirm(name).unwrap_or_default()
+                                inter.update_confirm(&e.name).unwrap_or_default()
                             } else {
                                 true
                             }
                         }
                         UpdatePolicy::Never => false,
                     })
-                    .try_for_each(|(_, e)| self.update(&e.info.dir))?;
+                    .try_for_each(|e| self.update(&e.name))?;
                 Ok(())
             }
         }

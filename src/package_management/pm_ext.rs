@@ -1,12 +1,12 @@
 use crate::{
-    dirutils,
+    dirutils::PMDirs,
     package_management::{PMError, PackageManagementCore, ScriptType},
     projects::{Project, ProjectStore, UpdatePolicy},
 };
 
 pub trait PackageManagementExt: PackageManagementCore {
     fn reinstall(&self, pkg_name: &str) -> Result<(), PMError> {
-        let prj = Self::Store::load()?
+        let prj = Self::Store::new()?
             .get_clone(pkg_name)
             .ok_or(PMError::NonExisting)?;
         self.uninstall(pkg_name)?;
@@ -15,16 +15,17 @@ pub trait PackageManagementExt: PackageManagementCore {
     }
 
     fn rebuild(&self, pkg_name: &str) -> Result<(), PMError> {
-        let prj = Self::Store::load()?
+        let prj = Self::Store::new()?
             .get_clone(pkg_name)
             .ok_or(PMError::NonExisting)?;
         self.script_runner(&prj, ScriptType::IScript)?;
         Ok(())
     }
     fn bootstrap(&self) -> Result<(), PMError> {
-        std::fs::create_dir_all(dirutils::projects_db()).unwrap();
-        std::fs::create_dir_all(dirutils::suggestions_db()).unwrap();
-        std::fs::create_dir_all(dirutils::src_dirs()).unwrap();
+        let dirs = Self::Dirs::new();
+        std::fs::create_dir_all(dirs.projects_db()).unwrap();
+        std::fs::create_dir_all(dirs.suggestions_db()).unwrap();
+        std::fs::create_dir_all(dirs.src_dirs()).unwrap();
         let prj = Project {
             name: "amisgitpm".into(),
             dir: "amisgitpm".into(),

@@ -25,3 +25,12 @@ However, I have published this crate. My reasons are:
 - You can only install via https clones and not ssh. Given that you
 shouldn't really be interacting with the repos this shouldn't be a mayor
 problem, but it's a bummer
+
+
+# TODO
+
+- Update
+- glob in suggestions
+- Use thiserror
+- Document, Document, and Document
+- Write Wiki

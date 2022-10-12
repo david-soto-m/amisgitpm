@@ -1,6 +1,6 @@
 use crate::{
     interaction::InteractError,
-    projects::{Project, ProjectTable},
+    projects::{Project, ProjectStore},
 };
 use dialoguer::{Confirm, Editor};
 use prettytable as pt;
@@ -15,7 +15,7 @@ pub trait MinorInteractions {
             Ok(prj)
         }
     }
-    fn list(&self, prj: &ProjectTable) -> Result<(), InteractError> {
+    fn list<T: ProjectStore>(&self, store: &T) -> Result<(), InteractError> {
         let mut show_table = pt::Table::new();
         show_table.set_titles(row![
             "Name",
@@ -24,14 +24,8 @@ pub trait MinorInteractions {
             "Reference",
             "Update policy"
         ]);
-        prj.table.iter().for_each(|(_, e)| {
-            show_table.add_row(row![
-                e.info.name,
-                e.info.dir,
-                e.info.url,
-                e.info.ref_string,
-                e.info.update_policy
-            ]);
+        store.iter().for_each(|e| {
+            show_table.add_row(row![e.name, e.dir, e.url, e.ref_string, e.update_policy]);
         });
         println!("{show_table}");
         Ok(())

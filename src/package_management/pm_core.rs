@@ -1,11 +1,10 @@
 use crate::{
-    dirutils,
+    dirutils::PMDirs,
     package_management::pm_error::PMError,
-    projects::{Project, ProjectStore, ProjectTable},
+    projects::{Project, ProjectStore},
 };
 use fs_extra::dir::{self, CopyOptions};
 use git2::Repository;
-use rayon::prelude::*;
 use subprocess::Exec;
 
 #[derive(Debug)]
@@ -16,14 +15,16 @@ pub enum ScriptType {
 
 pub trait PackageManagementCore {
     type Store: ProjectStore;
+    type Dirs: PMDirs;
     fn install(&self, prj: &Project) -> Result<(), PMError> {
+        let dirs = Self::Dirs::new();
         // Check there is directory is really new
-        let mut project_store = Self::Store::load()?;
+        let mut project_store = Self::Store::new()?;
         if project_store.check_unique(&prj.name, &prj.dir) {
             return Err(PMError::AlreadyExisting);
         }
         // Create and clone the repo
-        let new_dir = dirutils::new_src_dirs().join(&prj.dir);
+        let new_dir = dirs.git_dirs().join(&prj.dir);
         let repo = Repository::clone(&prj.url, &new_dir)?;
         let (obj, refe) = repo.revparse_ext(&prj.ref_string)?;
         repo.checkout_tree(&obj, None)?;
@@ -32,7 +33,7 @@ pub trait PackageManagementCore {
             None => repo.set_head_detached(obj.id()),
         }?;
         // move everything to the src directory
-        let src_dir = dirutils::src_dirs().join(&prj.dir);
+        let src_dir = dirs.src_dirs().join(&prj.dir);
         std::fs::rename(&new_dir, &src_dir)?;
         // Push here, rebuild will work should the build fail
         project_store.add(prj.clone())?;
@@ -41,15 +42,15 @@ pub trait PackageManagementCore {
     }
 
     fn uninstall(&self, pkg_name: &str) -> Result<(), PMError> {
-        let mut project_store = ProjectTable::load()?;
+        let dirs = Self::Dirs::new();
+        let mut project_store = Self::Store::new()?;
         let project = project_store
-            .table
-            .get_element(pkg_name)
+            .get_ref(pkg_name)
             .ok_or(PMError::NonExisting)?;
-        self.script_runner(&project.info, ScriptType::UnIScript)?;
-        let src_dir = dirutils::src_dirs().join(&project.info.dir);
+        self.script_runner(&project, ScriptType::UnIScript)?;
+        let src_dir = dirs.src_dirs().join(&project.dir);
         std::fs::remove_dir_all(src_dir)?;
-        let old_dir = dirutils::old_src_dirs().join(&project.info.dir);
+        let old_dir = dirs.old_dirs().join(&project.dir);
         if old_dir.exists() {
             std::fs::remove_dir_all(old_dir)?;
         }
@@ -57,19 +58,44 @@ pub trait PackageManagementCore {
         Ok(())
     }
 
-    fn update(&self, pkg_name: &str) -> Result<(), PMError> {
+    fn update(&self, prj: &str) -> Result<(), PMError> {
         todo!()
     }
 
+    //     fn update(&self, pkg_name: &str) -> Result<(), PMError> {
+    //         let src_dir = dirutils::src_dirs().join(&project.info.dir);
+    //         let repo = Repository::open()?
+    //
+    //     }
+    // fn fast_forward(&self, path: &Path) -> Result<(), Error> {
+    //     let repo = Repository::open(path)?;
+    //
+    //     repo.find_remote("origin")?
+    //         .fetch(&[self.branch], None, None)?;
+    //
+    //     let fetch_head = repo.find_reference("FETCH_HEAD")?;
+    //     let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
+    //     let analysis = repo.merge_analysis(&[&fetch_commit])?;
+    //     if analysis.0.is_up_to_date() {
+    //         Ok(())
+    //     } else if analysis.0.is_fast_forward() {
+    //         let refname = format!("refs/heads/{}", self.branch);
+    //         let mut reference = repo.find_reference(&refname)?;
+    //         reference.set_target(fetch_commit.id(), "Fast-Forward")?;
+    //         repo.set_head(&refname)?;
+    //         repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
+    //     } else {
+    //         Err(Error::from_str("Fast-forward only!"))
+    //     }
+    // }
+
     fn restore(&self, pkg_name: &str) -> Result<(), PMError> {
-        let project = ProjectTable::load()?
-            .table
-            .get_element(pkg_name)
-            .ok_or(PMError::NonExisting)?
-            .info
-            .clone();
-        let old_dir = dirutils::old_src_dirs().join(&project.dir);
-        let src_dir = dirutils::src_dirs().join(&project.dir);
+        let dirs = Self::Dirs::new();
+        let project = Self::Store::new()?
+            .get_clone(pkg_name)
+            .ok_or(PMError::NonExisting)?;
+        let old_dir = dirs.old_dirs().join(&project.dir);
+        let src_dir = dirs.src_dirs().join(&project.dir);
         let opts = CopyOptions {
             overwrite: true,
             copy_inside: true,
@@ -82,7 +108,8 @@ pub trait PackageManagementCore {
     }
 
     fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), PMError> {
-        let src_dir = dirutils::src_dirs().join(&prj.dir);
+        let dirs = Self::Dirs::new();
+        let src_dir = dirs.src_dirs().join(&prj.dir);
         let script = match scr_run {
             ScriptType::IScript => prj.install_script.join("&&"),
             ScriptType::UnIScript => prj.uninstall_script.join("&&"),
@@ -96,22 +123,20 @@ pub trait PackageManagementCore {
     }
 
     fn edit(&self, pkg_name: &str, prj: Project) -> Result<(), PMError> {
-        let mut project_store = ProjectTable::load()?;
-        if let Some(element) = project_store.table.get_mut_element(pkg_name) {
-            element.info = prj;
-        }
+        Self::Store::new()?.edit(pkg_name, prj)?;
         Ok(())
     }
 
     fn cleanup(&self) -> Result<(), PMError> {
-        let project_store = ProjectTable::load()?;
-        let new_dir = dirutils::new_src_dirs();
+        let dirs = Self::Dirs::new();
+        let project_store = Self::Store::new()?;
+        let new_dir = dirs.git_dirs();
         if new_dir.exists() {
             std::fs::remove_dir_all(new_dir)?;
         }
-        let src_dir = dirutils::src_dirs();
+        let src_dir = dirs.src_dirs();
         if src_dir.exists() {
-            std::fs::read_dir(src_dir)?.par_bridge().try_for_each(|e| {
+            std::fs::read_dir(src_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
                     if !project_store.check_dir(entry.file_name().to_str().ok_or(PMError::Os2str)?)
                     {
@@ -121,20 +146,17 @@ pub trait PackageManagementCore {
                 Ok::<(), PMError>(())
             })?;
         }
-        let old_dir = dirutils::old_src_dirs();
+        let old_dir = dirs.old_dirs();
         if old_dir.exists() {
-            std::fs::read_dir(&old_dir)?
-                .par_bridge()
-                .try_for_each(|e| {
-                    if let Ok(entry) = e {
-                        if !project_store
-                            .check_dir(entry.file_name().to_str().ok_or(PMError::Os2str)?)
-                        {
-                            std::fs::remove_dir_all(entry.path())?;
-                        }
+            std::fs::read_dir(&old_dir)?.try_for_each(|e| {
+                if let Ok(entry) = e {
+                    if !project_store.check_dir(entry.file_name().to_str().ok_or(PMError::Os2str)?)
+                    {
+                        std::fs::remove_dir_all(entry.path())?;
                     }
-                    Ok::<(), PMError>(())
-                })?;
+                }
+                Ok::<(), PMError>(())
+            })?;
         }
         Ok(())
     }
@@ -157,14 +179,16 @@ mod tests {
             uninstall_script: vec!["cargo uninstall --root ~/.local".into()],
         };
         pm.install(&prj).unwrap();
-        assert!(directories::BaseDirs::new().unwrap().home_dir().join(".local/bin/rust-hello-world").exists());
-        assert!(
-            if let Err(PMError::AlreadyExisting) = pm.install(&prj) {
-                true
-            } else {
-                false
-            }
-        );
+        assert!(directories::BaseDirs::new()
+            .unwrap()
+            .home_dir()
+            .join(".local/bin/rust-hello-world")
+            .exists());
+        assert!(if let Err(PMError::AlreadyExisting) = pm.install(&prj) {
+            true
+        } else {
+            false
+        });
         pm.uninstall(&prj.name).unwrap();
     }
 }

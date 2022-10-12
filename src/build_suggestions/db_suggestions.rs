@@ -1,4 +1,4 @@
-use crate::dirutils;
+use crate::dirutils::{PMDirs, PMDirsImpl};
 use json_tables::Table;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -31,7 +31,7 @@ impl SuggestionsTable {
     /// Get the table of pre-made suggestions for compilations.
     pub fn new() -> Result<Self, SuggestionsError> {
         Ok(Self {
-            table: Table::builder(dirutils::suggestions_db())
+            table: Table::builder(PMDirsImpl::new().suggestions_db())
                 .set_read_only()
                 .load()?,
         })
