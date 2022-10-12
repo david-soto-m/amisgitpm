@@ -1,27 +1,23 @@
 use crate::{
-    build_suggestions::BuildSuggester,
     dirutils,
     interaction::{InstallInteractions, MinorInteractions},
-    package_management::{pm_error::*, PackageManagementCore, ScriptType},
-    projects::{ProjectTable, UpdatePolicy},
+    package_management::{PMError, PackageManagementCore, ScriptType},
+    projects::{ProjectStore, ProjectTable, UpdatePolicy},
 };
 use git2::Repository;
 
 pub trait PackageManagementInteractive: PackageManagementCore {
-    fn inter_install<T, Q>(&self, url: &str, inter: T) -> Result<(), InstallError>
+    fn inter_install<T>(&self, url: &str, inter: T) -> Result<(), PMError>
     where
         T: InstallInteractions,
-        Q: BuildSuggester,
     {
-        let mut project_table = ProjectTable::load()?;
-        let (pkg_name, mut proj_stub) = inter
-            .initial(url, &project_table)
-            .map_err(InstallError::Interaction)?;
+        let mut project_store = Self::Store::load()?;
+        let mut proj_stub = inter.initial(url, &project_store)?;
         let new_dir = dirutils::new_src_dirs().join(&proj_stub.dir);
 
         let repo = Repository::clone(url, &new_dir)?;
 
-        let ref_name = inter.refs(&repo).map_err(InstallError::Interaction)?;
+        let ref_name = inter.refs(&repo)?;
         proj_stub.ref_string = ref_name.to_string();
         let (obj, refe) = repo.revparse_ext(&ref_name)?;
         repo.checkout_tree(&obj, None)?;
@@ -31,14 +27,11 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         }?;
 
         let src_dir = dirutils::src_dirs().join(&proj_stub.dir);
-        std::fs::rename(&new_dir, &src_dir).map_err(InstallError::Move)?;
-        let suggester = <Q as BuildSuggester>::new(&src_dir).map_err(InstallError::Suggestions)?;
-        let prj = inter
-            .finish(proj_stub, suggester)
-            .map_err(InstallError::Interaction)?;
+        std::fs::rename(&new_dir, &src_dir)?;
+        let prj = inter.finish(proj_stub)?;
 
-        project_table.table.push(&pkg_name, prj.clone())?;
-        self.script_runner(&pkg_name, &prj, ScriptType::IScript)?;
+        project_store.add(prj.clone())?;
+        self.script_runner(&prj, ScriptType::IScript)?;
         Ok(())
     }
 
@@ -46,32 +39,29 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         &self,
         pkg_name: Option<String>,
         inter: Q,
-    ) -> Result<(), ListError> {
+    ) -> Result<(), PMError> {
+        let project_store = ProjectTable::load()?;
         match pkg_name {
             Some(pkg) => {
-                let project_table = ProjectTable::load()?;
-                let project = project_table
+                let project = project_store
                     .table
                     .get_element(&pkg)
-                    .ok_or(ListError::NonExistant)?;
-                inter
-                    .list_one(&pkg, &project.info)
-                    .map_err(ListError::Interaction)?;
+                    .ok_or(PMError::NonExisting)?;
+                inter.list_one(&pkg, &project.info)?;
                 Ok(())
             }
             None => {
-                let project_table = ProjectTable::load()?;
-                inter.list(&project_table).map_err(ListError::Interaction)?;
+                inter.list(&project_store)?;
                 Ok(())
             }
         }
     }
-    fn edit<Q: MinorInteractions>(&self, package: &str, inter: Q) -> Result<(), EditError> {
-        let mut project_table = ProjectTable::load()?;
-        if let Some(element) = project_table.table.get_mut_element(package) {
-            inter
-                .edit(&mut element.info)
-                .map_err(EditError::Interaction)?;
+    fn inter_edit<Q: MinorInteractions>(&self, package: &str, inter: Q) -> Result<(), PMError> {
+        let project_store = Self::Store::load()?;
+        if let Some(element) = project_store.get_clone(package) {
+            let old_name = element.name.clone();
+            let prj = inter.edit(element)?;
+            self.edit(&old_name, prj)?;
         }
         Ok(())
     }
@@ -80,18 +70,18 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         pkg_name: Option<String>,
         force: bool,
         inter: Q,
-    ) -> Result<(), UpdateError> {
-        let project_table = ProjectTable::load()?;
+    ) -> Result<(), PMError> {
+        let project_store = ProjectTable::load()?;
         match pkg_name {
             Some(package) => {
-                project_table
+                project_store
                     .table
                     .get_element(&package)
-                    .ok_or(UpdateError::NonExistant)?;
+                    .ok_or(PMError::NonExisting)?;
                 self.update(&package)
             }
             None => {
-                project_table
+                project_store
                     .table
                     .iter()
                     .filter(|(name, e)| match e.info.update_policy {

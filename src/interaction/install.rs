@@ -1,17 +1,15 @@
 use crate::{
     build_suggestions::BuildSuggester,
-    interaction::interact_error::InstallInteractError,
-    projects::{Project, ProjectTable, UpdatePolicy},
+    dirutils,
+    interaction::interact_error::InteractError,
+    projects::{Project, ProjectStore, UpdatePolicy},
 };
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::Repository;
 
 pub trait InstallInteractions {
-    fn initial(
-        &self,
-        url: &str,
-        table: &ProjectTable,
-    ) -> Result<(String, Project), InstallInteractError> {
+    type Suggester: BuildSuggester;
+    fn initial<T: ProjectStore>(&self, url: &str, table: &T) -> Result<Project, InteractError> {
         let dir = url.split('/').last().map_or("".into(), |potential_dir| {
             potential_dir
                 .to_string()
@@ -19,7 +17,7 @@ pub trait InstallInteractions {
                 .map_or("".into(), |(dir, _)| dir.to_string())
         });
         let dir = if dir.is_empty()
-            || table.check_if_used_dir(&dir)
+            || table.check_dir(&dir)
             || !Confirm::new()
                 .with_prompt(format!(
                     "Do you want to use {dir} as the directory name of this project"
@@ -32,7 +30,7 @@ pub trait InstallInteractions {
                     .interact();
                 match input {
                     Ok(dir_candidate) => {
-                        if table.check_if_used_dir(&dir_candidate) {
+                        if table.check_dir(&dir_candidate) {
                             println!("That name is already in use, please try another")
                         } else {
                             break dir_candidate;
@@ -53,18 +51,16 @@ pub trait InstallInteractions {
             .items(update_arr)
             .interact()?;
         println!("The download will start shortly, please wait");
-        Ok((
-            dir.clone(),
-            Project {
-                dir,
-                url: url.into(),
-                update_policy: update_arr[update_idx],
-                ..Default::default()
-            },
-        ))
+        Ok(Project {
+            name: dir.clone(),
+            dir,
+            url: url.into(),
+            update_policy: update_arr[update_idx],
+            ..Default::default()
+        })
     }
 
-    fn refs(&self, repo: &Repository) -> Result<String, InstallInteractError> {
+    fn refs(&self, repo: &Repository) -> Result<String, InteractError> {
         let branch_arr: Vec<String> = repo
             .references()?
             .filter_map(|res| res.ok())
@@ -78,11 +74,10 @@ pub trait InstallInteractions {
         Ok(branch_arr[branch_idx].to_owned())
     }
 
-    fn finish<T: BuildSuggester>(
-        &self,
-        mut pr: Project,
-        sugg: T,
-    ) -> Result<Project, InstallInteractError> {
+    fn finish(&self, mut pr: Project) -> Result<Project, InteractError> {
+        let suggestions_dir = dirutils::src_dirs().join(&pr.dir);
+        let sugg = Self::Suggester::new(&suggestions_dir).unwrap();
+
         {
             let sug = sugg.get_install();
             let sug_len = sug.len() as isize;

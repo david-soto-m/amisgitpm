@@ -15,22 +15,20 @@ pub mod package_management;
 pub mod projects;
 use crate::{
     args::{Cli, Commands},
-    build_suggestions::BuildSuggester,
-    interaction::{MinorInteractions, InstallInteractions},
+    interaction::{InstallInteractions, MinorInteractions},
     package_management::{
         PackageManagementCore, PackageManagementExt, PackageManagementInteractive,
     },
 };
 
-pub fn matcher<T, Q, R>(args: Cli, pm: T, inter: Q)
+pub fn matcher<T, Q>(args: Cli, pm: T, inter: Q)
 where
-T: PackageManagementCore + PackageManagementExt + PackageManagementInteractive,
-Q: InstallInteractions + MinorInteractions,
-R: BuildSuggester,
+    T: PackageManagementCore + PackageManagementExt + PackageManagementInteractive,
+    Q: InstallInteractions + MinorInteractions,
 {
     match args.com {
         Commands::Install { url } => {
-            pm.inter_install::<_, R>(&url, inter)
+            pm.inter_install(&url, inter)
                 .unwrap_or_else(|e| println!("{e}"));
         }
         Commands::Uninstall { package } => {
@@ -44,16 +42,11 @@ R: BuildSuggester,
             pm.reinstall(&package).unwrap_or_else(|e| println!("{e}"))
         }
         Commands::Rebuild { package } => pm.rebuild(&package).unwrap_or_else(|e| println!("{e}")),
-        Commands::Rename { old_name, new_name } => {
-            pm.rename(&old_name, &new_name)
-                .unwrap_or_else(|e| println!("{e}"));
-        }
         Commands::List { package } => {
-            pm.list(package, inter)
-                .unwrap_or_else(|e| println!("{e}"));
+            pm.list(package, inter).unwrap_or_else(|e| println!("{e}"));
         }
         Commands::Edit { package } => {
-            pm.edit(&package, inter)
+            pm.inter_edit(&package, inter)
                 .unwrap_or_else(|e| println!("{e}"));
         }
         Commands::Cleanup => {

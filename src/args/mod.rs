@@ -81,17 +81,6 @@ pub enum Commands {
         package: String,
     },
 
-    /// Rename a package, this only changes how `amisgitpm` will name it when
-    /// updating or generally interacting with it. It will **not** change the
-    /// directory name or the executable name
-    Rename {
-        #[clap(value_parser)]
-        /// The old name of the package
-        old_name: String,
-        /// The new name of the package
-        new_name: String,
-    },
-
     /// Remove all srcs with no project associated
     ///
     /// It is `O(N^2)`, with `N` the number of installed packages
