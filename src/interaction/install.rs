@@ -1,7 +1,7 @@
 use crate::{
     build_suggestions::BuildSuggester,
     dirutils::{PMDirs, PMDirsImpl},
-    interaction::interact_error::InteractError,
+    interaction::InteractError,
     projects::{Project, ProjectStore, UpdatePolicy},
 };
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
@@ -76,7 +76,8 @@ pub trait InstallInteractions {
 
     fn finish(&self, mut pr: Project) -> Result<Project, InteractError> {
         let suggestions_dir = PMDirsImpl::new().src_dirs().join(&pr.dir);
-        let sugg = Self::Suggester::new(&suggestions_dir).unwrap();
+        let sugg = Self::Suggester::new(&suggestions_dir)
+            .map_err(|e| InteractError::Other(e.to_string()))?;
 
         {
             let sug = sugg.get_install();

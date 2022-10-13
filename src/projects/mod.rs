@@ -1,5 +1,5 @@
-use crate::dirutils::{PMDirsImpl, PMDirs};
-use json_tables::{Deserialize, Serialize, Table, TableBuilderError, TableError};
+use crate::dirutils::{PMDirs, PMDirsImpl};
+use json_tables::{Deserialize, Serialize, Table, TableError};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Project {
@@ -43,12 +43,13 @@ pub trait ProjectStore
 where
     Self: Sized,
 {
-    fn new() -> Result<Self, ProjectStoreError>;
-    fn add(&mut self, prj: Project) -> Result<(), ProjectStoreError>;
-    fn remove(&mut self, pkg_name: &str) -> Result<(), ProjectStoreError>;
+    type Error: std::error::Error;
+    fn new() -> Result<Self, Self::Error>;
+    fn add(&mut self, prj: Project) -> Result<(), Self::Error>;
+    fn remove(&mut self, pkg_name: &str) -> Result<(), Self::Error>;
     fn get_ref<'a>(&'a self, pkg_name: &str) -> Option<&'a Project>;
     fn get_clone(&self, pkg_name: &str) -> Option<Project>;
-    fn edit(&mut self, old_pkg_name: &str, new_prj: Project) -> Result<(), ProjectStoreError> {
+    fn edit(&mut self, old_pkg_name: &str, new_prj: Project) -> Result<(), Self::Error> {
         self.remove(old_pkg_name)?;
         self.add(new_prj)?;
         Ok(())
@@ -59,41 +60,17 @@ where
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a>;
 }
 
-#[derive(Debug)]
-pub enum ProjectStoreError {
-    Table(TableError),
-    Create(TableBuilderError),
-}
-
-impl std::error::Error for ProjectStoreError {}
-
-impl std::fmt::Display for ProjectStoreError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Table(e) => write!(f, "{e}"),
-            Self::Create(e) => write!(f, "{e}"),
-        }
-    }
-}
-
-impl From<TableError> for ProjectStoreError {
-    fn from(e: TableError) -> Self {
-        Self::Table(e)
-    }
-}
-
-impl From<TableBuilderError> for ProjectStoreError {
-    fn from(e: TableBuilderError) -> Self {
-        Self::Create(e)
-    }
-}
 
 pub struct ProjectTable {
     table: Table<Project>,
 }
 
+mod error;
+pub use error::ProjectStoreError;
+
 impl ProjectStore for ProjectTable {
-    fn new() -> Result<Self, ProjectStoreError> {
+    type Error = ProjectStoreError;
+    fn new() -> Result<Self, Self::Error> {
         let dirs = PMDirsImpl::new();
         match Table::builder(dirs.projects_db()).load() {
             Ok(table) => Ok(ProjectTable { table }),
@@ -131,12 +108,12 @@ impl ProjectStore for ProjectTable {
     fn get_clone(&self, prj_name: &str) -> Option<Project> {
         Some(self.table.get_element(prj_name)?.info.clone())
     }
-    fn add(&mut self, prj: Project) -> Result<(), ProjectStoreError> {
+    fn add(&mut self, prj: Project) -> Result<(), Self::Error> {
         let name = prj.name.clone();
         self.table.push(name, prj)?;
         Ok(())
     }
-    fn remove(&mut self, prj_name: &str) -> Result<(), ProjectStoreError> {
+    fn remove(&mut self, prj_name: &str) -> Result<(), Self::Error> {
         self.table.pop(prj_name)?;
         Ok(())
     }

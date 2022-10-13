@@ -9,11 +9,10 @@ use glob;
 use std::path::Path;
 
 mod db_suggestions;
-pub use db_suggestions::{SuggestionsItem, SuggestionsTable};
+use db_suggestions::SuggestionsTable;
 mod mdown;
-pub use mdown::*;
-mod suggestions_error;
-pub use suggestions_error::SuggestionsError;
+mod error;
+pub use error::SuggestionsError;
 
 /// A structure that implements the `BuildSuggester` trait
 pub struct BuildSuggestions {
@@ -22,20 +21,15 @@ pub struct BuildSuggestions {
 }
 
 impl BuildSuggester for BuildSuggestions {
+    type Error = SuggestionsError;
     fn new(path: &Path) -> Result<Self, SuggestionsError> {
-        let dir = std::fs::read_dir(path)?;
         let mut readme: Vec<Vec<String>> = vec![];
-        for each in glob::glob(
-            path.join("*.md")
-                .as_os_str()
-                .to_str()
-                .ok_or(SuggestionsError::Path)?,
-        )? {
+        for each in glob::glob(path.join("*.md").to_str().ok_or(SuggestionsError::Path)?)? {
             readme.append(&mut mdown::get_build_suggestions(&each?).unwrap_or_default());
         }
         match SuggestionsTable::new() {
             Ok(db) => {
-                let db_sug = db.get_suggestions(dir);
+                let db_sug = db.get_suggestions(path);
                 Ok(Self {
                     install: db_sug
                         .iter()
@@ -67,8 +61,10 @@ pub trait BuildSuggester
 where
     Self: Sized,
 {
+    /// An error for new operations
+    type Error: std::error::Error;
     /// The declaration of a new structure that implements the trait
-    fn new(path: &Path) -> Result<Self, SuggestionsError>;
+    fn new(path: &Path) -> Result<Self, Self::Error>;
     /// Get a reference to a list of install suggestions, these being a list of strings
     fn get_install(&self) -> &Vec<Vec<String>>;
     /// Get a reference to a list of uninstall suggestions, these being a list of strings

@@ -1,6 +1,6 @@
 mod install;
-mod interact_error;
-pub use interact_error::InteractError;
+mod error;
+pub use error::InteractError;
 mod minor;
 
 pub use install::InstallInteractions;
