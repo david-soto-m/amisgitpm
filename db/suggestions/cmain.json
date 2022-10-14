@@ -1,12 +1,12 @@
 {
-    "file_types":["*.c"],
+    "file_types":["main.c"],
     "install_suggestions":[[
             "$(head -n1 main.c| cut -c2-)",
             "mv {{project_name}} ~/.local/bin/{{used_name}}"
         ],
         [
-            "$(tail  -n1 main.c| cut -c2-)",
-            "mv {{project_name}} ~/.local/bin/{{used_name}}"
+            "$(tail  -n1 hilos.c| cut -c2-)",
+            "mv {{project_name}} ~/.local/bin"
         ]
     ],
     "uninstall_suggestions": [

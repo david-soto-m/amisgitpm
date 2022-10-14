@@ -1,5 +1,5 @@
 {
-    "file_types":["*.sh"],
+    "file_types":["build.sh", "make.sh", "install.sh"],
     "install_suggestions":[
         ["bash {{build script}}"]
     ],

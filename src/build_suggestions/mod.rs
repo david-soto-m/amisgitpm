@@ -9,8 +9,9 @@ use glob;
 use std::path::Path;
 
 mod db_suggestions;
-use db_suggestions::SuggestionsTable;
+pub use db_suggestions::{SuggestionsItem, SuggestionsTable};
 mod mdown;
+pub use mdown::*;
 mod error;
 pub use error::SuggestionsError;
 
@@ -21,10 +22,15 @@ pub struct BuildSuggestions {
 }
 
 impl BuildSuggester for BuildSuggestions {
-    type Error = SuggestionsError;
     fn new(path: &Path) -> Result<Self, SuggestionsError> {
+
         let mut readme: Vec<Vec<String>> = vec![];
-        for each in glob::glob(path.join("*.md").to_str().ok_or(SuggestionsError::Path)?)? {
+        for each in glob::glob(
+            path.join("*.md")
+                .as_os_str()
+                .to_str()
+                .ok_or(SuggestionsError::Path)?,
+        )? {
             readme.append(&mut mdown::get_build_suggestions(&each?).unwrap_or_default());
         }
         match SuggestionsTable::new() {
@@ -61,10 +67,8 @@ pub trait BuildSuggester
 where
     Self: Sized,
 {
-    /// An error for new operations
-    type Error: std::error::Error;
     /// The declaration of a new structure that implements the trait
-    fn new(path: &Path) -> Result<Self, Self::Error>;
+    fn new(path: &Path) -> Result<Self, SuggestionsError>;
     /// Get a reference to a list of install suggestions, these being a list of strings
     fn get_install(&self) -> &Vec<Vec<String>>;
     /// Get a reference to a list of uninstall suggestions, these being a list of strings

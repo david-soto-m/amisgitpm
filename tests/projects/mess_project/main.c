@@ -1,8 +1,7 @@
-// gcc -o hola main.c aux.c
+// gcc -o hola main.c
 #include <stdio.h>
-#include "aux.h"
 
 int main(void) {
-    printf("Hello, World!\n");
+    printf("Hello, World!");
     return 0;
 }

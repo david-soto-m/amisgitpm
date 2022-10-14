@@ -76,8 +76,7 @@ pub trait InstallInteractions {
 
     fn finish(&self, mut pr: Project) -> Result<Project, InteractError> {
         let suggestions_dir = PMDirsImpl::new().src_dirs().join(&pr.dir);
-        let sugg = Self::Suggester::new(&suggestions_dir)
-            .map_err(|e| InteractError::Other(e.to_string()))?;
+        let sugg = Self::Suggester::new(&suggestions_dir).unwrap();
 
         {
             let sug = sugg.get_install();

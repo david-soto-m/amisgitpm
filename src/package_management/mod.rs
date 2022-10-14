@@ -7,10 +7,11 @@ pub use pm_ext::PackageManagementExt;
 mod pm_inter;
 pub use pm_inter::PackageManagementInteractive;
 
-mod error;
-pub use error::PMError;
+mod pm_error;
+pub use pm_error::PMError;
 
 pub struct PackageManager {}
+
 
 impl PackageManagementCore for PackageManager {
     type Store = ProjectTable;
