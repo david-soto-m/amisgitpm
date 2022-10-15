@@ -1,4 +1,4 @@
-use crate::{dirutils::PMDirsImpl, projects::ProjectTable};
+use crate::{dirutils::PMDirsImpl, projects::ProjectTable, interaction::Interactor};
 
 mod pm_core;
 pub use pm_core::{PackageManagementCore, ScriptType};
@@ -17,4 +17,6 @@ impl PackageManagementCore for PackageManager {
     type Dirs = PMDirsImpl;
 }
 impl PackageManagementExt for PackageManager {}
-impl PackageManagementInteractive for PackageManager {}
+impl PackageManagementInteractive for PackageManager {
+    type Interact= Interactor;
+}

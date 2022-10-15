@@ -1,16 +1,15 @@
 use crate::{
     dirutils::PMDirs,
-    interaction::{InstallInteractions, MinorInteractions},
+    interaction::Interactions,
     package_management::{PMError, PackageManagementCore, ScriptType},
     projects::{ProjectStore, UpdatePolicy},
 };
 use git2::Repository;
 
 pub trait PackageManagementInteractive: PackageManagementCore {
-    fn inter_install<T>(&self, url: &str, inter: T) -> Result<(), PMError>
-    where
-        T: InstallInteractions,
-    {
+    type Interact: Interactions;
+    fn inter_install(&self, url: &str) -> Result<(), PMError>{
+        let inter = Self::Interact;
         let dirs = Self::Dirs::new();
         let mut project_store = Self::Store::new()?;
         let mut proj_stub = inter.initial(url, &project_store)?;
@@ -36,11 +35,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         Ok(())
     }
 
-    fn list<Q: MinorInteractions>(
-        &self,
-        pkg_name: Option<String>,
-        inter: Q,
-    ) -> Result<(), PMError> {
+    fn list(&self, pkg_name: Option<String>) -> Result<(), PMError> {
         let project_store = Self::Store::new()?;
         match pkg_name {
             Some(pkg) => {
@@ -54,7 +49,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
             }
         }
     }
-    fn inter_edit<Q: MinorInteractions>(&self, package: &str, inter: Q) -> Result<(), PMError> {
+    fn inter_edit(&self, package: &str) -> Result<(), PMError> {
         let project_store = Self::Store::new()?;
         if let Some(element) = project_store.get_clone(package) {
             let old_name = element.name.clone();
@@ -63,12 +58,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         }
         Ok(())
     }
-    fn inter_update<Q: MinorInteractions>(
-        &self,
-        pkg_name: Option<String>,
-        force: bool,
-        inter: Q,
-    ) -> Result<(), PMError> {
+    fn inter_update(&self, pkg_name: Option<String>, force: bool) -> Result<(), PMError> {
         let project_store = Self::Store::new()?;
         match pkg_name {
             Some(package) => {
