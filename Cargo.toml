@@ -17,9 +17,6 @@ git2 = "^0.15"
 serde = {version = "^1.0", features = ["derive"]}
 serde_json = "^1.0"
 
-# Paralelization and async
-rayon = "^1.5" #paralel computing
-
 # UI
 clap = { version = "^4", features = ["derive"] } # arguments
 dialoguer = "^0.10" # general cli utils
