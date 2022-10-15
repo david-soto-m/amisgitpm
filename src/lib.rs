@@ -16,13 +16,11 @@ pub mod projects;
 use crate::{
     args::{Cli, Commands},
     package_management::{
-        PackageManagementCore, PackageManagementExt, PackageManagementInteractive,
+        PackageManagerDefault, PackageManagementCore, PackageManagementExt, PackageManagementInteractive,
     },
 };
 
-pub fn matcher<T>(args: Cli, pm: T)
-where
-    T: PackageManagementCore + PackageManagementExt + PackageManagementInteractive,{
+pub fn matcher(args: Cli, pm: PackageManagerDefault){
     match args.com {
         Commands::Install { url } => pm.inter_install(&url),
         Commands::Uninstall { package } => pm.uninstall(&package),
@@ -31,9 +29,9 @@ where
         Commands::Reinstall { package } => pm.reinstall(&package),
         Commands::Rebuild { package } => pm.rebuild(&package),
         Commands::List { package } => pm.list(package),
-        Commands::Edit { package } =>pm.inter_edit(&package),
+        Commands::Edit { package } => pm.inter_edit(&package),
         Commands::Cleanup => pm.cleanup(),
         Commands::Bootstrap => pm.bootstrap(),
-
-    }.unwrap_or_else(|e| println!("{e}"));
+    }
+    .unwrap_or_else(|e| println!("{e}"));
 }

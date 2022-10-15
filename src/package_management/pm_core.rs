@@ -1,6 +1,6 @@
 use crate::{
     dirutils::PMDirs,
-    package_management::PMError,
+    package_management::CommonError,
     projects::{Project, ProjectStore},
 };
 use fs_extra::dir::{self, CopyOptions};
@@ -13,15 +13,28 @@ pub enum ScriptType {
     UnIScript,
 }
 
-pub trait PackageManagementCore {
+
+/// A trait whose Defaults are Sane, but bad.
+pub trait PackageManagementCore
+where
+    Self: Sized,
+{
     type Store: ProjectStore;
     type Dirs: PMDirs;
-    fn install(&self, prj: &Project) -> Result<(), PMError> {
+    type Error: std::error::Error
+        + From<<Self::Store as ProjectStore>::Error>
+        + From<CommonError>
+        + From<git2::Error>
+        + From<std::io::Error>
+        + From<fs_extra::error::Error>
+        + From<subprocess::PopenError>;
+    fn new() -> Result<Self, Self::Error>;
+    fn install(&self, prj: &Project) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         // Check there is directory is really new
         let mut project_store = Self::Store::new()?;
         if project_store.check_unique(&prj.name, &prj.dir) {
-            return Err(PMError::AlreadyExisting);
+            Err(CommonError::AlreadyExisting)?;
         }
         // Create and clone the repo
         let new_dir = dirs.git_dirs().join(&prj.dir);
@@ -41,12 +54,12 @@ pub trait PackageManagementCore {
         Ok(())
     }
 
-    fn uninstall(&self, pkg_name: &str) -> Result<(), PMError> {
+    fn uninstall(&self, pkg_name: &str) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let mut project_store = Self::Store::new()?;
         let project = project_store
             .get_ref(pkg_name)
-            .ok_or(PMError::NonExisting)?;
+            .ok_or(CommonError::NonExisting)?;
         self.script_runner(&project, ScriptType::UnIScript)?;
         let src_dir = dirs.src_dirs().join(&project.dir);
         std::fs::remove_dir_all(src_dir)?;
@@ -58,7 +71,7 @@ pub trait PackageManagementCore {
         Ok(())
     }
 
-    fn update(&self, prj: &str) -> Result<(), PMError> {
+    fn update(&self, prj: &str) -> Result<(), Self::Error> {
         todo!()
     }
 
@@ -89,11 +102,11 @@ pub trait PackageManagementCore {
     //     }
     // }
 
-    fn restore(&self, pkg_name: &str) -> Result<(), PMError> {
+    fn restore(&self, pkg_name: &str) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let project = Self::Store::new()?
             .get_clone(pkg_name)
-            .ok_or(PMError::NonExisting)?;
+            .ok_or(CommonError::NonExisting)?;
         let old_dir = dirs.old_dirs().join(&project.dir);
         let src_dir = dirs.src_dirs().join(&project.dir);
         let opts = CopyOptions {
@@ -107,7 +120,7 @@ pub trait PackageManagementCore {
         Ok(())
     }
 
-    fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), PMError> {
+    fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let src_dir = dirs.src_dirs().join(&prj.dir);
         let script = match scr_run {
@@ -116,18 +129,18 @@ pub trait PackageManagementCore {
         };
         std::env::set_current_dir(&src_dir)?;
         if !Exec::shell(script).join()?.success() {
-            Err(PMError::Exec(prj.name.to_string(), scr_run))
+            Err(CommonError::Exec(prj.name.to_string(), scr_run))?
         } else {
             Ok(())
         }
     }
 
-    fn edit(&self, pkg_name: &str, prj: Project) -> Result<(), PMError> {
+    fn edit(&self, pkg_name: &str, prj: Project) -> Result<(), Self::Error> {
         Self::Store::new()?.edit(pkg_name, prj)?;
         Ok(())
     }
 
-    fn cleanup(&self) -> Result<(), PMError> {
+    fn cleanup(&self) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let project_store = Self::Store::new()?;
         let new_dir = dirs.git_dirs();
@@ -138,24 +151,26 @@ pub trait PackageManagementCore {
         if src_dir.exists() {
             std::fs::read_dir(src_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
-                    if !project_store.check_dir(entry.file_name().to_str().ok_or(PMError::Os2str)?)
+                    if !project_store
+                        .check_dir(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
                     {
                         std::fs::remove_dir_all(entry.path())?;
                     }
                 }
-                Ok::<(), PMError>(())
+                Ok::<(), Self::Error>(())
             })?;
         }
         let old_dir = dirs.old_dirs();
         if old_dir.exists() {
             std::fs::read_dir(&old_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
-                    if !project_store.check_dir(entry.file_name().to_str().ok_or(PMError::Os2str)?)
+                    if !project_store
+                        .check_dir(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
                     {
                         std::fs::remove_dir_all(entry.path())?;
                     }
                 }
-                Ok::<(), PMError>(())
+                Ok::<(), Self::Error>(())
             })?;
         }
         Ok(())
@@ -164,7 +179,7 @@ pub trait PackageManagementCore {
 
 #[cfg(test)]
 mod tests {
-    use crate::package_management::{PMError, PackageManagementCore, PackageManager};
+    use crate::package_management::{CommonError, PMError, PackageManagementCore, PackageManager};
     use crate::projects::{Project, UpdatePolicy};
     #[test]
     fn install_uninstall_project() {
@@ -184,11 +199,13 @@ mod tests {
             .home_dir()
             .join(".local/bin/rust-hello-world")
             .exists());
-        assert!(if let Err(PMError::AlreadyExisting) = pm.install(&prj) {
-            true
-        } else {
-            false
-        });
+        assert!(
+            if let Err(PMError::Commons(CommonError::AlreadyExisting)) = pm.install(&prj) {
+                true
+            } else {
+                false
+            }
+        );
         pm.uninstall(&prj.name).unwrap();
     }
 }

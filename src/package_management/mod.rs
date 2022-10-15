@@ -1,4 +1,4 @@
-use crate::{dirutils::PMDirsImpl, projects::ProjectTable, interaction::Interactor};
+use crate::{dirutils::PMDirsImpl, interaction::Interactor, projects::ProjectTable};
 
 mod pm_core;
 pub use pm_core::{PackageManagementCore, ScriptType};
@@ -8,15 +8,20 @@ mod pm_inter;
 pub use pm_inter::PackageManagementInteractive;
 
 mod error;
-pub use error::PMError;
+pub use error::{CommonError, PMError};
 
-pub struct PackageManager {}
+pub struct PackageManagerDefault {}
 
-impl PackageManagementCore for PackageManager {
+impl PackageManagementCore for PackageManagerDefault {
     type Store = ProjectTable;
     type Dirs = PMDirsImpl;
+    type Error = PMError;
+    fn new() -> Result<Self, Self::Error> {
+        Ok(Self {})
+    }
 }
-impl PackageManagementExt for PackageManager {}
-impl PackageManagementInteractive for PackageManager {
-    type Interact= Interactor;
+impl PackageManagementExt for PackageManagerDefault {}
+impl PackageManagementInteractive for PackageManagerDefault {
+    type Interact = Interactor;
+    type ErrorI = PMError;
 }

@@ -1,23 +1,28 @@
 mod error;
-pub use error::InteractError;
 use crate::{
+    build_suggestions::{BuildSuggester, BuildSuggestions},
     dirutils::{PMDirs, PMDirsImpl},
-    build_suggestions::{BuildSuggestions, BuildSuggester},
-    projects::{Project, ProjectStore,UpdatePolicy},
+    projects::{Project, ProjectStore, UpdatePolicy},
 };
+use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
+pub use error::InteractError;
+use git2::Repository;
 use prettytable as pt;
 use prettytable::row;
 use serde_json;
-use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
-use git2::Repository;
 
 pub trait Interactions
 where
-    Self: Sized
+    Self: Sized,
 {
     type Suggester: BuildSuggester;
-    fn new()-> Result<Self, InteractError>;
-    fn initial<T: ProjectStore>(&self, url: &str, table: &T) -> Result<Project, InteractError> {
+    type Error: std::error::Error
+        + From<git2::Error>
+        + From<serde_json::Error>
+        + From<std::io::Error>
+        + From<<Self::Suggester as BuildSuggester>::Error>;
+    fn new() -> Result<Self, Self::Error>;
+    fn initial<T: ProjectStore>(&self, url: &str, table: &T) -> Result<Project, Self::Error> {
         let dir = url.split('/').last().map_or("".into(), |potential_dir| {
             potential_dir
                 .to_string()
@@ -68,7 +73,7 @@ where
         })
     }
 
-    fn refs(&self, repo: &Repository) -> Result<String, InteractError> {
+    fn refs(&self, repo: &Repository) -> Result<String, Self::Error> {
         let branch_arr: Vec<String> = repo
             .references()?
             .filter_map(|res| res.ok())
@@ -82,10 +87,9 @@ where
         Ok(branch_arr[branch_idx].to_owned())
     }
 
-    fn finish(&self, mut pr: Project) -> Result<Project, InteractError> {
+    fn finish(&self, mut pr: Project) -> Result<Project, Self::Error> {
         let suggestions_dir = PMDirsImpl::new().src_dirs().join(&pr.dir);
-        let sugg = Self::Suggester::new(&suggestions_dir)
-            .map_err(|e| InteractError::Other(e.to_string()))?;
+        let sugg = Self::Suggester::new(&suggestions_dir)?;
 
         {
             let sug = sugg.get_install();
@@ -175,15 +179,14 @@ executing in the root directory of the project."
         Ok(pr)
     }
 
-
-    fn edit(&self, prj: Project) -> Result<Project, InteractError> {
+    fn edit(&self, prj: Project) -> Result<Project,Self::Error> {
         if let Some(e) = Editor::new().edit(&serde_json::to_string_pretty(&prj)?)? {
             Ok(serde_json::from_str::<Project>(&e)?)
         } else {
             Ok(prj)
         }
     }
-    fn list<T: ProjectStore>(&self, store: &T) -> Result<(), InteractError> {
+    fn list<T: ProjectStore>(&self, store: &T) -> Result<(), Self::Error> {
         let mut show_table = pt::Table::new();
         show_table.set_titles(row![
             "Name",
@@ -198,24 +201,24 @@ executing in the root directory of the project."
         println!("{show_table}");
         Ok(())
     }
-    fn list_one(&self, pkg_name: &str, prj: &Project) -> Result<(), InteractError> {
+    fn list_one(&self, pkg_name: &str, prj: &Project) -> Result<(), Self::Error> {
         println!("Name: {pkg_name}");
         println!("{:#?}", prj);
         Ok(())
     }
-    fn update_confirm(&self, package_name: &str) -> Result<bool, InteractError> {
+    fn update_confirm(&self, package_name: &str) -> Result<bool, Self::Error> {
         let res = Confirm::new()
             .with_prompt(format!("Would you like to update {}", package_name))
             .interact()?;
         Ok(res)
     }
-
 }
 
 pub struct Interactor {}
 impl Interactions for Interactor {
     type Suggester = BuildSuggestions;
-    fn new()->Result<Self, InteractError> {
-        Ok(Self{})
+    type Error = InteractError;
+    fn new() -> Result<Self, Self::Error> {
+        Ok(Self {})
     }
 }

@@ -1,27 +1,27 @@
 use crate::{
     dirutils::PMDirs,
-    package_management::{PMError, PackageManagementCore, ScriptType},
+    package_management::{CommonError, PackageManagementCore, ScriptType},
     projects::{Project, ProjectStore, UpdatePolicy},
 };
 
 pub trait PackageManagementExt: PackageManagementCore {
-    fn reinstall(&self, pkg_name: &str) -> Result<(), PMError> {
+    fn reinstall(&self, pkg_name: &str) -> Result<(), Self::Error> {
         let prj = Self::Store::new()?
             .get_clone(pkg_name)
-            .ok_or(PMError::NonExisting)?;
+            .ok_or(CommonError::NonExisting)?;
         self.uninstall(pkg_name)?;
         self.install(&prj)?;
         Ok(())
     }
 
-    fn rebuild(&self, pkg_name: &str) -> Result<(), PMError> {
+    fn rebuild(&self, pkg_name: &str) -> Result<(), Self::Error> {
         let prj = Self::Store::new()?
             .get_clone(pkg_name)
-            .ok_or(PMError::NonExisting)?;
+            .ok_or(CommonError::NonExisting)?;
         self.script_runner(&prj, ScriptType::IScript)?;
         Ok(())
     }
-    fn bootstrap(&self) -> Result<(), PMError> {
+    fn bootstrap(&self) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         std::fs::create_dir_all(dirs.projects_db()).unwrap();
         std::fs::create_dir_all(dirs.suggestions_db()).unwrap();

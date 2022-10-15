@@ -10,8 +10,8 @@ use std::path::Path;
 
 mod db_suggestions;
 use db_suggestions::SuggestionsTable;
-mod mdown;
 mod error;
+mod mdown;
 pub use error::SuggestionsError;
 
 /// A structure that implements the `BuildSuggester` trait

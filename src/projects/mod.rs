@@ -60,7 +60,6 @@ where
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a>;
 }
 
-
 pub struct ProjectTable {
     table: Table<Project>,
 }
