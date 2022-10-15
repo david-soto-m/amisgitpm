@@ -1,10 +1,10 @@
-use crate::{
-    build_suggestions::SuggestionsError,
-    dirutils::{PMDirs, PMDirsImpl}};
+use crate::dirutils::{PMDirs, PMDirsImpl};
+use glob;
 use json_tables::Table;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+use crate::build_suggestions::SuggestionsError;
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -41,6 +41,7 @@ impl SuggestionsTable {
     /// let table = amisgitpm::build_suggestions::SuggestionsTable::new().unwrap();
     /// let sugg = table.get_suggestions(&std::path::Path::new("tests/projects/mess_project"));
     ///```
+    ///
     /// It doesn't panic, but ignores all errors, so it might return empty without
     /// information about why in cases in which it ought to return with something
     pub fn get_suggestions(&self, path: &Path) -> Vec<&SuggestionsItem> {
@@ -66,7 +67,7 @@ mod tests {
     fn makes_suggestions() {
         let table = SuggestionsTable::new().unwrap();
         let len = table
-            .get_suggestions(Path::new("tests/projects/mess_project"))
+            .get_suggestions(&Path::new("tests/projects/mess_project"))
             .len();
 
         assert_eq!(len, 3);

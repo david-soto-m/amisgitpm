@@ -1,7 +1,5 @@
-use crate::dirutils::{PMDirsImpl, PMDirs};
+use crate::dirutils::{PMDirs, PMDirsImpl};
 use json_tables::{Deserialize, Serialize, Table, TableError};
-mod error;
-pub use error::ProjectStoreError;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Project {
@@ -62,9 +60,13 @@ where
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a>;
 }
 
+
 pub struct ProjectTable {
     table: Table<Project>,
 }
+
+mod error;
+pub use error::ProjectStoreError;
 
 impl ProjectStore for ProjectTable {
     type Error = ProjectStoreError;

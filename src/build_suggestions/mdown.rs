@@ -16,6 +16,7 @@ pub fn get_build_suggestions(readme_file: &PathBuf) -> Result<Vec<Vec<String>>, 
 
 #[cfg(test)]
 mod test {
+    //TODO Test extensively
     use std::path::PathBuf;
     #[test]
     fn gets_different_sections() {

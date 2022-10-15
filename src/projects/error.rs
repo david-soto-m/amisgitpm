@@ -7,6 +7,4 @@ pub enum ProjectStoreError {
     Table(#[from] TableError),
     #[error(transparent)]
     Create(#[from] TableBuilderError),
-    #[error(transparent)]
-    Other(Box<dyn std::error::Error>),
 }

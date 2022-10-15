@@ -1,6 +1,6 @@
 use crate::{
     dirutils::PMDirs,
-    package_management::pm_error::PMError,
+    package_management::PMError,
     projects::{Project, ProjectStore},
 };
 use fs_extra::dir::{self, CopyOptions};

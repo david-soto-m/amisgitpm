@@ -4,9 +4,8 @@
 use directories::ProjectDirs;
 use std::path::PathBuf;
 
-
 /// A trait to standarize the directories that are used in the crate
-pub trait PMDirs{
+pub trait PMDirs {
     /// new the object that implements this trait
     fn new() -> Self;
     /// where to look path for a suggestions db.
