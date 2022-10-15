@@ -50,7 +50,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         match pkg_name {
             Some(pkg) => {
                 let project = project_store.get_ref(&pkg).ok_or(CommonError::NonExisting)?;
-                inter.list_one(&pkg, &project)?;
+                inter.list_one(&pkg, project)?;
                 Ok(())
             }
             None => {

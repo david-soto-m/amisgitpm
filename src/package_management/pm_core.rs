@@ -6,7 +6,7 @@ use crate::{
 use fs_extra::dir::{self, CopyOptions};
 use git2::Repository;
 use subprocess::Exec;
-
+use std::path::{Path, PathBuf};
 #[derive(Debug)]
 pub enum ScriptType {
     IScript,
@@ -29,28 +29,40 @@ where
         + From<fs_extra::error::Error>
         + From<subprocess::PopenError>;
     fn new() -> Result<Self, Self::Error>;
-    fn install(&self, prj: &Project) -> Result<(), Self::Error> {
+    fn download(&self, prj: &Project) -> Result<PathBuf, Self::Error> {
         let dirs = Self::Dirs::new();
-        // Check there is directory is really new
-        let mut project_store = Self::Store::new()?;
-        if project_store.check_unique(&prj.name, &prj.dir) {
-            Err(CommonError::AlreadyExisting)?;
-        }
-        // Create and clone the repo
-        let new_dir = dirs.git_dirs().join(&prj.dir);
-        let repo = Repository::clone(&prj.url, &new_dir)?;
+        let git_dir = dirs.git_dirs().join(&prj.dir);
+        let repo = Repository::clone(&prj.url, &git_dir)?;
         let (obj, refe) = repo.revparse_ext(&prj.ref_string)?;
         repo.checkout_tree(&obj, None)?;
         match refe {
             Some(gref) => repo.set_head(gref.name().unwrap()),
             None => repo.set_head_detached(obj.id()),
         }?;
-        // move everything to the src directory
+        Ok(git_dir)
+    }
+    fn build(&self, prj: &Project, path: &Path)->Result<(), Self::Error>{
+        let mut project_store = Self::Store::new()?;
+        if project_store.check_unique(&prj.name, &prj.dir) {
+            Err(CommonError::AlreadyExisting)?;
+        }
+        let dirs = Self::Dirs::new();
         let src_dir = dirs.src_dirs().join(&prj.dir);
-        std::fs::rename(&new_dir, &src_dir)?;
-        // Push here, rebuild will work should the build fail
+        let opts = CopyOptions {
+            overwrite: true,
+            copy_inside: true,
+            ..Default::default()
+        };
+        dir::copy(&path, &src_dir, &opts)?;
         project_store.add(prj.clone())?;
         self.script_runner(prj, ScriptType::IScript)?;
+        Ok(())
+    }
+
+    fn install(&self, prj: &Project)-> Result<(), Self::Error>{
+        let git_dir = self.download(prj)?;
+        self.build(prj, &git_dir)?;
+        std::fs::remove_dir_all(git_dir)?;
         Ok(())
     }
 
@@ -179,11 +191,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::package_management::{CommonError, PMError, PackageManagementCore, PackageManager};
+    use crate::package_management::{CommonError, PMError, PackageManagementCore, PackageManagerDefault};
     use crate::projects::{Project, UpdatePolicy};
     #[test]
     fn install_uninstall_project() {
-        let pm = PackageManager {};
+        let pm = PackageManagerDefault {};
         let prj = Project {
             name: "Hello-crate".into(),
             dir: "Hello-crate".into(),
@@ -201,11 +213,12 @@ mod tests {
             .exists());
         assert!(
             if let Err(PMError::Commons(CommonError::AlreadyExisting)) = pm.install(&prj) {
+                pm.cleanup().unwrap();
                 true
             } else {
                 false
             }
         );
-        pm.uninstall(&prj.name).unwrap();
+        // pm.uninstall(&prj.name).unwrap();
     }
 }
