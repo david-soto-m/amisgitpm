@@ -2,8 +2,8 @@ pub use crate::{
     build_suggestions::SuggestionsError, interaction::InteractError,
     package_management::ScriptType, projects::ProjectStoreError,
 };
-use thiserror::Error;
 use std::path::PathBuf;
+use thiserror::Error;
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -58,7 +58,9 @@ Then rebuild with `amisgitpm rebuild {0}`",
 
     )]
     Exec(String, ScriptType),
-    #[error("Update couldn't be solved by a fast forward.
-Solve the git status in {0} and then run `amisgitpm rebuild {1} --from-git")]
-    ImposibleUpdate(PathBuf, String)
+    #[error(
+        "Update couldn't be solved by a fast forward.
+Solve the git status in {0} and then run `amisgitpm rebuild {1} --from-git"
+    )]
+    ImposibleUpdate(PathBuf, String),
 }

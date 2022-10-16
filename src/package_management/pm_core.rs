@@ -25,7 +25,7 @@ pub trait PackageManagementCore: PackageManagementBase {
         let project = project_store
             .get_ref(prj_name)
             .ok_or(CommonError::NonExisting)?;
-        self.script_runner(&project, ScriptType::UnIScript)?;
+        self.script_runner(project, ScriptType::UnIScript)?;
         let src_dir = dirs.src_dirs().join(&project.dir);
         std::fs::remove_dir_all(src_dir)?;
         let old_dir = dirs.old_dirs().join(&project.dir);
@@ -54,21 +54,24 @@ pub trait PackageManagementCore: PackageManagementBase {
         self.switch_branch(&prj, &repo)?;
         let remotes = repo.remotes()?;
         if !remotes.is_empty() {
-            repo.find_remote(remotes.get(0).unwrap_or("origin".into()))?
+            repo.find_remote(remotes.get(0).unwrap_or("origin"))?
                 .fetch(&[&prj.ref_string], None, None)?;
         }
         let fetch_head = repo.find_reference("FETCH_HEAD")?;
         let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
         let analysis = repo.merge_analysis(&[&fetch_commit])?;
-        if analysis.0.is_up_to_date(){
+        if analysis.0.is_up_to_date() {
             return Ok(()); // early return
-        }else if analysis.0.is_fast_forward(){
+        } else if analysis.0.is_fast_forward() {
             let mut reference = repo.find_reference(&prj.dir)?;
             reference.set_target(fetch_commit.id(), "Fast-Forward")?;
             repo.set_head(&prj.ref_string)?;
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
         } else {
-            Err(CommonError::ImposibleUpdate(git_dir.clone(), prj.name.clone()))?;
+            Err(CommonError::ImposibleUpdate(
+                git_dir.clone(),
+                prj.name.clone(),
+            ))?;
         }
         self.build_rm(&prj, &git_dir)?;
         Ok(())

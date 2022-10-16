@@ -173,10 +173,10 @@ The directory is a name for a folder",
             |a| !store.check_dir_free(a),
         )?;
         let update_policy = self.get_updates(&t)?;
-        let sugg = Self::Suggester::new(&path)?;
+        let sugg = Self::Suggester::new(path)?;
         let install_script = self.get_sugg(
             &t,
-            &sugg.get_install(),
+            sugg.get_install(),
             "Now we have to establish how to build and install the program.
 Please keep two things in mind:
 1) The script will be run from the topmost directory of the project.
@@ -185,7 +185,7 @@ commands you might want to do something like this `command-to-detach & cd .`",
         )?;
         let uninstall_script = self.get_sugg(
             &t,
-            &sugg.get_uninstall(),
+            sugg.get_uninstall(),
             "Now we have to establish how to uninstall the program.
 You might want to trace:
 - Different executables/binaries
@@ -204,7 +204,6 @@ commands you might want to do something like this `command-to-detach & cd .`",
             update_policy,
             install_script,
             uninstall_script,
-            ..Default::default()
         })
     }
 

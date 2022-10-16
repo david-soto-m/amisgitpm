@@ -5,18 +5,18 @@ use crate::{
 };
 
 pub trait PackageManagementExt: PackageManagementCore {
-    fn reinstall(&self, pkg_name: &str) -> Result<(), Self::Error> {
+    fn reinstall(&self, prj_name: &str) -> Result<(), Self::Error> {
         let prj = Self::Store::new()?
-            .get_clone(pkg_name)
+            .get_clone(prj_name)
             .ok_or(CommonError::NonExisting)?;
-        self.uninstall(pkg_name)?;
+        self.uninstall(prj_name)?;
         self.install(&prj)?;
         Ok(())
     }
 
-    fn rebuild(&self, pkg_name: &str) -> Result<(), Self::Error> {
+    fn rebuild(&self, prj_name: &str) -> Result<(), Self::Error> {
         let prj = Self::Store::new()?
-            .get_clone(pkg_name)
+            .get_clone(prj_name)
             .ok_or(CommonError::NonExisting)?;
         self.script_runner(&prj, ScriptType::IScript)?;
         Ok(())

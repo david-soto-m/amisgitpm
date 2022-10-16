@@ -32,7 +32,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
 
         let (repo, git_dir) = self.download(&proj_stub)?;
         let ref_name = inter.refs(&repo)?;
-        proj_stub.ref_string = ref_name.to_string();
+        proj_stub.ref_string = ref_name;
         self.switch_branch(&proj_stub, &repo)?;
         let project = inter.create_project(&git_dir, &proj_stub, &store)?;
         self.build_rm(&project, &git_dir)?;
