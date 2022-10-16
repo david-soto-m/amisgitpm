@@ -6,14 +6,14 @@ mod pm_ext;
 pub use pm_ext::PackageManagementExt;
 mod pm_inter;
 pub use pm_inter::PackageManagementInteractive;
-mod pm_atomic;
-pub use pm_atomic::{PackageManagementAtomic, ScriptType};
+mod pm_base;
+pub use pm_base::{PackageManagementBase, ScriptType};
 mod error;
 pub use error::{CommonError, PMError};
 
 pub struct PackageManagerDefault {}
 
-impl PackageManagementAtomic for PackageManagerDefault {
+impl PackageManagementBase for PackageManagerDefault {
     type Store = ProjectTable;
     type Dirs = PMDirsImpl;
     type Error = PMError;

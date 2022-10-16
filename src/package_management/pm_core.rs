@@ -1,12 +1,12 @@
 use crate::{
     dirutils::PMDirs,
-    package_management::{CommonError, PackageManagementAtomic, ScriptType},
+    package_management::{CommonError, PackageManagementBase, ScriptType},
     projects::{Project, ProjectStore},
 };
 use fs_extra::dir::{self, CopyOptions};
 
 /// A trait whose Defaults are Sane, but bad.
-pub trait PackageManagementCore: PackageManagementAtomic {
+pub trait PackageManagementCore: PackageManagementBase {
     fn install(&self, prj: &Project) -> Result<(), Self::Error> {
         let (repo, git_dir) = self.download(prj)?;
         self.switch_branch(prj, repo)?;

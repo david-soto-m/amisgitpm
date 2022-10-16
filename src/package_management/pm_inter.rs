@@ -1,6 +1,6 @@
 use crate::{
     interaction::Interactions,
-    package_management::{CommonError, PackageManagementAtomic, PackageManagementCore},
+    package_management::{CommonError, PackageManagementBase, PackageManagementCore},
     projects::{Project, ProjectStore, UpdatePolicy},
 };
 
@@ -11,7 +11,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         + From<std::io::Error>
         + From<CommonError>
         + From<<Self::Interact as Interactions>::Error>
-        + From<<Self as PackageManagementAtomic>::Error>;
+        + From<<Self as PackageManagementBase>::Error>;
     fn inter_install(&self, url: &str) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;
         let store = Self::Store::new()?;

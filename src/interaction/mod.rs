@@ -79,10 +79,13 @@ where
                     .report(false)
                     .interact()?;
                 choices.iter().for_each(|&i| {
-                    sug[i]
-                        .iter()
-                        .for_each(|string| edit_string.push_str(string))
-                });
+                        sug[i].iter().for_each(|string| {
+                            if !edit_string.is_empty() {
+                                edit_string.push('\n');
+                            }
+                            edit_string.push_str(string)
+                        })
+                    });
             };
             if let Some(final_install) = Editor::new().edit(&edit_string)? {
                 Ok(final_install.split('\n').map(|e| e.to_string()).collect())
@@ -96,7 +99,7 @@ where
         &self,
         t: &Term,
         sugg: &str,
-        prompts: (&str, &str, &str, &str),
+        prompts: (&str, &str, &str),
         check: impl Fn(&str) -> bool,
     ) -> Result<String, Self::Error> {
         t.clear_screen()?;
@@ -104,12 +107,12 @@ where
         loop {
             let input: Result<String, _> = Input::new()
                 .with_initial_text(sugg)
-                .with_prompt(prompts.2)
+                .with_prompt(prompts.1)
                 .interact();
             match input {
                 Ok(dir_candidate) => {
                     if check(&dir_candidate) {
-                        println!("{}", prompts.3);
+                        println!("{}", prompts.2);
                     } else {
                         break Ok(dir_candidate);
                     }
@@ -150,7 +153,6 @@ where
             &sugg_name,
             (
                 "What's the name of the project going to be?",
-                "We suggest",
                 "Please provide a name for the project",
                 "A project already uses that name, please suggest another",
             ),
@@ -165,7 +167,6 @@ where
 The directory is a name for a folder",
                     style("directory").bold()
                 ),
-                "We suggest",
                 "Please provide a directory name",
                 "A project already uses that directory, please suggest another",
             ),
@@ -176,13 +177,22 @@ The directory is a name for a folder",
         let install_script = self.get_sugg(
             &t,
             &sugg.get_install(),
-            "Now we have to establish how to build and install, the program.
+            "Now we have to establish how to build and install the program.
 Please keep two things in mind:
-1) The script will be run from the topmost directory of the project.\
+1) The script will be run from the topmost directory of the project.
 2) All the lines in your script will be joined by `&&`. If you want to detach some
 commands you might want to do something like this `command-to-detach & cd .`",
         )?;
-        let uninstall_script = self.get_sugg(&t, &sugg.get_uninstall(), "")?;
+        let uninstall_script = self.get_sugg(&t, &sugg.get_uninstall(),
+        "Now we have to establish how to uninstall the program.
+You might want to trace:
+- Different executables/binaries
+- Cache that the program generates
+- Other files you don't think you will want to keep after uninstalling
+Please keep two things in mind:
+1) The script will be run from the topmost directory of the project.
+2) All the lines in your script will be joined by `&&`. If you want to detach some
+commands you might want to do something like this `command-to-detach & cd .`")?;
         Ok(Project {
             name,
             dir,

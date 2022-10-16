@@ -13,7 +13,7 @@ pub enum ScriptType {
     UnIScript,
 }
 
-pub trait PackageManagementAtomic
+pub trait PackageManagementBase
 where
     Self: Sized,
 {
