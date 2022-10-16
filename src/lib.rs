@@ -16,11 +16,12 @@ pub mod projects;
 use crate::{
     args::{Cli, Commands},
     package_management::{
-        PackageManagerDefault, PackageManagementCore, PackageManagementExt, PackageManagementInteractive,
+        PackageManagementCore, PackageManagementExt, PackageManagementInteractive,
+        PackageManagerDefault,
     },
 };
 
-pub fn matcher(args: Cli, pm: PackageManagerDefault){
+pub fn matcher(args: Cli, pm: PackageManagerDefault) {
     match args.com {
         Commands::Install { url } => pm.inter_install(&url),
         Commands::Uninstall { package } => pm.uninstall(&package),

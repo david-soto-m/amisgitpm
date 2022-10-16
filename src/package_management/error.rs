@@ -1,6 +1,6 @@
 pub use crate::{
     build_suggestions::SuggestionsError, interaction::InteractError,
-    package_management::pm_core::ScriptType, projects::ProjectStoreError,
+    package_management::ScriptType, projects::ProjectStoreError,
 };
 use thiserror::Error;
 

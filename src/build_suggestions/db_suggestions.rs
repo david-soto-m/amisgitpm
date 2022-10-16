@@ -49,8 +49,12 @@ impl SuggestionsTable {
             .get_table_content()
             .filter_map(|e| {
                 for pattern in &e.info.file_types {
-                    if glob::glob(path.join(&pattern).to_str()?).ok()?.next().is_some(){
-                        return Some(&e.info)
+                    if glob::glob(path.join(&pattern).to_str()?)
+                        .ok()?
+                        .next()
+                        .is_some()
+                    {
+                        return Some(&e.info);
                     }
                 }
                 None

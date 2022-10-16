@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::build_suggestions::SuggestionsError;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum InteractError {

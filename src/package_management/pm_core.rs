@@ -1,71 +1,19 @@
 use crate::{
     dirutils::PMDirs,
-    package_management::CommonError,
+    package_management::{CommonError, PackageManagementAtomic, ScriptType},
     projects::{Project, ProjectStore},
 };
 use fs_extra::dir::{self, CopyOptions};
-use git2::Repository;
-use subprocess::Exec;
-use std::path::{Path, PathBuf};
-#[derive(Debug)]
-pub enum ScriptType {
-    IScript,
-    UnIScript,
-}
-
 
 /// A trait whose Defaults are Sane, but bad.
-pub trait PackageManagementCore
-where
-    Self: Sized,
-{
-    type Store: ProjectStore;
-    type Dirs: PMDirs;
-    type Error: std::error::Error
-        + From<<Self::Store as ProjectStore>::Error>
-        + From<CommonError>
-        + From<git2::Error>
-        + From<std::io::Error>
-        + From<fs_extra::error::Error>
-        + From<subprocess::PopenError>;
-    fn new() -> Result<Self, Self::Error>;
-    fn download(&self, prj: &Project) -> Result<PathBuf, Self::Error> {
-        let dirs = Self::Dirs::new();
-        let git_dir = dirs.git_dirs().join(&prj.dir);
-        let repo = Repository::clone(&prj.url, &git_dir)?;
-        let (obj, refe) = repo.revparse_ext(&prj.ref_string)?;
-        repo.checkout_tree(&obj, None)?;
-        match refe {
-            Some(gref) => repo.set_head(gref.name().unwrap()),
-            None => repo.set_head_detached(obj.id()),
-        }?;
-        Ok(git_dir)
-    }
-    fn build(&self, prj: &Project, path: &Path)->Result<(), Self::Error>{
-        let mut project_store = Self::Store::new()?;
-        if project_store.check_unique(&prj.name, &prj.dir) {
-            Err(CommonError::AlreadyExisting)?;
-        }
-        let dirs = Self::Dirs::new();
-        let src_dir = dirs.src_dirs().join(&prj.dir);
-        let opts = CopyOptions {
-            overwrite: true,
-            copy_inside: true,
-            ..Default::default()
-        };
-        dir::copy(&path, &src_dir, &opts)?;
-        project_store.add(prj.clone())?;
-        self.script_runner(prj, ScriptType::IScript)?;
-        Ok(())
-    }
-
-    fn install(&self, prj: &Project)-> Result<(), Self::Error>{
-        let git_dir = self.download(prj)?;
+pub trait PackageManagementCore: PackageManagementAtomic {
+    fn install(&self, prj: &Project) -> Result<(), Self::Error> {
+        let (repo, git_dir) = self.download(prj)?;
+        self.switch_branch(prj, repo)?;
         self.build(prj, &git_dir)?;
         std::fs::remove_dir_all(git_dir)?;
         Ok(())
     }
-
     fn uninstall(&self, pkg_name: &str) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let mut project_store = Self::Store::new()?;
@@ -82,11 +30,9 @@ where
         project_store.remove(pkg_name)?;
         Ok(())
     }
-
     fn update(&self, prj: &str) -> Result<(), Self::Error> {
         todo!()
     }
-
     //     fn update(&self, pkg_name: &str) -> Result<(), PMError> {
     //         let src_dir = dirutils::src_dirs().join(&project.info.dir);
     //         let repo = Repository::open()?
@@ -132,21 +78,6 @@ where
         Ok(())
     }
 
-    fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), Self::Error> {
-        let dirs = Self::Dirs::new();
-        let src_dir = dirs.src_dirs().join(&prj.dir);
-        let script = match scr_run {
-            ScriptType::IScript => prj.install_script.join("&&"),
-            ScriptType::UnIScript => prj.uninstall_script.join("&&"),
-        };
-        std::env::set_current_dir(&src_dir)?;
-        if !Exec::shell(script).join()?.success() {
-            Err(CommonError::Exec(prj.name.to_string(), scr_run))?
-        } else {
-            Ok(())
-        }
-    }
-
     fn edit(&self, pkg_name: &str, prj: Project) -> Result<(), Self::Error> {
         Self::Store::new()?.edit(pkg_name, prj)?;
         Ok(())
@@ -163,8 +94,8 @@ where
         if src_dir.exists() {
             std::fs::read_dir(src_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
-                    if !project_store
-                        .check_dir(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
+                    if project_store
+                        .check_dir_free(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
                     {
                         std::fs::remove_dir_all(entry.path())?;
                     }
@@ -177,7 +108,7 @@ where
             std::fs::read_dir(&old_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
                     if !project_store
-                        .check_dir(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
+                        .check_dir_free(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
                     {
                         std::fs::remove_dir_all(entry.path())?;
                     }
@@ -191,7 +122,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::package_management::{CommonError, PMError, PackageManagementCore, PackageManagerDefault};
+    use crate::package_management::{
+        CommonError, PMError, PackageManagementCore, PackageManagerDefault,
+    };
     use crate::projects::{Project, UpdatePolicy};
     #[test]
     fn install_uninstall_project() {
@@ -219,6 +152,6 @@ mod tests {
                 false
             }
         );
-        // pm.uninstall(&prj.name).unwrap();
+        pm.uninstall(&prj.name).unwrap();
     }
 }

@@ -31,6 +31,7 @@ subprocess = "^0.2"
 prettytable-rs = {version = "^0.9", default-features = false}
 fs_extra = "^1.2"
 thiserror = "1.0.37"
+console = "0.15.2"
 
 
 [build-dependencies]

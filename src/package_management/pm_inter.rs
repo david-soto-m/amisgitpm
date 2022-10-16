@@ -1,55 +1,53 @@
 use crate::{
-    dirutils::PMDirs,
     interaction::Interactions,
-    package_management::{CommonError, PackageManagementCore, ScriptType},
-    projects::{ProjectStore, UpdatePolicy},
+    package_management::{CommonError, PackageManagementAtomic, PackageManagementCore},
+    projects::{Project, ProjectStore, UpdatePolicy},
 };
-use git2::Repository;
 
 pub trait PackageManagementInteractive: PackageManagementCore {
     type Interact: Interactions;
     type ErrorI: std::error::Error
         + From<<Self::Store as ProjectStore>::Error>
-        + From<CommonError>
-        + From<git2::Error>
         + From<std::io::Error>
-        + From<fs_extra::error::Error>
-        + From<subprocess::PopenError>
+        + From<CommonError>
         + From<<Self::Interact as Interactions>::Error>
-        + From<<Self as PackageManagementCore>::Error>;
+        + From<<Self as PackageManagementAtomic>::Error>;
     fn inter_install(&self, url: &str) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;
-        let dirs = Self::Dirs::new();
-        let mut project_store = Self::Store::new()?;
-        let mut proj_stub = inter.initial(url, &project_store)?;
-        let new_dir = dirs.git_dirs().join(&proj_stub.dir);
+        let store = Self::Store::new()?;
+        let sugg = url
+            .split('/')
+            .last()
+            .map_or("temp".into(), |potential_dir| {
+                potential_dir
+                    .to_string()
+                    .rsplit_once('.')
+                    .map_or(potential_dir.to_string(), |(dir, _)| dir.to_string())
+            });
+        let mut proj_stub = Project {
+            url: url.to_string(),
+            dir: sugg,
+            ..Default::default()
+        };
 
-        let repo = Repository::clone(url, &new_dir)?;
-
+        let (repo, git_dir) = self.download(&proj_stub)?;
         let ref_name = inter.refs(&repo)?;
         proj_stub.ref_string = ref_name.to_string();
-        let (obj, refe) = repo.revparse_ext(&ref_name)?;
-        repo.checkout_tree(&obj, None)?;
-        match refe {
-            Some(gref) => repo.set_head(gref.name().unwrap()),
-            None => repo.set_head_detached(obj.id()),
-        }?;
+        self.switch_branch(&proj_stub, repo)?;
 
-        let src_dir = dirs.src_dirs().join(&proj_stub.dir);
-        std::fs::rename(&new_dir, &src_dir)?;
-        let prj = inter.finish(proj_stub)?;
-
-        project_store.add(prj.clone())?;
-        self.script_runner(&prj, ScriptType::IScript)?;
+        let project = inter.create_project(&git_dir, &proj_stub, &store)?;
+        self.build(&project, &git_dir)?;
+        std::fs::remove_dir_all(&git_dir)?;
         Ok(())
     }
-
     fn list(&self, pkg_name: Option<String>) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;
         let project_store = Self::Store::new()?;
         match pkg_name {
             Some(pkg) => {
-                let project = project_store.get_ref(&pkg).ok_or(CommonError::NonExisting)?;
+                let project = project_store
+                    .get_ref(&pkg)
+                    .ok_or(CommonError::NonExisting)?;
                 inter.list_one(&pkg, project)?;
                 Ok(())
             }
