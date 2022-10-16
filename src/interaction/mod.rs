@@ -79,13 +79,13 @@ where
                     .report(false)
                     .interact()?;
                 choices.iter().for_each(|&i| {
-                        sug[i].iter().for_each(|string| {
-                            if !edit_string.is_empty() {
-                                edit_string.push('\n');
-                            }
-                            edit_string.push_str(string)
-                        })
-                    });
+                    sug[i].iter().for_each(|string| {
+                        if !edit_string.is_empty() {
+                            edit_string.push('\n');
+                        }
+                        edit_string.push_str(string)
+                    })
+                });
             };
             if let Some(final_install) = Editor::new().edit(&edit_string)? {
                 Ok(final_install.split('\n').map(|e| e.to_string()).collect())
@@ -183,8 +183,10 @@ Please keep two things in mind:
 2) All the lines in your script will be joined by `&&`. If you want to detach some
 commands you might want to do something like this `command-to-detach & cd .`",
         )?;
-        let uninstall_script = self.get_sugg(&t, &sugg.get_uninstall(),
-        "Now we have to establish how to uninstall the program.
+        let uninstall_script = self.get_sugg(
+            &t,
+            &sugg.get_uninstall(),
+            "Now we have to establish how to uninstall the program.
 You might want to trace:
 - Different executables/binaries
 - Cache that the program generates
@@ -192,7 +194,8 @@ You might want to trace:
 Please keep two things in mind:
 1) The script will be run from the topmost directory of the project.
 2) All the lines in your script will be joined by `&&`. If you want to detach some
-commands you might want to do something like this `command-to-detach & cd .`")?;
+commands you might want to do something like this `command-to-detach & cd .`",
+        )?;
         Ok(Project {
             name,
             dir,
@@ -227,8 +230,8 @@ commands you might want to do something like this `command-to-detach & cd .`")?;
         println!("{show_table}");
         Ok(())
     }
-    fn list_one(&self, pkg_name: &str, prj: &Project) -> Result<(), Self::Error> {
-        println!("Name: {pkg_name}");
+    fn list_one(&self, prj_name: &str, prj: &Project) -> Result<(), Self::Error> {
+        println!("Name: {prj_name}");
         println!("{:#?}", prj);
         Ok(())
     }

@@ -69,24 +69,24 @@ where
     /// Add an item to the store
     fn add(&mut self, prj: Project) -> Result<(), Self::Error>;
     /// Remove an item from the store
-    fn remove(&mut self, pkg_name: &str) -> Result<(), Self::Error>;
+    fn remove(&mut self, prj_name: &str) -> Result<(), Self::Error>;
     /// Get a reference to an item inside the store
-    fn get_ref<'a>(&'a self, pkg_name: &str) -> Option<&'a Project>;
+    fn get_ref<'a>(&'a self, prj_name: &str) -> Option<&'a Project>;
     /// Return a cloned instance of a project in the store
-    fn get_clone(&self, pkg_name: &str) -> Option<Project>;
-    /// Replace the project that used to go by the old_pkg_name name with the new_prj item
-    fn edit(&mut self, old_pkg_name: &str, new_prj: Project) -> Result<(), Self::Error> {
-        self.remove(old_pkg_name)?;
+    fn get_clone(&self, prj_name: &str) -> Option<Project>;
+    /// Replace the project that used to go by the old_prj_name name with the new_prj item
+    fn edit(&mut self, old_prj_name: &str, new_prj: Project) -> Result<(), Self::Error> {
+        self.remove(old_prj_name)?;
         self.add(new_prj)?;
         Ok(())
     }
     /// If a directory name is free for use
     fn check_dir_free(&self, dir: &str) -> bool;
     /// If a name is free for use
-    fn check_name_free(&self, pkg_name: &str) -> bool;
+    fn check_name_free(&self, prj_name: &str) -> bool;
     /// check if a combination of directory and name are both free for use
-    fn check_unique(&self, pkg_name: &str, dir: &str) -> bool {
-        self.check_dir_free(dir) && self.check_name_free(pkg_name)
+    fn check_unique(&self, prj_name: &str, dir: &str) -> bool {
+        self.check_dir_free(dir) && self.check_name_free(prj_name)
     }
     /// Return an iterator over refereneces of Project Items
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a>;
@@ -116,11 +116,11 @@ impl ProjectStore for ProjectTable {
             },
         }
     }
-    fn check_name_free(&self, pkg_name: &str) -> bool {
+    fn check_name_free(&self, prj_name: &str) -> bool {
         !self
             .table
             .get_table_content()
-            .any(|s| s.info.name == pkg_name)
+            .any(|s| s.info.name == prj_name)
     }
     fn check_dir_free(&self, dir: &str) -> bool {
         !self
@@ -128,14 +128,14 @@ impl ProjectStore for ProjectTable {
             .get_table_content()
             .any(|p_name| p_name.info.dir == dir)
     }
-    fn check_unique(&self, pkg_name: &str, dir: &str) -> bool {
+    fn check_unique(&self, prj_name: &str, dir: &str) -> bool {
         !self
             .table
             .get_table_content()
-            .any(|element| element.info.dir == dir || element.info.name == pkg_name)
+            .any(|element| element.info.dir == dir || element.info.name == prj_name)
     }
-    fn get_ref<'a>(&'a self, pkg_name: &str) -> Option<&'a Project> {
-        Some(&self.table.get_element(pkg_name)?.info)
+    fn get_ref<'a>(&'a self, prj_name: &str) -> Option<&'a Project> {
+        Some(&self.table.get_element(prj_name)?.info)
     }
     fn get_clone(&self, prj_name: &str) -> Option<Project> {
         Some(self.table.get_element(prj_name)?.info.clone())

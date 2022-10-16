@@ -3,17 +3,22 @@ pub use crate::{
     package_management::ScriptType, projects::ProjectStoreError,
 };
 use thiserror::Error;
+use std::path::PathBuf;
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum PMError {
-    #[error("Had an error on a Git operation with error:
+    #[error(
+        "Had an error on a Git operation with error:
 {0}
-Use the command `amisgitpm cleanup` and try again.",)]
+Use the command `amisgitpm cleanup` and try again."
+    )]
     Git(#[from] git2::Error),
-    #[error("Error while spawning the install process:
+    #[error(
+        "Error while spawning the install process:
 {0}
-Try rebuilding the project with `amisgitpm rebuild {{project_name}}`",)]
+Try rebuilding the project with `amisgitpm rebuild {{project_name}}`"
+    )]
     Spawn(#[from] subprocess::PopenError),
     #[error(transparent)]
     FileExt(#[from] fs_extra::error::Error),
@@ -53,4 +58,7 @@ Then rebuild with `amisgitpm rebuild {0}`",
 
     )]
     Exec(String, ScriptType),
+    #[error("Update couldn't be solved by a fast forward.
+Solve the git status in {0} and then run `amisgitpm rebuild {1} --from-git")]
+    ImposibleUpdate(PathBuf, String)
 }

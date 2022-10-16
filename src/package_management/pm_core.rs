@@ -4,21 +4,26 @@ use crate::{
     projects::{Project, ProjectStore},
 };
 use fs_extra::dir::{self, CopyOptions};
+use git2::Repository;
 
 /// A trait whose Defaults are Sane, but bad.
 pub trait PackageManagementCore: PackageManagementBase {
     fn install(&self, prj: &Project) -> Result<(), Self::Error> {
+        let mut project_store = Self::Store::new()?;
+        if !project_store.check_unique(&prj.name, &prj.dir) {
+            Err(CommonError::AlreadyExisting)?;
+        }
         let (repo, git_dir) = self.download(prj)?;
-        self.switch_branch(prj, repo)?;
-        self.build(prj, &git_dir)?;
-        std::fs::remove_dir_all(git_dir)?;
+        self.switch_branch(prj, &repo)?;
+        project_store.add(prj.clone())?;
+        self.build_rm(prj, &git_dir)?;
         Ok(())
     }
-    fn uninstall(&self, pkg_name: &str) -> Result<(), Self::Error> {
+    fn uninstall(&self, prj_name: &str) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let mut project_store = Self::Store::new()?;
         let project = project_store
-            .get_ref(pkg_name)
+            .get_ref(prj_name)
             .ok_or(CommonError::NonExisting)?;
         self.script_runner(&project, ScriptType::UnIScript)?;
         let src_dir = dirs.src_dirs().join(&project.dir);
@@ -27,23 +32,47 @@ pub trait PackageManagementCore: PackageManagementBase {
         if old_dir.exists() {
             std::fs::remove_dir_all(old_dir)?;
         }
-        project_store.remove(pkg_name)?;
+        project_store.remove(prj_name)?;
         Ok(())
     }
-    fn update(&self, prj: &str) -> Result<(), Self::Error> {
-        todo!()
+    fn update(&self, prj_name: &str) -> Result<(), Self::Error> {
+        let dirs = Self::Dirs::new();
+        let prj = Self::Store::new()?
+            .get_clone(prj_name)
+            .ok_or(CommonError::NonExisting)?;
+        let git_dir = dirs.git_dirs().join(&prj.dir);
+        let old_dir = dirs.old_dirs().join(&prj.dir);
+        let src_dir = dirs.src_dirs().join(&prj.dir);
+        let opts = CopyOptions {
+            overwrite: true,
+            copy_inside: true,
+            ..Default::default()
+        };
+        dir::copy(&src_dir, &old_dir, &opts)?;
+        dir::copy(&src_dir, &git_dir, &opts)?;
+        let repo = Repository::open(&git_dir)?;
+        self.switch_branch(&prj, &repo)?;
+        let remotes = repo.remotes()?;
+        if !remotes.is_empty() {
+            repo.find_remote(remotes.get(0).unwrap_or("origin".into()))?
+                .fetch(&[&prj.ref_string], None, None)?;
+        }
+        let fetch_head = repo.find_reference("FETCH_HEAD")?;
+        let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
+        let analysis = repo.merge_analysis(&[&fetch_commit])?;
+        if analysis.0.is_up_to_date(){
+            return Ok(()); // early return
+        }else if analysis.0.is_fast_forward(){
+            let mut reference = repo.find_reference(&prj.dir)?;
+            reference.set_target(fetch_commit.id(), "Fast-Forward")?;
+            repo.set_head(&prj.ref_string)?;
+            repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
+        } else {
+            Err(CommonError::ImposibleUpdate(git_dir.clone(), prj.name.clone()))?;
+        }
+        self.build_rm(&prj, &git_dir)?;
+        Ok(())
     }
-    //     fn update(&self, pkg_name: &str) -> Result<(), PMError> {
-    //         let src_dir = dirutils::src_dirs().join(&project.info.dir);
-    //         let repo = Repository::open()?
-    //
-    //     }
-    // fn fast_forward(&self, path: &Path) -> Result<(), Error> {
-    //     let repo = Repository::open(path)?;
-    //
-    //     repo.find_remote("origin")?
-    //         .fetch(&[self.branch], None, None)?;
-    //
     //     let fetch_head = repo.find_reference("FETCH_HEAD")?;
     //     let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
     //     let analysis = repo.merge_analysis(&[&fetch_commit])?;
@@ -60,10 +89,10 @@ pub trait PackageManagementCore: PackageManagementBase {
     //     }
     // }
 
-    fn restore(&self, pkg_name: &str) -> Result<(), Self::Error> {
+    fn restore(&self, prj_name: &str) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let project = Self::Store::new()?
-            .get_clone(pkg_name)
+            .get_clone(prj_name)
             .ok_or(CommonError::NonExisting)?;
         let old_dir = dirs.old_dirs().join(&project.dir);
         let src_dir = dirs.src_dirs().join(&project.dir);
@@ -78,8 +107,8 @@ pub trait PackageManagementCore: PackageManagementBase {
         Ok(())
     }
 
-    fn edit(&self, pkg_name: &str, prj: Project) -> Result<(), Self::Error> {
-        Self::Store::new()?.edit(pkg_name, prj)?;
+    fn edit(&self, prj_name: &str, prj: Project) -> Result<(), Self::Error> {
+        Self::Store::new()?.edit(prj_name, prj)?;
         Ok(())
     }
 

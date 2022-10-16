@@ -34,7 +34,7 @@ where
         let repo = Repository::clone(&prj.url, &git_dir)?;
         Ok((repo, git_dir))
     }
-    fn switch_branch(&self, prj: &Project, repo: Repository) -> Result<(), Self::Error> {
+    fn switch_branch(&self, prj: &Project, repo: &Repository) -> Result<(), Self::Error> {
         let (obj, refe) = repo.revparse_ext(&prj.ref_string)?;
         repo.checkout_tree(&obj, None)?;
         match refe {
@@ -43,11 +43,7 @@ where
         }?;
         Ok(())
     }
-    fn build(&self, prj: &Project, path: &Path) -> Result<(), Self::Error> {
-        let mut project_store = Self::Store::new()?;
-        if !project_store.check_unique(&prj.name, &prj.dir) {
-            Err(CommonError::AlreadyExisting)?;
-        }
+    fn build_rm(&self, prj: &Project, path: &Path) -> Result<(), Self::Error> {
         let dirs = Self::Dirs::new();
         let src_dir = dirs.src_dirs().join(&prj.dir);
         let opts = CopyOptions {
@@ -56,7 +52,7 @@ where
             ..Default::default()
         };
         dir::copy(&path, &src_dir, &opts)?;
-        project_store.add(prj.clone())?;
+        std::fs::remove_dir_all(&path)?;
         self.script_runner(prj, ScriptType::IScript)?;
         Ok(())
     }

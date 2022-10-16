@@ -33,17 +33,15 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         let (repo, git_dir) = self.download(&proj_stub)?;
         let ref_name = inter.refs(&repo)?;
         proj_stub.ref_string = ref_name.to_string();
-        self.switch_branch(&proj_stub, repo)?;
-
+        self.switch_branch(&proj_stub, &repo)?;
         let project = inter.create_project(&git_dir, &proj_stub, &store)?;
-        self.build(&project, &git_dir)?;
-        std::fs::remove_dir_all(&git_dir)?;
+        self.build_rm(&project, &git_dir)?;
         Ok(())
     }
-    fn list(&self, pkg_name: Option<String>) -> Result<(), Self::ErrorI> {
+    fn list(&self, prj_name: Option<String>) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;
         let project_store = Self::Store::new()?;
-        match pkg_name {
+        match prj_name {
             Some(pkg) => {
                 let project = project_store
                     .get_ref(&pkg)
@@ -67,10 +65,10 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         }
         Ok(())
     }
-    fn inter_update(&self, pkg_name: Option<String>, force: bool) -> Result<(), Self::ErrorI> {
+    fn inter_update(&self, prj_name: Option<String>, force: bool) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;
         let project_store = Self::Store::new()?;
-        match pkg_name {
+        match prj_name {
             Some(package) => {
                 project_store
                     .get_ref(&package)
