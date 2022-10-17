@@ -9,9 +9,10 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum PMError {
     #[error(
-        "Had an error on a Git operation with error:
+        "Had an error on a Git operation
 {0}
-Use the command `amisgitpm cleanup` and try again."
+If you fix the issue try the command
+`amisgitpm rebuild {{project_name}} --from_git`"
     )]
     Git(#[from] git2::Error),
     #[error(
@@ -60,7 +61,9 @@ Then rebuild with `amisgitpm rebuild {0}`",
     Exec(String, ScriptType),
     #[error(
         "Update couldn't be solved by a fast forward.
-Solve the git status in {0} and then run `amisgitpm rebuild {1} --from-git"
+Solve the git problems in {0} and then run `amisgitpm rebuild {1} --from-git"
     )]
     ImposibleUpdate(PathBuf, String),
+    #[error("Couldn't find a reference to a non detached HEAD")]
+    BadRef,
 }

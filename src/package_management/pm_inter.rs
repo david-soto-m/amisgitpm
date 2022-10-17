@@ -14,7 +14,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         + From<<Self as PackageManagementBase>::Error>;
     fn inter_install(&self, url: &str) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;
-        let store = Self::Store::new()?;
+        let mut store = Self::Store::new()?;
         let sugg = url
             .split('/')
             .last()
@@ -35,6 +35,7 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         proj_stub.ref_string = ref_name;
         self.switch_branch(&proj_stub, &repo)?;
         let project = inter.create_project(&git_dir, &proj_stub, &store)?;
+        store.add(project.clone())?;
         self.build_rm(&project, &git_dir)?;
         Ok(())
     }

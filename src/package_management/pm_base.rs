@@ -37,10 +37,11 @@ where
     fn switch_branch(&self, prj: &Project, repo: &Repository) -> Result<(), Self::Error> {
         let (obj, refe) = repo.revparse_ext(&prj.ref_string)?;
         repo.checkout_tree(&obj, None)?;
-        match refe {
-            Some(gref) => repo.set_head(gref.name().unwrap()),
-            None => repo.set_head_detached(obj.id()),
-        }?;
+        if let Some(gref) =  refe {
+            repo.set_head(gref.name().unwrap())?;
+        }else {
+            Err(CommonError::BadRef)?;
+        }
         Ok(())
     }
     fn build_rm(&self, prj: &Project, path: &Path) -> Result<(), Self::Error> {
