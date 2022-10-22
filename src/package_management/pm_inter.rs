@@ -11,8 +11,15 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         + From<std::io::Error>
         + From<CommonError>
         + From<<Self::Interact as Interactions>::Error>
+        + From<<Self as PackageManagementCore>::ErrorC>
         + From<<Self as PackageManagementBase>::Error>;
     fn inter_install(&self, url: &str) -> Result<(), Self::ErrorI> {
+        let url = if url.ends_with('/') {
+            let (a, _) = url.rsplit_once('/').unwrap();
+            a
+        } else {
+            url
+        };
         let inter = Self::Interact::new()?;
         let mut store = Self::Store::new()?;
         let sugg = url
@@ -29,7 +36,6 @@ pub trait PackageManagementInteractive: PackageManagementCore {
             dir: sugg,
             ..Default::default()
         };
-
         let (repo, git_dir) = self.download(&proj_stub)?;
         let ref_name = inter.refs(&repo)?;
         proj_stub.ref_string = ref_name;
@@ -39,22 +45,21 @@ pub trait PackageManagementInteractive: PackageManagementCore {
         self.build_rm(&project, &git_dir)?;
         Ok(())
     }
-    fn list(&self, prj_name: Option<String>) -> Result<(), Self::ErrorI> {
+    fn list(&self, prj_names: Vec<String>) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;
         let project_store = Self::Store::new()?;
-        match prj_name {
-            Some(pkg) => {
+        if prj_names.is_empty() {
+            inter.list(&project_store)?;
+        } else {
+            prj_names.into_iter().try_for_each(|prj_name| {
                 let project = project_store
-                    .get_ref(&pkg)
+                    .get_ref(&prj_name)
                     .ok_or(CommonError::NonExisting)?;
-                inter.list_one(&pkg, project)?;
-                Ok(())
-            }
-            None => {
-                inter.list(&project_store)?;
-                Ok(())
-            }
+                inter.list_one(project)?;
+                Ok::<_, Self::ErrorI>(())
+            })?;
         }
+        Ok(())
     }
     fn inter_edit(&self, package: &str) -> Result<(), Self::ErrorI> {
         let inter = Self::Interact::new()?;

@@ -97,8 +97,8 @@ pub enum Commands {
     /// Show the list of installed applications and their version
     List {
         #[clap(value_parser)]
-        /// Package from which to get detailed information
-        package: Option<String>,
+        /// Packages from which to get detailed information
+        package: Vec<String>,
     },
 
     /// Install amisgitpm with amisgitpm, check that everything is in place

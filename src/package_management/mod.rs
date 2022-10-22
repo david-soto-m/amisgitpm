@@ -14,14 +14,16 @@ pub use error::{CommonError, PMError};
 pub struct PackageManagerDefault {}
 
 impl PackageManagementBase for PackageManagerDefault {
-    type Store = ProjectTable;
     type Dirs = PMDirsImpl;
     type Error = PMError;
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
-impl PackageManagementCore for PackageManagerDefault {}
+impl PackageManagementCore for PackageManagerDefault {
+    type Store = ProjectTable;
+    type ErrorC = PMError;
+}
 impl PackageManagementExt for PackageManagerDefault {}
 impl PackageManagementInteractive for PackageManagerDefault {
     type Interact = Interactor;

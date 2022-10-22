@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-
-rm .git
+rm -rf .git

@@ -8,7 +8,17 @@ use git2::Repository;
 
 /// A trait whose Defaults are Sane, but bad.
 pub trait PackageManagementCore: PackageManagementBase {
-    fn install(&self, prj: &Project) -> Result<(), Self::Error> {
+    type Store: ProjectStore;
+    type ErrorC: std::error::Error
+        + From<Self::Error>
+        + From<CommonError>
+        + From<<Self::Store as ProjectStore>::Error>
+        + From<std::io::Error>
+        + From<git2::Error>
+        + From<fs_extra::error::Error>
+        + From<subprocess::PopenError>;
+
+    fn install(&self, prj: &Project) -> Result<(), Self::ErrorC> {
         let mut project_store = Self::Store::new()?;
         if !project_store.check_unique(&prj.name, &prj.dir) {
             Err(CommonError::AlreadyExisting)?;
@@ -19,7 +29,7 @@ pub trait PackageManagementCore: PackageManagementBase {
         self.build_rm(prj, &git_dir)?;
         Ok(())
     }
-    fn uninstall(&self, prj_name: &str) -> Result<(), Self::Error> {
+    fn uninstall(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
         let dirs = Self::Dirs::new();
         let mut project_store = Self::Store::new()?;
         let project = project_store
@@ -35,7 +45,7 @@ pub trait PackageManagementCore: PackageManagementBase {
         project_store.remove(prj_name)?;
         Ok(())
     }
-    fn update(&self, prj_name: &str) -> Result<(), Self::Error> {
+    fn update(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
         let dirs = Self::Dirs::new();
         let prj = Self::Store::new()?
             .get_clone(prj_name)
@@ -63,7 +73,7 @@ pub trait PackageManagementCore: PackageManagementBase {
         if analysis.0.is_up_to_date() {
             return Ok(()); // early return
         } else if analysis.0.is_fast_forward() {
-            let mut reference = repo.find_reference(&prj.dir)?;
+            let mut reference = repo.find_reference(&prj.ref_string)?;
             reference.set_target(fetch_commit.id(), "Fast-Forward")?;
             repo.set_head(&prj.ref_string)?;
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
@@ -76,23 +86,8 @@ pub trait PackageManagementCore: PackageManagementBase {
         self.build_rm(&prj, &git_dir)?;
         Ok(())
     }
-    //     let fetch_head = repo.find_reference("FETCH_HEAD")?;
-    //     let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
-    //     let analysis = repo.merge_analysis(&[&fetch_commit])?;
-    //     if analysis.0.is_up_to_date() {
-    //         Ok(())
-    //     } else if analysis.0.is_fast_forward() {
-    //         let refname = format!("refs/heads/{}", self.branch);
-    //         let mut reference = repo.find_reference(&refname)?;
-    //         reference.set_target(fetch_commit.id(), "Fast-Forward")?;
-    //         repo.set_head(&refname)?;
-    //         repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
-    //     } else {
-    //         Err(Error::from_str("Fast-forward only!"))
-    //     }
-    // }
 
-    fn restore(&self, prj_name: &str) -> Result<(), Self::Error> {
+    fn restore(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
         let dirs = Self::Dirs::new();
         let project = Self::Store::new()?
             .get_clone(prj_name)
@@ -110,12 +105,12 @@ pub trait PackageManagementCore: PackageManagementBase {
         Ok(())
     }
 
-    fn edit(&self, prj_name: &str, prj: Project) -> Result<(), Self::Error> {
+    fn edit(&self, prj_name: &str, prj: Project) -> Result<(), Self::ErrorC> {
         Self::Store::new()?.edit(prj_name, prj)?;
         Ok(())
     }
 
-    fn cleanup(&self) -> Result<(), Self::Error> {
+    fn cleanup(&self) -> Result<(), Self::ErrorC> {
         let dirs = Self::Dirs::new();
         let project_store = Self::Store::new()?;
         let new_dir = dirs.git_dirs();
@@ -154,10 +149,16 @@ pub trait PackageManagementCore: PackageManagementBase {
 
 #[cfg(test)]
 mod tests {
-    use crate::package_management::{
-        CommonError, PMError, PackageManagementCore, PackageManagerDefault,
+    use crate::{
+        dirutils::PMDirs,
+        package_management::{
+            CommonError, PMError, PackageManagementBase, PackageManagementCore,
+            PackageManagerDefault,
+        },
+        projects::{Project, UpdatePolicy},
     };
-    use crate::projects::{Project, UpdatePolicy};
+    use std::{fs::canonicalize, io::prelude::*, path::PathBuf};
+    use subprocess::Exec;
     #[test]
     fn install_uninstall_project() {
         let pm = PackageManagerDefault {};
@@ -178,12 +179,76 @@ mod tests {
             .exists());
         assert!(
             if let Err(PMError::Commons(CommonError::AlreadyExisting)) = pm.install(&prj) {
-                pm.cleanup().unwrap();
                 true
             } else {
                 false
             }
         );
         pm.uninstall(&prj.name).unwrap();
+    }
+    #[test]
+    fn updates() {
+        let dir = canonicalize(PathBuf::from(".").join("tests/projects/git_upd")).unwrap();
+        assert_eq!(
+            Exec::shell("bash 0_start.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        let mut url: String = "file://".into();
+        url.push_str(&dir.to_str().unwrap());
+        let prj = Project {
+            name: "git_upd".into(),
+            dir: "git_upd".into(),
+            url,
+            ref_string: "refs/heads/main".into(),
+            update_policy: UpdatePolicy::Always,
+            install_script: vec![],
+            uninstall_script: vec![],
+        };
+        let pm = PackageManagerDefault::new().unwrap();
+        let a = <PackageManagerDefault as PackageManagementBase>::Dirs::new();
+        pm.install(&prj).unwrap();
+        let mut epoch = String::new();
+        std::fs::File::open(dir.join("dates.txt"))
+            .unwrap()
+            .read_to_string(&mut epoch)
+            .unwrap();
+        let epoch = epoch.trim().parse::<i64>().unwrap();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        assert_eq!(
+            Exec::shell("bash 1_update.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        let mut epoch2 = String::new();
+        std::fs::File::open(dir.join("dates.txt"))
+            .unwrap()
+            .read_to_string(&mut epoch2)
+            .unwrap();
+        let epoch2 = epoch2.trim().parse::<i64>().unwrap();
+        assert!(epoch2 > epoch);
+        pm.update("git_upd").unwrap();
+        let mut epoch2 = String::new();
+        std::fs::File::open(a.src_dirs().join("git_upd").join("dates.txt"))
+            .unwrap()
+            .read_to_string(&mut epoch2)
+            .unwrap();
+        let epoch2 = epoch2.trim().parse::<i64>().unwrap();
+        assert!(epoch2 > epoch);
+        assert_eq!(
+            Exec::shell("bash 2_finish.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        pm.uninstall("git_upd").unwrap();
     }
 }

@@ -223,14 +223,16 @@ commands you might want to do something like this `command-to-detach & cd .`",
             "Reference",
             "Update policy"
         ]);
+        if store.is_empty() {
+            return Ok(());
+        }
         store.iter().for_each(|e| {
             show_table.add_row(row![e.name, e.dir, e.url, e.ref_string, e.update_policy]);
         });
         println!("{show_table}");
         Ok(())
     }
-    fn list_one(&self, prj_name: &str, prj: &Project) -> Result<(), Self::Error> {
-        println!("Name: {prj_name}");
+    fn list_one(&self, prj: &Project) -> Result<(), Self::Error> {
         println!("{:#?}", prj);
         Ok(())
     }

@@ -1,8 +1,4 @@
-use crate::{
-    dirutils::PMDirs,
-    package_management::CommonError,
-    projects::{Project, ProjectStore},
-};
+use crate::{dirutils::PMDirs, package_management::CommonError, projects::Project};
 use fs_extra::dir::{self, CopyOptions};
 use git2::Repository;
 use std::path::{Path, PathBuf};
@@ -17,10 +13,8 @@ pub trait PackageManagementBase
 where
     Self: Sized,
 {
-    type Store: ProjectStore;
     type Dirs: PMDirs;
     type Error: std::error::Error
-        + From<<Self::Store as ProjectStore>::Error>
         + From<CommonError>
         + From<git2::Error>
         + From<std::io::Error>
@@ -37,9 +31,9 @@ where
     fn switch_branch(&self, prj: &Project, repo: &Repository) -> Result<(), Self::Error> {
         let (obj, refe) = repo.revparse_ext(&prj.ref_string)?;
         repo.checkout_tree(&obj, None)?;
-        if let Some(gref) =  refe {
+        if let Some(gref) = refe {
             repo.set_head(gref.name().unwrap())?;
-        }else {
+        } else {
             Err(CommonError::BadRef)?;
         }
         Ok(())
@@ -52,6 +46,10 @@ where
             copy_inside: true,
             ..Default::default()
         };
+        if src_dir.exists() {
+            std::fs::remove_dir_all(&src_dir)?;
+        }
+        // We copy rather than rename due to the
         dir::copy(&path, &src_dir, &opts)?;
         std::fs::remove_dir_all(&path)?;
         self.script_runner(prj, ScriptType::IScript)?;

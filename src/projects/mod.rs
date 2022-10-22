@@ -90,6 +90,8 @@ where
     }
     /// Return an iterator over refereneces of Project Items
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a>;
+    /// Check if there are elements in the store
+    fn is_empty(&self) -> bool;
 }
 
 /// A struct that implements the ProjectStore using a json_tables::Table
@@ -151,5 +153,8 @@ impl ProjectStore for ProjectTable {
     }
     fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a> {
         Box::new(self.table.get_table_content().map(|e| &e.info))
+    }
+    fn is_empty(&self) -> bool {
+        self.table.is_empty()
     }
 }
