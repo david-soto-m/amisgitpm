@@ -52,18 +52,17 @@ pub enum Commands {
         force: bool,
     },
 
-    /// Get the last version of the package
-    Restore {
-        #[clap(value_parser)]
-        /// An optional package name to update independently.
-        /// If not provided all packages are updated
-        package: String,
-    },
-
     /// Uninstall a package
     Uninstall {
         #[clap(value_parser)]
         /// The package name to uninstall
+        package: Vec<String>,
+    },
+
+    /// Get the last version of the package
+    Restore {
+        #[clap(value_parser)]
+        /// The package to downgrade
         package: String,
     },
 

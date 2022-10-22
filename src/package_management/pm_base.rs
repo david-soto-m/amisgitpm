@@ -49,7 +49,8 @@ where
         if src_dir.exists() {
             std::fs::remove_dir_all(&src_dir)?;
         }
-        // We copy rather than rename due to the
+        // We copy rather than rename due to the platform specific behavior of
+        // std::fs::rename
         dir::copy(&path, &src_dir, &opts)?;
         std::fs::remove_dir_all(&path)?;
         self.script_runner(prj, ScriptType::IScript)?;
@@ -62,8 +63,7 @@ where
             ScriptType::IScript => prj.install_script.join("&&"),
             ScriptType::UnIScript => prj.uninstall_script.join("&&"),
         };
-        std::env::set_current_dir(&src_dir)?;
-        if !Exec::shell(script).join()?.success() {
+        if !Exec::shell(script).cwd(&src_dir).join()?.success() {
             Err(CommonError::Exec(prj.name.to_string(), scr_run))?
         } else {
             Ok(())
