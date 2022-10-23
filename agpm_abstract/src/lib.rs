@@ -6,5 +6,5 @@ mod project;
 pub use project::{Project, ProjectStore, UpdatePolicy};
 mod dirs;
 pub use dirs::PMDirs;
-mod package_manager;
-pub use package_manager::*;
+mod pm;
+pub use pm::*;

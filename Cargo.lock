@@ -6,10 +6,8 @@ version = 3
 name = "agpm_abstract"
 version = "0.1.0"
 dependencies = [
- "fs_extra",
  "git2",
  "serde",
- "subprocess",
 ]
 
 [[package]]

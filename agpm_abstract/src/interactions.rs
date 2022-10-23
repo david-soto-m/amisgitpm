@@ -3,13 +3,6 @@ use crate::{Project, ProjectStore, UpdatePolicy};
 use git2::Repository;
 use std::path::Path;
 
-/*
-"Now we are trying to establish build instructions. To help with that we have
-compiled some suggestions. These come from previous knowledge about build
-systems or the README.md file. Assume the commands you leave will start
-executing in the root directory of the project."
-*/
-
 pub trait Interactions
 where
     Self: Sized,
