@@ -5,7 +5,7 @@ use amisgitpm::{
     interaction::Interactor,
     dirutils::PMDirsImpl};
 use clap::Parser;
-use agpm_pm_impl::ProjectManager;
+use agpm_pm::ProjectManager;
 use agpm_abstract::*;
 
 fn main() {

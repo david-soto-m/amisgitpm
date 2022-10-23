@@ -11,7 +11,7 @@ description = "A package manager for git repos"
 [workspace]
 members = [
     "agpm_abstract",
-    "agpm_pm_impl"
+    "agpm_pm"
 ]
 
 
@@ -40,7 +40,7 @@ fs_extra = "^1.2"
 thiserror = "1.0.37"
 console = "0.15.2"
 agpm_abstract = {path = "agpm_abstract", features = ["serde"] }
-agpm_pm_impl = {path = "agpm_pm_impl"}
+agpm_pm = {path = "agpm_pm"}
 
 
 [build-dependencies]

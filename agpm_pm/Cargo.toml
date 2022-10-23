@@ -1,5 +1,5 @@
 [package]
-name = "agpm_pm_impl"
+name = "agpm_pm"
 version = "0.1.0"
 edition = "2021"
 

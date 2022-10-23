@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "agpm_pm_impl"
+name = "agpm_pm"
 version = "0.1.0"
 dependencies = [
  "agpm_abstract",
@@ -37,7 +37,7 @@ name = "amisgitpm"
 version = "0.1.0"
 dependencies = [
  "agpm_abstract",
- "agpm_pm_impl",
+ "agpm_pm",
  "clap 4.0.18",
  "console",
  "dialoguer",
