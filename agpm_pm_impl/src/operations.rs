@@ -1,28 +1,24 @@
-use super::{CommonError, ScriptType};
+use crate::{PMError, ProjectManager};
+use agpm_abstract::*;
 use fs_extra::dir::{self, CopyOptions};
 use git2::Repository;
+use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use subprocess::Exec;
 
-use crate::{PMDirs, Project};
-
-pub trait PMOperations
-where
-    Self: Sized,
-{
-    type Dirs: PMDirs;
-    type Error: std::error::Error
-        + From<<Self::Dirs as PMDirs>::Error>
-        + From<CommonError>
-        + From<git2::Error>
-        + From<std::io::Error>
-        + From<fs_extra::error::Error>
-        + From<subprocess::PopenError>;
-
-    fn new() -> Result<Self, Self::Error>;
+impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManager<D, PS, I> {
+    type Dirs = D;
+    type Error = PMError<I::Error, PS::Error, D::Error>;
+    fn new() -> Result<Self, Self::Error> {
+        let dirs = D::new().map_err(Self::Error::Dirs)?;
+        Ok(Self {
+            dirs,
+            store: PS::new().map_err(Self::Error::Store)?,
+            inter_data: PhantomData::default(),
+        })
+    }
     fn download(&self, prj: &Project) -> Result<(Repository, PathBuf), Self::Error> {
-        let dirs = Self::Dirs::new()?;
-        let git_dir = dirs.git_dirs().join(&prj.dir);
+        let git_dir = self.dirs.git_dirs().join(&prj.dir);
         let repo = Repository::clone(&prj.url, &git_dir)?;
         Ok((repo, git_dir))
     }
@@ -32,13 +28,12 @@ where
         if let Some(gref) = refe {
             repo.set_head(gref.name().unwrap())?;
         } else {
-            Err(CommonError::BadRef)?;
+            Err(Self::Error::BadRef)?;
         }
         Ok(())
     }
     fn build_rm(&self, prj: &Project, path: &Path) -> Result<(), Self::Error> {
-        let dirs = Self::Dirs::new()?;
-        let src_dir = dirs.src_dirs().join(&prj.dir);
+        let src_dir = self.dirs.src_dirs().join(&prj.dir);
         let opts = CopyOptions {
             overwrite: true,
             copy_inside: true,
@@ -55,14 +50,13 @@ where
         Ok(())
     }
     fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), Self::Error> {
-        let dirs = Self::Dirs::new()?;
-        let src_dir = dirs.src_dirs().join(&prj.dir);
+        let src_dir = self.dirs.src_dirs().join(&prj.dir);
         let script = match scr_run {
             ScriptType::IScript => prj.install_script.join("&&"),
             ScriptType::UnIScript => prj.uninstall_script.join("&&"),
         };
         if !Exec::shell(script).cwd(&src_dir).join()?.success() {
-            Err(CommonError::Exec(prj.name.to_string(), scr_run))?
+            Err(Self::Error::Exec(prj.name.to_string(), scr_run))?
         } else {
             Ok(())
         }

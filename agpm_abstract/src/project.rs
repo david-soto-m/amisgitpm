@@ -57,7 +57,7 @@ where
     Self: Sized,
 {
     /// Your custom Error type
-    type Error: std::error::Error;
+    type Error: std::error::Error + 'static;
     /// A function to start up your store
     fn new() -> Result<Self, Self::Error>;
     /// Add an item to the store

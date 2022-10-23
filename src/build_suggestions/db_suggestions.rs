@@ -1,5 +1,5 @@
 use crate::{build_suggestions::SuggestionsError, dirutils::PMDirsImpl};
-use amisgitpm_types_traits::PMDirs;
+use agpm_abstract::PMDirs;
 use glob;
 use json_tables::Table;
 use serde::{Deserialize, Serialize};

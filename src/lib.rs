@@ -11,15 +11,12 @@ pub mod args;
 pub mod build_suggestions;
 pub mod dirutils;
 pub mod interaction;
-pub mod package_management;
 pub mod projects;
-use crate::{
-    args::{Cli, Commands},
-    package_management::PackageManagerDefault,
-};
-use amisgitpm_types_traits::{PMBasics, PMExtended, PMInteractive};
+use crate::
+    args::{Cli, Commands};
+use agpm_abstract::{PMBasics, PMExtended, PMInteractive};
 
-pub fn matcher(args: Cli, pm: PackageManagerDefault) {
+pub fn matcher(args: Cli,pm: &mut (impl PMBasics + PMExtended + PMInteractive)) {
     match args.com {
         Commands::Install { url } => pm.inter_install(&url),
         Commands::Uninstall { package } => pm.uninstall(&package),

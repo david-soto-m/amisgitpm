@@ -15,7 +15,7 @@ where
     Self: Sized,
 {
     type Suggester: Suggester;
-    type Error: std::error::Error + From<git2::Error> + From<<Self::Suggester as Suggester>::Error>;
+    type Error: std::error::Error + 'static;
     fn new() -> Result<Self, Self::Error>;
 
     fn refs(&self, repo: &Repository) -> Result<String, Self::Error>;

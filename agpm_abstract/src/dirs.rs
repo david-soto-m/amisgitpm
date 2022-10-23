@@ -4,7 +4,7 @@ pub trait PMDirs
 where
     Self: Sized,
 {
-    type Error: std::error::Error;
+    type Error: std::error::Error + 'static;
     /// new the object that implements this trait
     fn new() -> Result<Self, Self::Error>;
     /// where to look path for a suggestions db.

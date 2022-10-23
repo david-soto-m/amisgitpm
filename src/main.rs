@@ -1,8 +1,15 @@
-use amisgitpm::{args::Cli, matcher, package_management::PackageManagerDefault};
+use amisgitpm::{
+    args::Cli,
+    matcher,
+    projects::ProjectTable,
+    interaction::Interactor,
+    dirutils::PMDirsImpl};
 use clap::Parser;
+use agpm_pm_impl::ProjectManager;
+use agpm_abstract::*;
 
 fn main() {
     let args = Cli::parse();
-    let pm = PackageManagerDefault {};
-    matcher(args, pm);
+    let mut pm = ProjectManager::<PMDirsImpl, ProjectTable, Interactor>::new().unwrap();
+    matcher(args, &mut pm);
 }

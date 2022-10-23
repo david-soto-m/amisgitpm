@@ -10,7 +10,8 @@ description = "A package manager for git repos"
 
 [workspace]
 members = [
-    "amisgitpm_types_traits"
+    "agpm_abstract",
+    "agpm_pm_impl"
 ]
 
 
@@ -38,7 +39,8 @@ prettytable-rs = {version = "^0.9", default-features = false}
 fs_extra = "^1.2"
 thiserror = "1.0.37"
 console = "0.15.2"
-amisgitpm_types_traits = {path = "amisgitpm_types_traits", features = ["serde"] }
+agpm_abstract = {path = "agpm_abstract", features = ["serde"] }
+agpm_pm_impl = {path = "agpm_pm_impl"}
 
 
 [build-dependencies]

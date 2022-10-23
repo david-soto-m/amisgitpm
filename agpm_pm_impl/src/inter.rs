@@ -1,22 +1,16 @@
-use crate::*;
-pub trait PMInteractive: PMBasics {
-    type Interact: Interactions;
-    type ErrorI: std::error::Error
-        + From<<Self::Store as ProjectStore>::Error>
-        + From<std::io::Error>
-        + From<CommonError>
-        + From<<Self::Interact as Interactions>::Error>
-        + From<<Self as PMBasics>::ErrorC>
-        + From<<Self as PMOperations>::Error>;
-    fn inter_install(&self, url: &str) -> Result<(), Self::ErrorI> {
+use crate::ProjectManager;
+use agpm_abstract::*;
+
+impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMInteractive for ProjectManager<D, PS, I> {
+    type Interact = I;
+    fn inter_install(&mut self, url: &str) -> Result<(), Self::Error> {
         let url = if url.ends_with('/') {
             let (a, _) = url.rsplit_once('/').unwrap();
             a
         } else {
             url
         };
-        let inter = Self::Interact::new()?;
-        let mut store = Self::Store::new()?;
+        let inter = Self::Interact::new().map_err(Self::Error::Interact)?;
         let sugg = url
             .split('/')
             .last()
@@ -32,53 +26,50 @@ pub trait PMInteractive: PMBasics {
             ..Default::default()
         };
         let (repo, git_dir) = self.download(&proj_stub)?;
-        let ref_name = inter.refs(&repo)?;
+        let ref_name = inter.refs(&repo).map_err(Self::Error::Interact)?;
         proj_stub.ref_string = ref_name;
         self.switch_branch(&proj_stub, &repo)?;
-        let project = inter.create_project(&git_dir, &proj_stub, &store)?;
-        store.add(project.clone())?;
+        let project = inter.create_project(&git_dir, &proj_stub, &self.store).map_err(Self::Error::Interact)?;
+        self.store.add(project.clone()).map_err(Self::Error::Store)?;
         self.build_rm(&project, &git_dir)?;
         Ok(())
     }
-    fn list(&self, prj_names: Vec<String>) -> Result<(), Self::ErrorI> {
-        let inter = Self::Interact::new()?;
-        let project_store = Self::Store::new()?;
+    fn list(&self, prj_names: Vec<String>) -> Result<(), Self::Error> {
+        let inter = Self::Interact::new().map_err(Self::Error::Interact)?;
         if prj_names.is_empty() {
-            inter.list(&project_store)?;
+            inter.list(&self.store).map_err(Self::Error::Interact)?;
         } else {
             prj_names.into_iter().try_for_each(|prj_name| {
-                let project = project_store
+                let project = self.store
                     .get_ref(&prj_name)
-                    .ok_or(CommonError::NonExisting)?;
-                inter.list_one(project)?;
-                Ok::<_, Self::ErrorI>(())
+                    .ok_or(Self::Error::NonExisting)?;
+                inter.list_one(project).map_err(Self::Error::Interact)?;
+                Ok::<_,Self::Error>(())
             })?;
         }
         Ok(())
     }
-    fn inter_edit(&self, package: &str) -> Result<(), Self::ErrorI> {
-        let inter = Self::Interact::new()?;
-        let project_store = Self::Store::new()?;
-        if let Some(element) = project_store.get_clone(package) {
+    fn inter_edit(&mut self, package: &str) -> Result<(), Self::Error> {
+        let inter = Self::Interact::new().map_err(Self::Error::Interact)?;
+        if let Some(element) = self.store.get_clone(package) {
             let old_name = element.name.clone();
-            let prj = inter.edit(element)?;
+            let prj = inter.edit(element).map_err(Self::Error::Interact)?;
             self.edit(&old_name, prj)?;
         }
         Ok(())
     }
-    fn inter_update(&self, prj_name: Option<String>, force: bool) -> Result<(), Self::ErrorI> {
-        let inter = Self::Interact::new()?;
-        let project_store = Self::Store::new()?;
+    fn inter_update(&self, prj_name: Option<String>, force: bool) -> Result<(), Self::Error> {
+        let inter = Self::Interact::new().map_err(Self::Error::Interact)?;
         match prj_name {
             Some(package) => {
-                project_store
+                self.store
                     .get_ref(&package)
-                    .ok_or(CommonError::NonExisting)?;
+                    .ok_or(Self::Error::NonExisting)?;
                 self.update(&package)?;
                 Ok(())
             }
             None => {
-                project_store
+                self.store
                     .iter()
                     .filter(|e| match e.update_policy {
                         UpdatePolicy::Always => true,

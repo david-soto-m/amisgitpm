@@ -3,7 +3,7 @@
 //! how installed projects are stored and internally queried.
 
 use crate::dirutils::PMDirsImpl;
-use amisgitpm_types_traits::{PMDirs, Project, ProjectStore};
+use agpm_abstract::{PMDirs, Project, ProjectStore};
 use json_tables::{Table, TableError};
 mod error;
 pub use error::ProjectStoreError;

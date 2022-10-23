@@ -1,55 +1,43 @@
+use crate::ProjectManager;
+use agpm_abstract::*;
 use fs_extra::dir::{self, CopyOptions};
 use git2::Repository;
-use crate::{ProjectStore,Project, PMDirs, PMOperations, CommonError, ScriptType};
 
-/// A trait whose Defaults are Sane, but bad.
-pub trait PMBasics: PMOperations {
-    type Store: ProjectStore;
-    type ErrorC: std::error::Error
-        + From<Self::Error>
-        + From<CommonError>
-        + From<<Self::Store as ProjectStore>::Error>
-        + From<<Self::Dirs as PMDirs>::Error>
-        + From<std::io::Error>
-        + From<git2::Error>
-        + From<fs_extra::error::Error>
-        + From<subprocess::PopenError>;
-
-    fn install(&self, prj: &Project) -> Result<(), Self::ErrorC> {
-        let mut project_store = Self::Store::new()?;
-        if !project_store.check_unique(&prj.name, &prj.dir) {
-            Err(CommonError::AlreadyExisting)?;
+impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMBasics for ProjectManager<D, PS, I> {
+    type Store = PS;
+    fn install(&mut self, prj: &Project) -> Result<(), Self::Error> {
+        if !self.store.check_unique(&prj.name, &prj.dir) {
+            Err(Self::Error::AlreadyExisting)?;
         }
         let (repo, git_dir) = self.download(prj)?;
         self.switch_branch(prj, &repo)?;
-        project_store.add(prj.clone())?;
+        self.store.add(prj.clone()).map_err(Self::Error::Store)?;
         self.build_rm(prj, &git_dir)?;
         Ok(())
     }
-    fn uninstall(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
-        let dirs = Self::Dirs::new()?;
-        let mut project_store = Self::Store::new()?;
-        let project = project_store
+    fn uninstall(&mut self, prj_name: &str) -> Result<(), Self::Error> {
+        let project = self
+            .store
             .get_ref(prj_name)
-            .ok_or(CommonError::NonExisting)?;
+            .ok_or(Self::Error::NonExisting)?;
         self.script_runner(project, ScriptType::UnIScript)?;
-        let src_dir = dirs.src_dirs().join(&project.dir);
+        let src_dir = self.dirs.src_dirs().join(&project.dir);
         std::fs::remove_dir_all(src_dir)?;
-        let old_dir = dirs.old_dirs().join(&project.dir);
+        let old_dir = self.dirs.old_dirs().join(&project.dir);
         if old_dir.exists() {
             std::fs::remove_dir_all(old_dir)?;
         }
-        project_store.remove(prj_name)?;
+        self.store.remove(prj_name).map_err(Self::Error::Store)?;
         Ok(())
     }
-    fn update(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
-        let dirs = Self::Dirs::new()?;
-        let prj = Self::Store::new()?
-            .get_clone(prj_name)
-            .ok_or(CommonError::NonExisting)?;
-        let git_dir = dirs.git_dirs().join(&prj.dir);
-        let old_dir = dirs.old_dirs().join(&prj.dir);
-        let src_dir = dirs.src_dirs().join(&prj.dir);
+    fn update(&self, prj_name: &str) -> Result<(), Self::Error> {
+        let prj = self
+            .store
+            .get_ref(prj_name)
+            .ok_or(Self::Error::NonExisting)?;
+        let git_dir = self.dirs.git_dirs().join(&prj.dir);
+        let old_dir = self.dirs.old_dirs().join(&prj.dir);
+        let src_dir = self.dirs.src_dirs().join(&prj.dir);
         let opts = CopyOptions {
             overwrite: true,
             copy_inside: true,
@@ -75,7 +63,7 @@ pub trait PMBasics: PMOperations {
             repo.set_head(&prj.ref_string)?;
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
         } else {
-            Err(CommonError::ImposibleUpdate(
+            Err(Self::Error::ImposibleUpdate(
                 git_dir.clone(),
                 prj.name.clone(),
             ))?;
@@ -84,13 +72,13 @@ pub trait PMBasics: PMOperations {
         Ok(())
     }
 
-    fn restore(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
-        let dirs = Self::Dirs::new()?;
-        let project = Self::Store::new()?
-            .get_clone(prj_name)
-            .ok_or(CommonError::NonExisting)?;
-        let old_dir = dirs.old_dirs().join(&project.dir);
-        let src_dir = dirs.src_dirs().join(&project.dir);
+    fn restore(&self, prj_name: &str) -> Result<(), Self::Error> {
+        let project = self
+            .store
+            .get_ref(prj_name)
+            .ok_or(Self::Error::NonExisting)?;
+        let old_dir = self.dirs.old_dirs().join(&project.dir);
+        let src_dir = self.dirs.src_dirs().join(&project.dir);
         let opts = CopyOptions {
             overwrite: true,
             copy_inside: true,
@@ -102,24 +90,23 @@ pub trait PMBasics: PMOperations {
         Ok(())
     }
 
-    fn edit(&self, prj_name: &str, prj: Project) -> Result<(), Self::ErrorC> {
-        Self::Store::new()?.edit(prj_name, prj)?;
+    fn edit(&mut self, prj_name: &str, prj: Project) -> Result<(), Self::Error> {
+        self.store.edit(prj_name, prj).map_err(Self::Error::Store)?;
         Ok(())
     }
 
-    fn cleanup(&self) -> Result<(), Self::ErrorC> {
-        let dirs = Self::Dirs::new()?;
-        let project_store = Self::Store::new()?;
-        let new_dir = dirs.git_dirs();
+    fn cleanup(&self) -> Result<(), Self::Error> {
+        let new_dir = self.dirs.git_dirs();
         if new_dir.exists() {
             std::fs::remove_dir_all(new_dir)?;
         }
-        let src_dir = dirs.src_dirs();
+        let src_dir = self.dirs.src_dirs();
         if src_dir.exists() {
             std::fs::read_dir(src_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
-                    if project_store
-                        .check_dir_free(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
+                    if self
+                        .store
+                        .check_dir_free(entry.file_name().to_str().ok_or(Self::Error::Os2str)?)
                     {
                         std::fs::remove_dir_all(entry.path())?;
                     }
@@ -127,12 +114,13 @@ pub trait PMBasics: PMOperations {
                 Ok::<(), Self::Error>(())
             })?;
         }
-        let old_dir = dirs.old_dirs();
+        let old_dir = self.dirs.old_dirs();
         if old_dir.exists() {
             std::fs::read_dir(&old_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
-                    if !project_store
-                        .check_dir_free(entry.file_name().to_str().ok_or(CommonError::Os2str)?)
+                    if !self
+                        .store
+                        .check_dir_free(entry.file_name().to_str().ok_or(Self::Error::Os2str)?)
                     {
                         std::fs::remove_dir_all(entry.path())?;
                     }

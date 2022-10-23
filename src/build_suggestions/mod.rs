@@ -12,7 +12,7 @@ mod db_suggestions;
 use db_suggestions::SuggestionsTable;
 mod error;
 mod mdown;
-use amisgitpm_types_traits::Suggester;
+use agpm_abstract::Suggester;
 pub use error::SuggestionsError;
 
 /// A structure that implements the `BuildSuggester` trait

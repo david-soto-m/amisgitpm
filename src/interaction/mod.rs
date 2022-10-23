@@ -1,6 +1,6 @@
 mod error;
 use crate::build_suggestions::BuildSuggestions;
-use amisgitpm_types_traits::{Interactions, Project, ProjectStore, Suggester, UpdatePolicy};
+use agpm_abstract::*;
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 pub use error::InteractError;

@@ -1,16 +1,13 @@
 [package]
-name = "amisgitpm_types_traits"
+name = "agpm_pm_impl"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+agpm_abstract = {path = "../agpm_abstract"}
 git2 = "^0.15"
 thiserror = "^1.0"
 subprocess = "^0.2"
 fs_extra = "^1.2"
-serde = {version = "^1.0", features = ["derive"], optional=true}
-
-[features]
-serde = ["dep:serde"]

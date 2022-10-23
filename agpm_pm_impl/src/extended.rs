@@ -1,28 +1,27 @@
-use crate::*;
+use crate::ProjectManager;
+use agpm_abstract::*;
 
-pub trait PMExtended: PMBasics {
-    fn reinstall(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
-        let prj = Self::Store::new()?
+impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMExtended for ProjectManager<D, PS, I> {
+    fn reinstall(&mut self, prj_name: &str) -> Result<(), Self::Error> {
+        let prj = self
+            .store
             .get_clone(prj_name)
-            .ok_or(CommonError::NonExisting)?;
+            .ok_or(Self::Error::NonExisting)?;
         self.uninstall(prj_name)?;
         self.install(&prj)?;
         Ok(())
     }
 
-    fn rebuild(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
-        let prj = Self::Store::new()?
+    fn rebuild(&self, prj_name: &str) -> Result<(), Self::Error> {
+        let prj = self
+            .store
             .get_clone(prj_name)
-            .ok_or(CommonError::NonExisting)?;
+            .ok_or(Self::Error::NonExisting)?;
         self.script_runner(&prj, ScriptType::IScript)?;
         Ok(())
     }
 
-    fn bootstrap(&self) -> Result<(), Self::ErrorC> {
-        let dirs = Self::Dirs::new()?;
-        std::fs::create_dir_all(dirs.projects_db()).unwrap();
-        std::fs::create_dir_all(dirs.suggestions_db()).unwrap();
-        std::fs::create_dir_all(dirs.src_dirs()).unwrap();
+    fn bootstrap(&mut self) -> Result<(), Self::Error> {
         let prj = Project {
             name: "amisgitpm".into(),
             dir: "amisgitpm".into(),

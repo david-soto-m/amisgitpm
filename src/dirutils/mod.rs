@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 //! Shortcuts to the different recurrent paths
 
-use amisgitpm_types_traits::PMDirs;
+use agpm_abstract::PMDirs;
 use directories::ProjectDirs;
 use std::path::PathBuf;
 use thiserror::Error;
