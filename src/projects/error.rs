@@ -1,3 +1,4 @@
+use crate::dirutils::DirError;
 use json_tables::{TableBuilderError, TableError};
 use thiserror::Error;
 
@@ -11,4 +12,6 @@ pub enum ProjectStoreError {
     /// An error with the table creating process
     #[error(transparent)]
     Create(#[from] TableBuilderError),
+    #[error(transparent)]
+    Dirs(#[from] DirError),
 }

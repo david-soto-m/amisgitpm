@@ -1,25 +1,10 @@
 #![warn(missing_docs)]
 //! Shortcuts to the different recurrent paths
 
+use amisgitpm_types_traits::PMDirs;
 use directories::ProjectDirs;
 use std::path::PathBuf;
-
-/// A trait to standarize the directories that are used in the crate
-pub trait PMDirs {
-    /// new the object that implements this trait
-    fn new() -> Self;
-    /// where to look path for a suggestions db.
-    fn suggestions_db(&self) -> PathBuf;
-    /// where to look path for a projects db.
-    fn projects_db(&self) -> PathBuf;
-    /// Where to store all the projects code that is going to be built
-    fn src_dirs(&self) -> PathBuf;
-    /// Where to do the git operations. It is separated because this way if git
-    /// operations fail you can still have a buildable program
-    fn git_dirs(&self) -> PathBuf;
-    /// Where to store old copies of the projects
-    fn old_dirs(&self) -> PathBuf;
-}
+use thiserror::Error;
 
 /// An implementor for the PMDirs trait, it uses the [directories::ProjectDirs]
 /// type internally
@@ -27,13 +12,17 @@ pub struct PMDirsImpl {
     p_dirs: ProjectDirs,
 }
 
+#[derive(Debug, Error)]
+pub enum DirError {}
+
 impl PMDirs for PMDirsImpl {
+    type Error = DirError;
     /// Creator for the PMDirsImpl object It will **panic** if there is no valid
     /// `$HOME` path or known equivalent in your platform
-    fn new() -> Self {
-        Self {
+    fn new() -> Result<Self, Self::Error> {
+        Ok(Self {
             p_dirs: ProjectDirs::from("org", "amisoft", "amisgitpm").unwrap(),
-        }
+        })
     }
     ///`~/.config/amisgitpm/suggestions` in Linux
     fn suggestions_db(&self) -> PathBuf {

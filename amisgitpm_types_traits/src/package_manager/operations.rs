@@ -1,20 +1,18 @@
-use crate::{dirutils::PMDirs, package_management::CommonError, projects::Project};
+use super::{CommonError, ScriptType};
 use fs_extra::dir::{self, CopyOptions};
 use git2::Repository;
 use std::path::{Path, PathBuf};
 use subprocess::Exec;
-#[derive(Debug)]
-pub enum ScriptType {
-    IScript,
-    UnIScript,
-}
 
-pub trait PackageManagementBase
+use crate::{PMDirs, Project};
+
+pub trait PMOperations
 where
     Self: Sized,
 {
     type Dirs: PMDirs;
     type Error: std::error::Error
+        + From<<Self::Dirs as PMDirs>::Error>
         + From<CommonError>
         + From<git2::Error>
         + From<std::io::Error>
@@ -23,7 +21,7 @@ where
 
     fn new() -> Result<Self, Self::Error>;
     fn download(&self, prj: &Project) -> Result<(Repository, PathBuf), Self::Error> {
-        let dirs = Self::Dirs::new();
+        let dirs = Self::Dirs::new()?;
         let git_dir = dirs.git_dirs().join(&prj.dir);
         let repo = Repository::clone(&prj.url, &git_dir)?;
         Ok((repo, git_dir))
@@ -39,7 +37,7 @@ where
         Ok(())
     }
     fn build_rm(&self, prj: &Project, path: &Path) -> Result<(), Self::Error> {
-        let dirs = Self::Dirs::new();
+        let dirs = Self::Dirs::new()?;
         let src_dir = dirs.src_dirs().join(&prj.dir);
         let opts = CopyOptions {
             overwrite: true,
@@ -57,7 +55,7 @@ where
         Ok(())
     }
     fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), Self::Error> {
-        let dirs = Self::Dirs::new();
+        let dirs = Self::Dirs::new()?;
         let src_dir = dirs.src_dirs().join(&prj.dir);
         let script = match scr_run {
             ScriptType::IScript => prj.install_script.join("&&"),

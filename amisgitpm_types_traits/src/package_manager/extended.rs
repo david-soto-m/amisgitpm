@@ -1,10 +1,6 @@
-use crate::{
-    dirutils::PMDirs,
-    package_management::{CommonError, PackageManagementCore, ScriptType},
-    projects::{Project, ProjectStore, UpdatePolicy},
-};
+use crate::*;
 
-pub trait PackageManagementExt: PackageManagementCore {
+pub trait PMExtended: PMBasics {
     fn reinstall(&self, prj_name: &str) -> Result<(), Self::ErrorC> {
         let prj = Self::Store::new()?
             .get_clone(prj_name)
@@ -23,7 +19,7 @@ pub trait PackageManagementExt: PackageManagementCore {
     }
 
     fn bootstrap(&self) -> Result<(), Self::ErrorC> {
-        let dirs = Self::Dirs::new();
+        let dirs = Self::Dirs::new()?;
         std::fs::create_dir_all(dirs.projects_db()).unwrap();
         std::fs::create_dir_all(dirs.suggestions_db()).unwrap();
         std::fs::create_dir_all(dirs.src_dirs()).unwrap();

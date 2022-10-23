@@ -1,18 +1,13 @@
-use crate::{
-    interaction::Interactions,
-    package_management::{CommonError, PackageManagementBase, PackageManagementCore},
-    projects::{Project, ProjectStore, UpdatePolicy},
-};
-
-pub trait PackageManagementInteractive: PackageManagementCore {
+use crate::*;
+pub trait PMInteractive: PMBasics {
     type Interact: Interactions;
     type ErrorI: std::error::Error
         + From<<Self::Store as ProjectStore>::Error>
         + From<std::io::Error>
         + From<CommonError>
         + From<<Self::Interact as Interactions>::Error>
-        + From<<Self as PackageManagementCore>::ErrorC>
-        + From<<Self as PackageManagementBase>::Error>;
+        + From<<Self as PMBasics>::ErrorC>
+        + From<<Self as PMOperations>::Error>;
     fn inter_install(&self, url: &str) -> Result<(), Self::ErrorI> {
         let url = if url.ends_with('/') {
             let (a, _) = url.rsplit_once('/').unwrap();

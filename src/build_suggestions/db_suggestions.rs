@@ -1,10 +1,9 @@
-use crate::dirutils::{PMDirs, PMDirsImpl};
+use crate::{build_suggestions::SuggestionsError, dirutils::PMDirsImpl};
+use amisgitpm_types_traits::PMDirs;
 use glob;
 use json_tables::Table;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-
-use crate::build_suggestions::SuggestionsError;
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -31,7 +30,7 @@ impl SuggestionsTable {
     /// Get the table of pre-made suggestions for compilations.
     pub fn new() -> Result<Self, SuggestionsError> {
         Ok(Self {
-            table: Table::builder(PMDirsImpl::new().suggestions_db())
+            table: Table::builder(PMDirsImpl::new()?.suggestions_db())
                 .set_read_only()
                 .load()?,
         })

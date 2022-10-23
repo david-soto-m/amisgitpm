@@ -12,6 +12,7 @@ mod db_suggestions;
 use db_suggestions::SuggestionsTable;
 mod error;
 mod mdown;
+use amisgitpm_types_traits::Suggester;
 pub use error::SuggestionsError;
 
 /// A structure that implements the `BuildSuggester` trait
@@ -20,7 +21,7 @@ pub struct BuildSuggestions {
     uninstall: Vec<Vec<String>>,
 }
 
-impl BuildSuggester for BuildSuggestions {
+impl Suggester for BuildSuggestions {
     type Error = SuggestionsError;
     fn new(path: &Path) -> Result<Self, SuggestionsError> {
         let mut readme: Vec<Vec<String>> = vec![];
@@ -54,19 +55,4 @@ impl BuildSuggester for BuildSuggestions {
     fn get_uninstall(&self) -> &Vec<Vec<String>> {
         &self.uninstall
     }
-}
-
-/// A trait that standardizes how to provide build suggestions for the install process
-pub trait BuildSuggester
-where
-    Self: Sized,
-{
-    /// An error for new operations
-    type Error: std::error::Error;
-    /// The declaration of a new structure that implements the trait
-    fn new(path: &Path) -> Result<Self, Self::Error>;
-    /// Get a reference to a list of install suggestions, these being a list of strings
-    fn get_install(&self) -> &Vec<Vec<String>>;
-    /// Get a reference to a list of uninstall suggestions, these being a list of strings
-    fn get_uninstall(&self) -> &Vec<Vec<String>>;
 }

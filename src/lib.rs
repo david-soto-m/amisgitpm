@@ -15,11 +15,9 @@ pub mod package_management;
 pub mod projects;
 use crate::{
     args::{Cli, Commands},
-    package_management::{
-        PackageManagementCore, PackageManagementExt, PackageManagementInteractive,
-        PackageManagerDefault,
-    },
+    package_management::PackageManagerDefault,
 };
+use amisgitpm_types_traits::{PMBasics, PMExtended, PMInteractive};
 
 pub fn matcher(args: Cli, pm: PackageManagerDefault) {
     match args.com {

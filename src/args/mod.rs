@@ -56,7 +56,7 @@ pub enum Commands {
     Uninstall {
         #[clap(value_parser)]
         /// The package name to uninstall
-        package: Vec<String>,
+        package: String,
     },
 
     /// Get the last version of the package

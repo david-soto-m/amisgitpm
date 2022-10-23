@@ -1,7 +1,7 @@
+use crate::dirutils::DirError;
 use glob::{GlobError, PatternError};
 use json_tables::TableError;
 use thiserror::Error;
-
 #[derive(Error, Debug)]
 /// An error type for the BuildSuggestions struct.
 pub enum SuggestionsError {
@@ -20,6 +20,9 @@ pub enum SuggestionsError {
     /// The path is not utf-8
     #[error("A path is not utf-8 compatible")]
     Path,
+    /// Had a problem loading the directories
+    #[error(transparent)]
+    Dirs(#[from] DirError),
     /// A field to place errors that don't fit in with the other variants when
     /// re-implementing the BuildSuggestions
     #[error("{0}")]

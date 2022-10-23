@@ -1,12 +1,10 @@
 mod error;
-use crate::{
-    build_suggestions::{BuildSuggester, BuildSuggestions},
-    projects::{Project, ProjectStore, UpdatePolicy},
-};
+use crate::build_suggestions::BuildSuggestions;
+use amisgitpm_types_traits::{Interactions, Project, ProjectStore, Suggester, UpdatePolicy};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 pub use error::InteractError;
-use git2::Repository;
+use git2::{BranchType, Repository};
 use prettytable as pt;
 use prettytable::row;
 use serde_json;
@@ -18,23 +16,21 @@ compiled some suggestions. These come from previous knowledge about build
 systems or the README.md file. Assume the commands you leave will start
 executing in the root directory of the project."
 */
+pub struct Interactor {
+    t: Term,
+}
 
-pub trait Interactions
-where
-    Self: Sized,
-{
-    type Suggester: BuildSuggester;
-    type Error: std::error::Error
-        + From<git2::Error>
-        + From<serde_json::Error>
-        + From<std::io::Error>
-        + From<<Self::Suggester as BuildSuggester>::Error>;
-    fn new() -> Result<Self, Self::Error>;
-
+impl Interactions for Interactor {
+    type Suggester = BuildSuggestions;
+    type Error = InteractError;
+    fn new() -> Result<Self, Self::Error> {
+        Ok(Self { t: Term::stdout() })
+    }
     fn refs(&self, repo: &Repository) -> Result<String, Self::Error> {
         let branch_arr: Vec<String> = repo
-            .references()?
-            .filter_map(|res| res.ok())
+            .branches(Some(BranchType::Local))?
+            .filter_map(|br| br.ok())
+            .map(|(br, _)| br.into_reference())
             .filter_map(|el| el.name().map(|name| name.to_string()))
             .collect();
         let branch_idx = Select::new()
@@ -45,14 +41,9 @@ where
         Ok(branch_arr[branch_idx].to_owned())
     }
 
-    fn get_sugg(
-        &self,
-        t: &Term,
-        sug: &Vec<Vec<String>>,
-        info: &str,
-    ) -> Result<Vec<String>, Self::Error> {
+    fn get_sugg(&self, sug: &Vec<Vec<String>>, info: &str) -> Result<Vec<String>, Self::Error> {
         {
-            t.clear_screen()?;
+            self.t.clear_screen()?;
             let sug_len = sug.len() as isize;
             let mut idx: isize = sug_len - 1; // if there are no suggestions idx is -1;
             let mut edit_string = String::new();
@@ -97,12 +88,11 @@ where
 
     fn get_name_or_dir(
         &self,
-        t: &Term,
         sugg: &str,
         prompts: (&str, &str, &str),
         check: impl Fn(&str) -> bool,
     ) -> Result<String, Self::Error> {
-        t.clear_screen()?;
+        self.t.clear_screen()?;
         println!("{}", prompts.0);
         loop {
             let input: Result<String, _> = Input::new()
@@ -124,8 +114,8 @@ where
         }
     }
 
-    fn get_updates(&self, t: &Term) -> Result<UpdatePolicy, Self::Error> {
-        t.clear_screen()?;
+    fn get_updates(&self) -> Result<UpdatePolicy, Self::Error> {
+        self.t.clear_screen()?;
         println!("Now we are trying to get an update policy");
         let update_array = vec![UpdatePolicy::Ask, UpdatePolicy::Always, UpdatePolicy::Never];
         let idx = Select::new().items(&update_array).interact()?;
@@ -137,7 +127,6 @@ where
         prj_stub: &Project,
         store: &impl ProjectStore,
     ) -> Result<Project, Self::Error> {
-        let t = Term::stdout();
         let sugg_name = prj_stub
             .url
             .split('/')
@@ -149,7 +138,6 @@ where
                     .map_or(potential_dir.to_string(), |(dir, _)| dir.to_string())
             });
         let name = self.get_name_or_dir(
-            &t,
             &sugg_name,
             (
                 "What's the name of the project going to be?",
@@ -159,7 +147,6 @@ where
             |a| !store.check_name_free(a),
         )?;
         let dir = self.get_name_or_dir(
-            &t,
             &name,
             (
                 &format!(
@@ -172,10 +159,9 @@ The directory is a name for a folder",
             ),
             |a| !store.check_dir_free(a),
         )?;
-        let update_policy = self.get_updates(&t)?;
+        let update_policy = self.get_updates()?;
         let sugg = Self::Suggester::new(path)?;
         let install_script = self.get_sugg(
-            &t,
             sugg.get_install(),
             "Now we have to establish how to build and install the program.
 Please keep two things in mind:
@@ -184,7 +170,6 @@ Please keep two things in mind:
 commands you might want to do something like this `command-to-detach & cd .`",
         )?;
         let uninstall_script = self.get_sugg(
-            &t,
             sugg.get_uninstall(),
             "Now we have to establish how to uninstall the program.
 You might want to trace:
@@ -241,14 +226,5 @@ commands you might want to do something like this `command-to-detach & cd .`",
             .with_prompt(format!("Would you like to update {}", package_name))
             .interact()?;
         Ok(res)
-    }
-}
-
-pub struct Interactor {}
-impl Interactions for Interactor {
-    type Suggester = BuildSuggestions;
-    type Error = InteractError;
-    fn new() -> Result<Self, Self::Error> {
-        Ok(Self {})
     }
 }
