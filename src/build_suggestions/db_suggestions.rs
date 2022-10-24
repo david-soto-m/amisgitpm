@@ -1,4 +1,5 @@
-use crate::{build_suggestions::SuggestionsError, dirutils::PMDirsImpl};
+use crate::build_suggestions::SuggestionsError;
+use agpm_dirs::PMDirsImpl;
 use agpm_abstract::PMDirs;
 use glob;
 use json_tables::Table;

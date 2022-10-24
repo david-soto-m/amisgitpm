@@ -1,0 +1,11 @@
+[package]
+name = "agpm_dirs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+agpm_abstract = {path = "../agpm_abstract"}
+directories = "^4.0" # config and local and stuff
+thiserror = "^1.0"

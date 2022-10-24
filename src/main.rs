@@ -2,10 +2,10 @@ use amisgitpm::{
     args::Cli,
     matcher,
     projects::ProjectTable,
-    interaction::Interactor,
-    dirutils::PMDirsImpl};
+    interaction::Interactor};
 use clap::Parser;
 use agpm_pm::ProjectManager;
+use agpm_dirs::PMDirsImpl;
 use agpm_abstract::*;
 
 fn main() {

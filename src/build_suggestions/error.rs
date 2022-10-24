@@ -1,4 +1,4 @@
-use crate::dirutils::DirError;
+use agpm_dirs::DirError;
 use glob::{GlobError, PatternError};
 use json_tables::TableError;
 use thiserror::Error;

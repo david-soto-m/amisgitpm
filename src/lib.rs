@@ -9,7 +9,6 @@
 
 pub mod args;
 pub mod build_suggestions;
-pub mod dirutils;
 pub mod interaction;
 pub mod projects;
 use crate::

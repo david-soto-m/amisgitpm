@@ -11,6 +11,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "agpm_dirs"
+version = "0.1.0"
+dependencies = [
+ "agpm_abstract",
+ "directories",
+ "thiserror",
+]
+
+[[package]]
 name = "agpm_pm"
 version = "0.1.0"
 dependencies = [
@@ -35,6 +44,7 @@ name = "amisgitpm"
 version = "0.1.0"
 dependencies = [
  "agpm_abstract",
+ "agpm_dirs",
  "agpm_pm",
  "clap 4.0.18",
  "console",
@@ -49,7 +59,6 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "subprocess",
  "thiserror",
 ]
 

@@ -2,7 +2,7 @@
 //! A module to regulate the information for installed projects and
 //! how installed projects are stored and internally queried.
 
-use crate::dirutils::PMDirsImpl;
+use agpm_dirs::PMDirsImpl;
 use agpm_abstract::{PMDirs, Project, ProjectStore};
 use json_tables::{Table, TableError};
 mod error;

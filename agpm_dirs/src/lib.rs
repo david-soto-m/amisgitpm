@@ -12,9 +12,6 @@ pub struct PMDirsImpl {
     p_dirs: ProjectDirs,
 }
 
-#[derive(Debug, Error)]
-pub enum DirError {}
-
 impl PMDirs for PMDirsImpl {
     type Error = DirError;
     /// Creator for the PMDirsImpl object It will **panic** if there is no valid
@@ -46,3 +43,8 @@ impl PMDirs for PMDirsImpl {
         self.p_dirs.data_local_dir().join("old")
     }
 }
+
+
+/// An error type for the initialization of a PMDirsImpl struct
+#[derive(Debug, Error)]
+pub enum DirError {}
