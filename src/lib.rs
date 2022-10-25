@@ -11,11 +11,10 @@ pub mod args;
 pub mod build_suggestions;
 pub mod interaction;
 pub mod projects;
-use crate::
-    args::{Cli, Commands};
+use crate::args::{Cli, Commands};
 use agpm_abstract::{PMBasics, PMExtended, PMInteractive};
 
-pub fn matcher(args: Cli,pm: &mut (impl PMBasics + PMExtended + PMInteractive)) {
+pub fn matcher(args: Cli, pm: &mut (impl PMBasics + PMExtended + PMInteractive)) {
     match args.com {
         Commands::Install { url } => pm.inter_install(&url),
         Commands::Uninstall { package } => pm.uninstall(&package),

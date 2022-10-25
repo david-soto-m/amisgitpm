@@ -29,8 +29,10 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMInteractive for ProjectMana
         let ref_name = inter.refs(&repo).map_err(Self::Error::Interact)?;
         proj_stub.ref_string = ref_name;
         self.switch_branch(&proj_stub, &repo)?;
-        let project = inter.create_project(&git_dir, &proj_stub, &self.store).map_err(Self::Error::Interact)?;
-        self.store.add(project.clone()).map_err(Self::Error::Store)?;
+        let project = inter
+            .create_project(&git_dir, &proj_stub, &self.store)
+            .map_err(Self::Error::Interact)?;
+        self.store.add(&project).map_err(Self::Error::Store)?;
         self.build_rm(&project, &git_dir)?;
         Ok(())
     }
@@ -40,11 +42,12 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMInteractive for ProjectMana
             inter.list(&self.store).map_err(Self::Error::Interact)?;
         } else {
             prj_names.into_iter().try_for_each(|prj_name| {
-                let project = self.store
+                let project = self
+                    .store
                     .get_ref(&prj_name)
                     .ok_or(Self::Error::NonExisting)?;
                 inter.list_one(project).map_err(Self::Error::Interact)?;
-                Ok::<_,Self::Error>(())
+                Ok::<_, Self::Error>(())
             })?;
         }
         Ok(())

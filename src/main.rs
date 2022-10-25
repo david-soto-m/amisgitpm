@@ -1,12 +1,8 @@
-use amisgitpm::{
-    args::Cli,
-    matcher,
-    projects::ProjectTable,
-    interaction::Interactor};
-use clap::Parser;
-use agpm_pm::ProjectManager;
-use agpm_dirs::PMDirsImpl;
 use agpm_abstract::*;
+use agpm_dirs::PMDirsImpl;
+use agpm_pm::ProjectManager;
+use amisgitpm::{args::Cli, interaction::Interactor, matcher, projects::ProjectTable};
+use clap::Parser;
 
 fn main() {
     let args = Cli::parse();

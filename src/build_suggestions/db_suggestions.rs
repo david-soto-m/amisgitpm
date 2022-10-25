@@ -1,6 +1,6 @@
 use crate::build_suggestions::SuggestionsError;
-use agpm_dirs::PMDirsImpl;
 use agpm_abstract::PMDirs;
+use agpm_dirs::PMDirsImpl;
 use glob;
 use json_tables::Table;
 use serde::{Deserialize, Serialize};

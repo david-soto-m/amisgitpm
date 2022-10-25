@@ -4,32 +4,6 @@ use fs_extra::dir::{self, CopyOptions};
 use git2::Repository;
 
 impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMBasics for ProjectManager<D, PS, I> {
-    type Store = PS;
-    fn install(&mut self, prj: &Project) -> Result<(), Self::Error> {
-        if !self.store.check_unique(&prj.name, &prj.dir) {
-            Err(Self::Error::AlreadyExisting)?;
-        }
-        let (repo, git_dir) = self.download(prj)?;
-        self.switch_branch(prj, &repo)?;
-        self.store.add(prj.clone()).map_err(Self::Error::Store)?;
-        self.build_rm(prj, &git_dir)?;
-        Ok(())
-    }
-    fn uninstall(&mut self, prj_name: &str) -> Result<(), Self::Error> {
-        let project = self
-            .store
-            .get_ref(prj_name)
-            .ok_or(Self::Error::NonExisting)?;
-        self.script_runner(project, ScriptType::UnIScript)?;
-        let src_dir = self.dirs.src_dirs().join(&project.dir);
-        std::fs::remove_dir_all(src_dir)?;
-        let old_dir = self.dirs.old_dirs().join(&project.dir);
-        if old_dir.exists() {
-            std::fs::remove_dir_all(old_dir)?;
-        }
-        self.store.remove(prj_name).map_err(Self::Error::Store)?;
-        Ok(())
-    }
     fn update(&self, prj_name: &str) -> Result<(), Self::Error> {
         let prj = self
             .store
@@ -74,11 +48,10 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMBasics for ProjectManager<D
 
     fn restore(&self, prj_name: &str) -> Result<(), Self::Error> {
         let project = self
-            .store
-            .get_ref(prj_name)
+            .get_ref_from_store(prj_name)
             .ok_or(Self::Error::NonExisting)?;
-        let old_dir = self.dirs.old_dirs().join(&project.dir);
-        let src_dir = self.dirs.src_dirs().join(&project.dir);
+        let old_dir = self.old_dir().join(&project.dir);
+        let src_dir = self.src_dir().join(&project.dir);
         let opts = CopyOptions {
             overwrite: true,
             copy_inside: true,
@@ -87,47 +60,6 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMBasics for ProjectManager<D
         std::fs::remove_dir_all(&src_dir)?;
         dir::copy(&old_dir, &src_dir, &opts)?;
         self.script_runner(&project, ScriptType::IScript)?;
-        Ok(())
-    }
-
-    fn edit(&mut self, prj_name: &str, prj: Project) -> Result<(), Self::Error> {
-        self.store.edit(prj_name, prj).map_err(Self::Error::Store)?;
-        Ok(())
-    }
-
-    fn cleanup(&self) -> Result<(), Self::Error> {
-        let new_dir = self.dirs.git_dirs();
-        if new_dir.exists() {
-            std::fs::remove_dir_all(new_dir)?;
-        }
-        let src_dir = self.dirs.src_dirs();
-        if src_dir.exists() {
-            std::fs::read_dir(src_dir)?.try_for_each(|e| {
-                if let Ok(entry) = e {
-                    if self
-                        .store
-                        .check_dir_free(entry.file_name().to_str().ok_or(Self::Error::Os2str)?)
-                    {
-                        std::fs::remove_dir_all(entry.path())?;
-                    }
-                }
-                Ok::<(), Self::Error>(())
-            })?;
-        }
-        let old_dir = self.dirs.old_dirs();
-        if old_dir.exists() {
-            std::fs::read_dir(&old_dir)?.try_for_each(|e| {
-                if let Ok(entry) = e {
-                    if !self
-                        .store
-                        .check_dir_free(entry.file_name().to_str().ok_or(Self::Error::Os2str)?)
-                    {
-                        std::fs::remove_dir_all(entry.path())?;
-                    }
-                }
-                Ok::<(), Self::Error>(())
-            })?;
-        }
         Ok(())
     }
 }

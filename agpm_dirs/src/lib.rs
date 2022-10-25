@@ -44,7 +44,6 @@ impl PMDirs for PMDirsImpl {
     }
 }
 
-
 /// An error type for the initialization of a PMDirsImpl struct
 #[derive(Debug, Error)]
 pub enum DirError {}

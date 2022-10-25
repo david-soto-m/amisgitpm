@@ -8,7 +8,7 @@ where
     Self: Sized,
 {
     type Suggester: Suggester;
-    type Error: std::error::Error + 'static;
+    type Error: std::error::Error;
     fn new() -> Result<Self, Self::Error>;
 
     fn refs(&self, repo: &Repository) -> Result<String, Self::Error>;

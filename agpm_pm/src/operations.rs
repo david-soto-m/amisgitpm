@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use subprocess::Exec;
 
 impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManager<D, PS, I> {
+    type Store = PS;
     type Dirs = D;
     type Error = PMError<I::Error, PS::Error, D::Error>;
     fn new() -> Result<Self, Self::Error> {
