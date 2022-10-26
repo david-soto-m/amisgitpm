@@ -12,7 +12,7 @@ where
     fn new() -> Result<Self, Self::Error>;
 
     fn refs(&self, repo: &Repository) -> Result<String, Self::Error>;
-    fn get_sugg(&self, sug: &Vec<Vec<String>>, info: &str) -> Result<Vec<String>, Self::Error>;
+    fn get_sugg(&self, sug: &[Vec<String>], info: &str) -> Result<Vec<String>, Self::Error>;
     fn get_name_or_dir(
         &self,
         sugg: &str,

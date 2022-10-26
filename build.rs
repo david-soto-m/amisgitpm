@@ -11,5 +11,5 @@ fn main() {
         let file = file.unwrap();
         println!("{:?}", file.file_name());
         fs::copy(file.path(), sugg_dir.join(file.file_name())).unwrap();
-    })
+    });
 }

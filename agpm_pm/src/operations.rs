@@ -9,7 +9,7 @@ use subprocess::Exec;
 impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManager<D, PS, I> {
     type Store = PS;
     type Dirs = D;
-    type Error = PMError<I::Error, PS::Error, D::Error>;
+    type Error = PMError<D::Error, PS::Error, I::Error>;
     fn new() -> Result<Self, Self::Error> {
         let dirs = D::new().map_err(Self::Error::Dirs)?;
         Ok(Self {
@@ -18,40 +18,32 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
             inter_data: PhantomData::default(),
         })
     }
-    fn download(&self, prj: &Project) -> Result<(Repository, PathBuf), Self::Error> {
-        let git_dir = self.dirs.git_dirs().join(&prj.dir);
-        let repo = Repository::clone(&prj.url, &git_dir)?;
-        Ok((repo, git_dir))
+    fn map_store_error(err: <Self::Store as ProjectStore>::Error)->Self::Error {
+        Self::Error::Store(err)
     }
-    fn switch_branch(&self, prj: &Project, repo: &Repository) -> Result<(), Self::Error> {
-        let (obj, refe) = repo.revparse_ext(&prj.ref_string)?;
-        repo.checkout_tree(&obj, None)?;
-        if let Some(gref) = refe {
-            repo.set_head(gref.name().unwrap())?;
-        } else {
-            Err(Self::Error::BadRef)?;
-        }
-        Ok(())
+    fn map_dir_error(err: <Self::Dirs as PMDirs>::Error)->Self::Error {
+        Self::Error::Dirs(err)
     }
-    fn build_rm(&self, prj: &Project, path: &Path) -> Result<(), Self::Error> {
-        let src_dir = self.dirs.src_dirs().join(&prj.dir);
+    fn get_store(&self) -> &Self::Store {
+        &self.store
+    }
+    fn get_mut_store(&mut self) -> &mut Self::Store {
+        &mut self.store
+    }
+    fn get_dir(&self) -> &Self::Dirs {
+        & self.dirs
+    }
+    fn copy_directory<T: AsRef<Path>, Q: AsRef<Path>>(&self, from: T, to: Q) -> Result<(), Self::Error> {
         let opts = CopyOptions {
             overwrite: true,
             copy_inside: true,
             ..Default::default()
         };
-        if src_dir.exists() {
-            std::fs::remove_dir_all(&src_dir)?;
-        }
-        // We copy rather than rename due to the platform specific behavior of
-        // std::fs::rename
-        dir::copy(&path, &src_dir, &opts)?;
-        std::fs::remove_dir_all(&path)?;
-        self.script_runner(prj, ScriptType::IScript)?;
+        dir::copy(from, to, &opts)?;
         Ok(())
     }
     fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), Self::Error> {
-        let src_dir = self.dirs.src_dirs().join(&prj.dir);
+        let src_dir = self.dirs.src().join(&prj.dir);
         let script = match scr_run {
             ScriptType::IScript => prj.install_script.join("&&"),
             ScriptType::UnIScript => prj.uninstall_script.join("&&"),

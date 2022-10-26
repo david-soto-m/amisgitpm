@@ -1,10 +1,10 @@
-use agpm_abstract::ScriptType;
+use agpm_abstract::{CommonPMErrors, ScriptType};
 use std::path::PathBuf;
 use thiserror::Error;
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
-pub enum PMError<I: std::error::Error, ST: std::error::Error, D: std::error::Error> {
+pub enum PMError<D: std::error::Error, ST: std::error::Error, I: std::error::Error> {
     #[error(
         "Had an error on a Git operation
 {0}
@@ -23,20 +23,13 @@ Try rebuilding the project with `amisgitpm rebuild {{project_name}}`"
     #[error(transparent)]
     IO(#[from] std::io::Error),
     #[error(transparent)]
+    Common(#[from] CommonPMErrors),
+    #[error(transparent)]
     Interact(I),
     #[error(transparent)]
     Store(ST),
     #[error(transparent)]
     Dirs(D),
-    #[error("A project with that name or directory already exists")]
-    AlreadyExisting,
-    #[error(
-        "That project that doesn't exist!
-To list all projects use `amisgitpm list`"
-    )]
-    NonExisting,
-    #[error("Couldn't convert from &Osstr to utf-8 &str")]
-    Os2str,
     #[error("The {} process failed.
 Edit the project config with `amisgitpm edit {0}`
 Then rebuild with `amisgitpm rebuild {0}`",
@@ -47,11 +40,4 @@ Then rebuild with `amisgitpm rebuild {0}`",
 
     )]
     Exec(String, ScriptType),
-    #[error(
-        "Update couldn't be solved by a fast forward.
-Solve the git problems in {0} and then run `amisgitpm rebuild {1} --from-git"
-    )]
-    ImposibleUpdate(PathBuf, String),
-    #[error("Couldn't find a reference to a non detached HEAD")]
-    BadRef,
 }

@@ -41,7 +41,7 @@ impl Interactions for Interactor {
         Ok(branch_arr[branch_idx].to_owned())
     }
 
-    fn get_sugg(&self, sug: &Vec<Vec<String>>, info: &str) -> Result<Vec<String>, Self::Error> {
+    fn get_sugg(&self, sug: &[Vec<String>], info: &str) -> Result<Vec<String>, Self::Error> {
         {
             self.t.clear_screen()?;
             let sug_len = sug.len() as isize;

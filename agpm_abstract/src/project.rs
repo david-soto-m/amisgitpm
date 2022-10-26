@@ -61,15 +61,15 @@ where
     /// A function to start up your store
     fn new() -> Result<Self, Self::Error>;
     /// Add an item to the store
-    fn add(&mut self, prj: &Project) -> Result<(), Self::Error>;
+    fn add(&mut self, prj: Project) -> Result<(), Self::Error>;
     /// Remove an item from the store
     fn remove(&mut self, prj_name: &str) -> Result<(), Self::Error>;
     /// Get a reference to an item inside the store
     fn get_ref<'a>(&'a self, prj_name: &str) -> Option<&'a Project>;
     /// Return a cloned instance of a project in the store
     fn get_clone(&self, prj_name: &str) -> Option<Project>;
-    /// Replace the project that used to go by the old_prj_name name with the new_prj item
-    fn edit(&mut self, old_prj_name: &str, new_prj: &Project) -> Result<(), Self::Error> {
+    /// Replace the project that used to go by the `old_prj_name` name with the `new_prj` item
+    fn edit(&mut self, old_prj_name: &str, new_prj: Project) -> Result<(), Self::Error> {
         self.remove(old_prj_name)?;
         self.add(new_prj)?;
         Ok(())

@@ -30,16 +30,16 @@ impl PMDirs for PMDirsImpl {
         self.p_dirs.config_dir().join("projects")
     }
     /// `~/.local/share/amisgitpm/src` in Linux
-    fn src_dirs(&self) -> PathBuf {
+    fn src(&self) -> PathBuf {
         self.p_dirs.data_local_dir().join("src")
     }
 
     /// `~/.local/share/amisgitpm/git_ops` in Linux
-    fn git_dirs(&self) -> PathBuf {
+    fn git(&self) -> PathBuf {
         self.p_dirs.data_local_dir().join("git_ops")
     }
     ///`~/.local/share/amisgitpm/old` in Linux
-    fn old_dirs(&self) -> PathBuf {
+    fn old(&self) -> PathBuf {
         self.p_dirs.data_local_dir().join("old")
     }
 }
