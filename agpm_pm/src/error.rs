@@ -1,5 +1,4 @@
 use agpm_abstract::{CommonPMErrors, ScriptType};
-use std::path::PathBuf;
 use thiserror::Error;
 
 #[non_exhaustive]

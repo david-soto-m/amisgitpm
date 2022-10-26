@@ -278,7 +278,22 @@ pub trait PMInteractive: PMBasics {
         self.build_rm(&project, &git_dir)?;
         Ok(())
     }
-    fn list(&self, prj_names: Vec<String>) -> Result<(), Self::Error>;
+    fn list(&self, prj_names: Vec<String>) -> Result<(), Self::Error>{
+        let inter = Self::Interact::new().map_err(Self::map_inter_error)?;
+        if prj_names.is_empty() {
+            inter.list(self.get_store()).map_err(Self::map_inter_error)?;
+        } else {
+            prj_names.into_iter().try_for_each(|prj_name| {
+                let project = self
+                    .get_store()
+                    .get_ref(&prj_name)
+                    .ok_or(CommonPMErrors::NonExisting)?;
+                inter.list_one(project).map_err(Self::map_inter_error)?;
+                Ok::<_, Self::Error>(())
+            })?;
+        }
+        Ok(())
+    }
     fn inter_edit(&mut self, package: &str) -> Result<(), Self::Error> {
         let inter = Self::Interact::new().map_err(Self::map_inter_error)?;
         if let Some(element) = self.get_store().get_clone(package) {

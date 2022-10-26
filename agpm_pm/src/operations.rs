@@ -1,9 +1,8 @@
 use crate::{PMError, ProjectManager};
 use agpm_abstract::*;
 use fs_extra::dir::{self, CopyOptions};
-use git2::Repository;
 use std::marker::PhantomData;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use subprocess::Exec;
 
 impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManager<D, PS, I> {
