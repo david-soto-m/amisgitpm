@@ -30,9 +30,11 @@ To list all projects use `amisgitpm list`"
             ),
             Self::Os2str => write!(f, "Couldn't convert from &Osstr to utf-8 &str"),
             Self::BadRef => write!(f, "Couldn't find a reference to a non detached HEAD"),
-            Self::ImposibleUpdate(path, name)=> write!(f,
-        "Update couldn't be solved by a fast forward.
-Solve the git problems in {path:?} and then run `amisgitpm rebuild {name} --from-git"),
+            Self::ImposibleUpdate(path, name) => write!(
+                f,
+                "Update couldn't be solved by a fast forward.
+Solve the git problems in {path:?} and then run `amisgitpm rebuild {name} --from-git"
+            ),
         }
     }
 }
@@ -81,7 +83,7 @@ where
         self.script_runner(prj, ScriptType::IScript)?;
         Ok(())
     }
-    fn update_repo(&self,prj: &Project, repo: &Repository)-> Result<(), Self::Error>{
+    fn update_repo(&self, prj: &Project, repo: &Repository) -> Result<(), Self::Error> {
         let remotes = repo.remotes()?;
         if !remotes.is_empty() {
             repo.find_remote(remotes.get(0).unwrap_or("origin"))?
@@ -99,7 +101,7 @@ where
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
         } else {
             Err(CommonPMErrors::ImposibleUpdate(
-                self.get_dir().git().join(&prj.dir).clone(),
+                self.get_dir().git().join(&prj.dir),
                 prj.name.clone(),
             ))?;
         }
@@ -278,10 +280,12 @@ pub trait PMInteractive: PMBasics {
         self.build_rm(&project, &git_dir)?;
         Ok(())
     }
-    fn list(&self, prj_names: Vec<String>) -> Result<(), Self::Error>{
+    fn list(&self, prj_names: Vec<String>) -> Result<(), Self::Error> {
         let inter = Self::Interact::new().map_err(Self::map_inter_error)?;
         if prj_names.is_empty() {
-            inter.list(self.get_store()).map_err(Self::map_inter_error)?;
+            inter
+                .list(self.get_store())
+                .map_err(Self::map_inter_error)?;
         } else {
             prj_names.into_iter().try_for_each(|prj_name| {
                 let project = self

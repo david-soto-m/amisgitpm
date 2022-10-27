@@ -1,0 +1,16 @@
+[package]
+name = "agpm_suggestions"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+markdown-extract = "^2.0"
+agpm_abstract = {path = "../agpm_abstract"}
+thiserror = "^1.0"
+json_tables = "^0.0" # table managements
+serde = {version = "^1.0", features = ["derive"]}
+glob = "0.3.0"
+regex = "^1.6"
+

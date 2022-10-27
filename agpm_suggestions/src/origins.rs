@@ -1,10 +1,9 @@
-use crate::build_suggestions::SuggestionsError;
+use std::{path::Path, marker::PhantomData};
 use agpm_abstract::PMDirs;
-use agpm_dirs::PMDirsImpl;
-use glob;
-use json_tables::Table;
-use serde::{Deserialize, Serialize};
-use std::path::Path;
+use json_tables::{Table, Serialize, Deserialize};
+use crate::SuggestionsError;
+/// This function examines a given markdown file for headers that matches with
+/// the case insensitive regex `(compil|instal|build)`
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -17,33 +16,20 @@ pub struct SuggestionsItem {
     pub uninstall_suggestions: Vec<Vec<String>>,
 }
 
-/// A wrapper structure for a json_tables of `SuggestionsItem`
-///
-/// It allows for some extra methods to be defined
-pub struct SuggestionsTable {
-    /// The table that holds the different suggestions for projects
+pub struct SuggestionsTable<D: PMDirs> {
     pub table: Table<SuggestionsItem>,
+    dirs: PhantomData<D>
 }
 
-/// Special functions for Tables of DBSuggestions structures, such as loading the tables
-/// or getting the suggestions for a repo.
-impl SuggestionsTable {
-    /// Get the table of pre-made suggestions for compilations.
-    pub fn new() -> Result<Self, SuggestionsError> {
+impl<D: PMDirs> SuggestionsTable<D> {
+    pub fn new() -> Result<Self, SuggestionsError<D::Error>> {
         Ok(Self {
-            table: Table::builder(PMDirsImpl::new()?.suggestions_db())
+            table: Table::builder(D::new().map_err(SuggestionsError::Dirs)?.suggestions_db())
                 .set_read_only()
                 .load()?,
+            dirs:PhantomData::default(),
         })
     }
-    /// Get the build suggestions from the table for the files examined in a directory
-    ///```ignore
-    /// let table = amisgitpm::build_suggestions::SuggestionsTable::new().unwrap();
-    /// let sugg = table.get_suggestions(&std::path::Path::new("tests/projects/mess_project"));
-    ///```
-    ///
-    /// It doesn't panic, but ignores all errors, so it might return empty without
-    /// information about why in cases in which it ought to return with something
     pub fn get_suggestions(&self, path: &Path) -> Vec<&SuggestionsItem> {
         self.table
             .get_table_content()
@@ -65,8 +51,8 @@ impl SuggestionsTable {
 
 #[cfg(test)]
 mod tests {
-    use crate::build_suggestions::SuggestionsTable;
-    use std::path::Path;
+    use crate::origins::SuggestionsTable;
+    use std::path::{Path, PathBuf};
     #[test]
     fn makes_suggestions() {
         let table = SuggestionsTable::new().unwrap();
@@ -80,5 +66,15 @@ mod tests {
     fn all_build_aux_json_is_correct() {
         SuggestionsTable::new().unwrap();
         assert!(true)
+    }
+    #[test]
+    fn gets_different_sections() {
+        let hx = super::get_build_suggestions(&PathBuf::from("tests/mdowns/Helix.md")).unwrap();
+        assert_eq!(hx[0].len(), 48);
+        let swave =
+            super::get_build_suggestions(&PathBuf::from("tests/mdowns/Shortwave.md")).unwrap();
+        assert_eq!(swave.len(), 2);
+        assert_eq!(swave[0].len(), 10);
+        assert_eq!(swave[1].len(), 26);
     }
 }

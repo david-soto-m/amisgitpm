@@ -1,5 +1,5 @@
 use crate::{PMError, ProjectManager};
-use agpm_abstract::*;
+use agpm_abstract::{Interactions, PMDirs, PMOperations, Project, ProjectStore, ScriptType};
 use fs_extra::dir::{self, CopyOptions};
 use std::marker::PhantomData;
 use std::path::Path;
@@ -17,10 +17,10 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
             inter_data: PhantomData::default(),
         })
     }
-    fn map_store_error(err: <Self::Store as ProjectStore>::Error)->Self::Error {
+    fn map_store_error(err: <Self::Store as ProjectStore>::Error) -> Self::Error {
         Self::Error::Store(err)
     }
-    fn map_dir_error(err: <Self::Dirs as PMDirs>::Error)->Self::Error {
+    fn map_dir_error(err: <Self::Dirs as PMDirs>::Error) -> Self::Error {
         Self::Error::Dirs(err)
     }
     fn get_store(&self) -> &Self::Store {
@@ -30,9 +30,13 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
         &mut self.store
     }
     fn get_dir(&self) -> &Self::Dirs {
-        & self.dirs
+        &self.dirs
     }
-    fn copy_directory<T: AsRef<Path>, Q: AsRef<Path>>(&self, from: T, to: Q) -> Result<(), Self::Error> {
+    fn copy_directory<T: AsRef<Path>, Q: AsRef<Path>>(
+        &self,
+        from: T,
+        to: Q,
+    ) -> Result<(), Self::Error> {
         let opts = CopyOptions {
             overwrite: true,
             copy_inside: true,
@@ -47,10 +51,10 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
             ScriptType::IScript => prj.install_script.join("&&"),
             ScriptType::UnIScript => prj.uninstall_script.join("&&"),
         };
-        if !Exec::shell(script).cwd(&src_dir).join()?.success() {
-            Err(Self::Error::Exec(prj.name.to_string(), scr_run))?
-        } else {
+        if Exec::shell(script).cwd(&src_dir).join()?.success() {
             Ok(())
+        } else {
+            Err(Self::Error::Exec(prj.name.to_string(), scr_run))?
         }
     }
 }

@@ -3,28 +3,34 @@
 //! how installed projects are stored and internally queried.
 
 use agpm_abstract::{PMDirs, Project, ProjectStore};
-use agpm_dirs::PMDirsImpl;
 use json_tables::{Table, TableError};
 mod error;
 pub use error::ProjectStoreError;
+use std::marker::PhantomData;
 
-/// A struct that implements the ProjectStore using a json_tables::Table
-pub struct ProjectTable {
+/// A struct that implements the [`ProjectStore`](agpm_abstract::ProjectStore)
+/// trait using a [`json_tables::Table`]
+pub struct ProjectTable<D: PMDirs> {
     table: Table<Project>,
+    dirs: PhantomData<D>,
 }
 
-impl ProjectStore for ProjectTable {
-    type Error = ProjectStoreError;
+impl<D: PMDirs> ProjectStore for ProjectTable<D> {
+    type Error = ProjectStoreError<D::Error>;
     fn new() -> Result<Self, Self::Error> {
-        let dirs = PMDirsImpl::new()?;
+        let dirs = <D as PMDirs>::new().map_err(Self::Error::Dirs)?;
         match Table::builder(dirs.projects_db()).load() {
-            Ok(table) => Ok(ProjectTable { table }),
+            Ok(table) => Ok(ProjectTable {
+                table,
+                dirs: PhantomData::default(),
+            }),
             Err(e) => match e {
                 TableError::FileOpError(io_err) => match io_err.kind() {
                     std::io::ErrorKind::NotFound => Ok(ProjectTable {
                         table: Table::builder(dirs.projects_db())
                             .set_auto_write()
                             .build()?,
+                        dirs: PhantomData::default(),
                     }),
                     _ => Err(TableError::FileOpError(io_err))?,
                 },

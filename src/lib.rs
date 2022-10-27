@@ -8,9 +8,6 @@
 //! trait based interfaces.
 
 pub mod args;
-pub mod build_suggestions;
-pub mod interaction;
-pub mod projects;
 use crate::args::{Cli, Commands};
 use agpm_abstract::{PMBasics, PMExtended, PMInteractive};
 

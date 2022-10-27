@@ -1,4 +1,4 @@
-#![warn(missing_docs)]
+// #![warn(missing_docs)]
 //! Shortcuts to the different recurrent paths
 
 use agpm_abstract::PMDirs;
@@ -6,15 +6,15 @@ use directories::ProjectDirs;
 use std::path::PathBuf;
 use thiserror::Error;
 
-/// An implementor for the PMDirs trait, it uses the [directories::ProjectDirs]
-/// type internally
+/// An implementor for the [`PMDirs`](agpm_abstract::PMDirs) trait, it uses
+/// the [`directories::ProjectDirs`] type internally
 pub struct PMDirsImpl {
     p_dirs: ProjectDirs,
 }
 
 impl PMDirs for PMDirsImpl {
     type Error = DirError;
-    /// Creator for the PMDirsImpl object It will **panic** if there is no valid
+    /// A creator object It will **panic** if there is no valid
     /// `$HOME` path or known equivalent in your platform
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {
@@ -44,6 +44,5 @@ impl PMDirs for PMDirsImpl {
     }
 }
 
-/// An error type for the initialization of a PMDirsImpl struct
 #[derive(Debug, Error)]
 pub enum DirError {}

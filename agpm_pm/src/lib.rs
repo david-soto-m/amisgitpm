@@ -1,4 +1,4 @@
-use agpm_abstract::*;
+use agpm_abstract::{Interactions, PMBasics, PMDirs, PMExtended, PMInteractive, ProjectStore};
 use std::marker::PhantomData;
 
 mod error;
@@ -15,7 +15,7 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMExtended for ProjectManager
 impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMInteractive for ProjectManager<D, PS, I> {
     type Interact = I;
 
-    fn map_inter_error(err: <Self::Interact as Interactions>::Error)->Self::Error {
+    fn map_inter_error(err: <Self::Interact as Interactions>::Error) -> Self::Error {
         Self::Error::Interact(err)
     }
 }

@@ -20,6 +20,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "agpm_interactions"
+version = "0.1.0"
+dependencies = [
+ "agpm_abstract",
+ "console",
+ "dialoguer",
+ "fs_extra",
+ "git2",
+ "prettytable-rs",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "agpm_pm"
 version = "0.1.0"
 dependencies = [
@@ -27,6 +41,28 @@ dependencies = [
  "fs_extra",
  "git2",
  "subprocess",
+ "thiserror",
+]
+
+[[package]]
+name = "agpm_store"
+version = "0.1.0"
+dependencies = [
+ "agpm_abstract",
+ "json_tables",
+ "thiserror",
+]
+
+[[package]]
+name = "agpm_suggestions"
+version = "0.1.0"
+dependencies = [
+ "agpm_abstract",
+ "glob",
+ "json_tables",
+ "markdown-extract",
+ "regex",
+ "serde",
  "thiserror",
 ]
 
@@ -45,21 +81,12 @@ version = "0.1.0"
 dependencies = [
  "agpm_abstract",
  "agpm_dirs",
+ "agpm_interactions",
  "agpm_pm",
+ "agpm_store",
+ "agpm_suggestions",
  "clap 4.0.18",
- "console",
- "dialoguer",
  "directories",
- "fs_extra",
- "git2",
- "glob",
- "json_tables",
- "markdown-extract",
- "prettytable-rs",
- "regex",
- "serde",
- "serde_json",
- "thiserror",
 ]
 
 [[package]]

@@ -1,15 +1,14 @@
-mod error;
-use crate::build_suggestions::BuildSuggestions;
 use agpm_abstract::*;
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
-pub use error::InteractError;
 use git2::{BranchType, Repository};
 use prettytable as pt;
 use prettytable::row;
 use serde_json;
 use std::path::Path;
 
+mod error;
+pub use error::InteractError;
 /*
 "Now we are trying to establish build instructions. To help with that we have
 compiled some suggestions. These come from previous knowledge about build

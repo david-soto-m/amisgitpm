@@ -1,10 +1,9 @@
-use agpm_dirs::DirError;
 use glob::{GlobError, PatternError};
 use json_tables::TableError;
 use thiserror::Error;
 #[derive(Error, Debug)]
 /// An error type for the BuildSuggestions struct.
-pub enum SuggestionsError {
+pub enum SuggestionsError<D: std::error::Error> {
     /// The creation has had an error with some file operation
     #[error(transparent)]
     FileOp(#[from] std::io::Error),
@@ -22,7 +21,7 @@ pub enum SuggestionsError {
     Path,
     /// Had a problem loading the directories
     #[error(transparent)]
-    Dirs(#[from] DirError),
+    Dirs(D),
     /// A field to place errors that don't fit in with the other variants when
     /// re-implementing the BuildSuggestions
     #[error("{0}")]

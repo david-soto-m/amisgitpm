@@ -12,35 +12,24 @@ description = "A package manager for git repos"
 members = [
     "agpm_abstract",
     "agpm_pm",
-    "agpm_dirs"
+    "agpm_dirs",
+    "agpm_store",
+    "agpm_interactions",
+    "agpm_suggestions"
 ]
 
 
 [dependencies]
-
-# Main dep
-git2 = "^0.15"
-
-# Serialization
-serde = {version = "^1.0", features = ["derive"]}
-serde_json = "^1.0"
-
 # UI
 clap = { version = "^4", features = ["derive"] } # arguments
-dialoguer = "^0.10" # general cli utils
 
 # Utils
-json_tables = "^0.0" # table management
-regex = "^1.6"
-glob = "0.3.0"
-markdown-extract = "^2.0"
-prettytable-rs = {version = "^0.9", default-features = false}
-fs_extra = "^1.2"
-thiserror = "1.0.37"
-console = "0.15.2"
 agpm_abstract = {path = "agpm_abstract", features = ["serde"] }
 agpm_pm = {path = "agpm_pm"}
 agpm_dirs = {path = "agpm_dirs"}
+agpm_store = {path = "agpm_store"}
+agpm_suggestions = {path = "agpm_suggestions"}
+agpm_interactions = {path = "agpm_interactions"}
 
 
 [build-dependencies]
