@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 clap = { version = "^4", features = ["derive"] } # arguments
 agpm_glue = {path = "../agpm_glue"}
+
+[build-dependencies]
+directories = "^4.0" # config and local and stuff

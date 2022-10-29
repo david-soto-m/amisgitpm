@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "agpm_glue",
  "clap 4.0.18",
+ "directories",
 ]
 
 [[package]]
@@ -94,13 +95,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4f55bd91a0978cbfd91c457a164bab8b4001c833b7f323132c0a4e1922dd44e"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "amisgitpm"
-version = "0.1.0"
-dependencies = [
- "directories",
 ]
 
 [[package]]

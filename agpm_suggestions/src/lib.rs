@@ -3,7 +3,6 @@
 //! It also defines a struct that implements the trait and the auxiliary
 //! structs and functions that are needed for that.
 
-use glob;
 use regex::Regex;
 use std::path::PathBuf;
 mod origins;

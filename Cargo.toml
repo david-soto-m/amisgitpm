@@ -1,13 +1,3 @@
-[package]
-name = "amisgitpm"
-version = "0.1.0"
-edition = "2021"
-license = "Unlicense"
-repository = "https://github.com/david-soto-m/"
-categories = ["command-line-interface", "filesystem", "development-tools", "config"]
-keywords = ["Git", "Package management", "building", "testing", "development"]
-description = "A package manager for git repos"
-
 [workspace]
 members = [
     "agpm_abstract",
@@ -19,9 +9,8 @@ members = [
     "agpm_glue",
     "agpm"
 ]
-
-
-[dependencies]
-
-[build-dependencies]
-directories = "^4.0" # config and local and stuff
+[workspace.package]
+license = "Unlicense OR CC0-1.0 OR MIT"
+repository = "https://github.com/david-soto-m/"
+categories = ["command-line-interface", "filesystem", "development-tools", "config"]
+keywords = ["Git", "Package management", "building", "testing", "development"]
