@@ -12,5 +12,3 @@ members = [
 [workspace.package]
 license = "Unlicense OR CC0-1.0 OR MIT"
 repository = "https://github.com/david-soto-m/"
-categories = ["command-line-interface", "filesystem", "development-tools", "config"]
-keywords = ["Git", "Package management", "building", "testing", "development"]
