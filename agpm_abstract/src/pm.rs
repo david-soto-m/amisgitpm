@@ -272,7 +272,7 @@ pub trait PMInteractive: PMBasics {
         proj_stub.ref_string = ref_name;
         self.switch_branch(&proj_stub, &repo)?;
         let project = inter
-            .create_project(&git_dir, &proj_stub, self.get_store())
+            .create_project(&proj_stub, self.get_store())
             .map_err(Self::map_inter_error)?;
         self.get_mut_store()
             .add(project.clone())

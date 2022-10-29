@@ -1,87 +1,79 @@
-use agpm_abstract::*;
+use agpm_abstract::{Interactions, Project, ProjectStore, UpdatePolicy};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::{BranchType, Repository};
 use prettytable as pt;
 use prettytable::row;
-use serde_json;
-use std::path::Path;
+use std::marker::PhantomData;
 
 mod error;
 pub use error::InteractError;
-/*
-"Now we are trying to establish build instructions. To help with that we have
-compiled some suggestions. These come from previous knowledge about build
-systems or the README.md file. Assume the commands you leave will start
-executing in the root directory of the project."
-*/
-pub struct Interactor {
+
+pub struct Interactor<S: Suggester> {
     t: Term,
+    sugg: PhantomData<*const S>,
 }
 
-impl Interactions for Interactor {
-    type Suggester = BuildSuggestions;
-    type Error = InteractError;
-    fn new() -> Result<Self, Self::Error> {
-        Ok(Self { t: Term::stdout() })
-    }
-    fn refs(&self, repo: &Repository) -> Result<String, Self::Error> {
-        let branch_arr: Vec<String> = repo
-            .branches(Some(BranchType::Local))?
-            .filter_map(|br| br.ok())
-            .map(|(br, _)| br.into_reference())
-            .filter_map(|el| el.name().map(|name| name.to_string()))
-            .collect();
-        let branch_idx = Select::new()
-            .default(0)
-            .with_prompt("Please, choose a reference")
-            .items(&branch_arr)
-            .interact()?;
-        Ok(branch_arr[branch_idx].to_owned())
-    }
+/// A trait that standardizes how to provide build suggestions for the install process
+pub trait Suggester
+where
+    Self: Sized,
+{
+    /// An error for new operations
+    type Error: std::error::Error;
+    /// The declaration of a new structure that implements the trait
+    fn new(name: &str) -> Result<Self, Self::Error>;
+    /// Get a reference to a list of install suggestions, these being a list of strings
+    fn get_install(&self) -> &Vec<Vec<String>>;
+    /// Get a reference to a list of uninstall suggestions, these being a list of strings
+    fn get_uninstall(&self) -> &Vec<Vec<String>>;
+}
 
-    fn get_sugg(&self, sug: &[Vec<String>], info: &str) -> Result<Vec<String>, Self::Error> {
-        {
-            self.t.clear_screen()?;
-            let sug_len = sug.len() as isize;
-            let mut idx: isize = sug_len - 1; // if there are no suggestions idx is -1;
-            let mut edit_string = String::new();
-            if idx >= 0 {
-                println!("{}", info);
-                let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
-                choices.push("Stop previews".into());
-                while idx != sug_len {
-                    idx = Select::new()
-                        .items(&choices)
-                        .default(sug_len as usize)
-                        .with_prompt("Please select one of these to preview")
-                        .interact()? as isize;
-                    if idx != sug_len {
-                        println!("{:#?}", sug[idx as usize]);
-                    }
-                }
-                choices.pop().unwrap();
-                let choices = MultiSelect::new()
+impl<S: Suggester> Interactor<S> {
+    fn get_sugg(
+        &self,
+        sug: &[Vec<String>],
+        info: &str,
+    ) -> Result<Vec<String>, InteractError<S::Error>> {
+        self.t.clear_screen()?;
+        let sug_len = sug.len() as isize;
+        let mut idx: isize = sug_len - 1; // if there are no suggestions idx is -1;
+        let mut edit_string = String::new();
+        if idx >= 0 {
+            println!("{}", info);
+            let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
+            choices.push("Stop previews".into());
+            while idx != sug_len {
+                idx = Select::new()
                     .items(&choices)
-                    .with_prompt(
-    "Please select all the suggestions you'd like to edit, press space next to all that apply"
-                    )
-                    .report(false)
-                    .interact()?;
-                choices.iter().for_each(|&i| {
-                    sug[i].iter().for_each(|string| {
-                        if !edit_string.is_empty() {
-                            edit_string.push('\n');
-                        }
-                        edit_string.push_str(string)
-                    })
-                });
-            };
-            if let Some(final_install) = Editor::new().edit(&edit_string)? {
-                Ok(final_install.split('\n').map(|e| e.to_string()).collect())
-            } else {
-                Ok(vec![])
+                    .default(sug_len as usize)
+                    .with_prompt("Please select one of these to preview")
+                    .interact()? as isize;
+                if idx != sug_len {
+                    println!("{:#?}", sug[idx as usize]);
+                }
             }
+            choices.pop().unwrap();
+            let choices = MultiSelect::new()
+                .items(&choices)
+                .with_prompt(
+"Please select all the suggestions you'd like to edit, press space next to all that apply"
+                )
+                .report(false)
+                .interact()?;
+            choices.iter().for_each(|&i| {
+                sug[i].iter().for_each(|string| {
+                    if !edit_string.is_empty() {
+                        edit_string.push('\n');
+                    }
+                    edit_string.push_str(string)
+                })
+            });
+        };
+        if let Some(final_install) = Editor::new().edit(&edit_string)? {
+            Ok(final_install.split('\n').map(|e| e.to_string()).collect())
+        } else {
+            Ok(vec![])
         }
     }
 
@@ -90,7 +82,7 @@ impl Interactions for Interactor {
         sugg: &str,
         prompts: (&str, &str, &str),
         check: impl Fn(&str) -> bool,
-    ) -> Result<String, Self::Error> {
+    ) -> Result<String, InteractError<S::Error>> {
         self.t.clear_screen()?;
         println!("{}", prompts.0);
         loop {
@@ -113,16 +105,38 @@ impl Interactions for Interactor {
         }
     }
 
-    fn get_updates(&self) -> Result<UpdatePolicy, Self::Error> {
+    fn get_updates(&self) -> Result<UpdatePolicy, InteractError<S::Error>> {
         self.t.clear_screen()?;
         println!("Now we are trying to get an update policy");
         let update_array = vec![UpdatePolicy::Ask, UpdatePolicy::Always, UpdatePolicy::Never];
         let idx = Select::new().items(&update_array).interact()?;
         Ok(update_array[idx])
     }
+}
+impl<S: Suggester> Interactions for Interactor<S> {
+    type Error = InteractError<S::Error>;
+    fn new() -> Result<Self, Self::Error> {
+        Ok(Self {
+            t: Term::stdout(),
+            sugg: PhantomData::default(),
+        })
+    }
+    fn refs(&self, repo: &Repository) -> Result<String, Self::Error> {
+        let branch_arr: Vec<String> = repo
+            .branches(Some(BranchType::Local))?
+            .filter_map(|br| br.ok())
+            .map(|(br, _)| br.into_reference())
+            .filter_map(|el| el.name().map(|name| name.to_string()))
+            .collect();
+        let branch_idx = Select::new()
+            .default(0)
+            .with_prompt("Please, choose a reference")
+            .items(&branch_arr)
+            .interact()?;
+        Ok(branch_arr[branch_idx].to_owned())
+    }
     fn create_project(
         &self,
-        path: &Path,
         prj_stub: &Project,
         store: &impl ProjectStore,
     ) -> Result<Project, Self::Error> {
@@ -159,7 +173,7 @@ The directory is a name for a folder",
             |a| !store.check_dir_free(a),
         )?;
         let update_policy = self.get_updates()?;
-        let sugg = Self::Suggester::new(path)?;
+        let sugg = S::new(&name).map_err(InteractError::Suggestion)?;
         let install_script = self.get_sugg(
             sugg.get_install(),
             "Now we have to establish how to build and install the program.

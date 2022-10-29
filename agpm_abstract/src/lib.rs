@@ -1,5 +1,3 @@
-mod suggestions;
-pub use suggestions::Suggester;
 mod interactions;
 pub use interactions::Interactions;
 mod project;

@@ -7,8 +7,6 @@ where
     type Error: std::error::Error;
     /// new the object that implements this trait
     fn new() -> Result<Self, Self::Error>;
-    /// where to look path for a suggestions db.
-    fn suggestions_db(&self) -> PathBuf;
     /// where to look path for a projects db.
     fn projects_db(&self) -> PathBuf;
     /// Where to store all the projects code that is going to be built

@@ -15,22 +15,13 @@ members = [
     "agpm_dirs",
     "agpm_store",
     "agpm_interactions",
-    "agpm_suggestions"
+    "agpm_suggestions",
+    "agpm_glue",
+    "agpm"
 ]
 
 
 [dependencies]
-# UI
-clap = { version = "^4", features = ["derive"] } # arguments
-
-# Utils
-agpm_abstract = {path = "agpm_abstract", features = ["serde"] }
-agpm_pm = {path = "agpm_pm"}
-agpm_dirs = {path = "agpm_dirs"}
-agpm_store = {path = "agpm_store"}
-agpm_suggestions = {path = "agpm_suggestions"}
-agpm_interactions = {path = "agpm_interactions"}
-
 
 [build-dependencies]
 directories = "^4.0" # config and local and stuff

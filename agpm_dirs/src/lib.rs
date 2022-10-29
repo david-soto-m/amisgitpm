@@ -21,10 +21,6 @@ impl PMDirs for PMDirsImpl {
             p_dirs: ProjectDirs::from("org", "amisoft", "amisgitpm").unwrap(),
         })
     }
-    ///`~/.config/amisgitpm/suggestions` in Linux
-    fn suggestions_db(&self) -> PathBuf {
-        self.p_dirs.config_dir().join("suggestions")
-    }
     ///`~/.config/amisgitpm/projects` in Linux
     fn projects_db(&self) -> PathBuf {
         self.p_dirs.config_dir().join("projects")

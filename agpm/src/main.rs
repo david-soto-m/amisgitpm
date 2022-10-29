@@ -1,5 +1,3 @@
-// #![warn(missing_docs)]
-
 //! This is the library associated with the amisgitpm.
 //!
 //! The idea of this library is to make programmatic interactions with the
@@ -7,9 +5,11 @@
 //! To make everything easy to mix and match there is a preference for
 //! trait based interfaces.
 
+use agpm_glue::{ProjectManager, prelude::*};
+use clap::Parser;
+
 pub mod args;
 use crate::args::{Cli, Commands};
-use agpm_abstract::{PMBasics, PMExtended, PMInteractive};
 
 pub fn matcher(args: Cli, pm: &mut (impl PMBasics + PMExtended + PMInteractive)) {
     match args.com {
@@ -25,4 +25,10 @@ pub fn matcher(args: Cli, pm: &mut (impl PMBasics + PMExtended + PMInteractive))
         Commands::Bootstrap => pm.bootstrap(),
     }
     .unwrap_or_else(|e| println!("{e}"));
+}
+
+fn main() {
+    let args = Cli::parse();
+    let mut pm = ProjectManager::new().unwrap();
+    matcher(args, &mut pm);
 }

@@ -1,9 +1,8 @@
-
-use crate::build_suggestions::SuggestionsError;
+// use agpm_suggestions::SuggestionsError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum InteractError {
+pub enum InteractError<S: std::error::Error> {
     #[error("Error while getting refs: {0}")]
     Git(#[from] git2::Error),
     #[error(transparent)]
@@ -11,7 +10,7 @@ pub enum InteractError {
     #[error(transparent)]
     Serde(#[from] serde_json::Error),
     #[error(transparent)]
-    Suggestion(#[from] SuggestionsError),
+    Suggestion(S),
     #[error(transparent)]
     Other(Box<dyn std::error::Error>),
 }

@@ -1,0 +1,14 @@
+[package]
+name = "agpm_glue"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+agpm_abstract = {path = "../agpm_abstract", features = ["serde"] }
+agpm_pm = {path = "../agpm_pm"}
+agpm_dirs = {path = "../agpm_dirs"}
+agpm_store = {path = "../agpm_store"}
+agpm_suggestions = {path = "../agpm_suggestions"}
+agpm_interactions = {path = "../agpm_interactions"}

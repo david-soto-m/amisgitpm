@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 markdown-extract = "^2.0"
 agpm_abstract = {path = "../agpm_abstract"}
+agpm_interactions = {path = "../agpm_interactions"}
 thiserror = "^1.0"
 json_tables = "^0.0" # table managements
 serde = {version = "^1.0", features = ["derive"]}

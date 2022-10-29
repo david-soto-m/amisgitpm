@@ -3,6 +3,14 @@
 version = 3
 
 [[package]]
+name = "agpm"
+version = "0.1.0"
+dependencies = [
+ "agpm_glue",
+ "clap 4.0.18",
+]
+
+[[package]]
 name = "agpm_abstract"
 version = "0.1.0"
 dependencies = [
@@ -17,6 +25,18 @@ dependencies = [
  "agpm_abstract",
  "directories",
  "thiserror",
+]
+
+[[package]]
+name = "agpm_glue"
+version = "0.1.0"
+dependencies = [
+ "agpm_abstract",
+ "agpm_dirs",
+ "agpm_interactions",
+ "agpm_pm",
+ "agpm_store",
+ "agpm_suggestions",
 ]
 
 [[package]]
@@ -58,6 +78,7 @@ name = "agpm_suggestions"
 version = "0.1.0"
 dependencies = [
  "agpm_abstract",
+ "agpm_interactions",
  "glob",
  "json_tables",
  "markdown-extract",
@@ -79,13 +100,6 @@ dependencies = [
 name = "amisgitpm"
 version = "0.1.0"
 dependencies = [
- "agpm_abstract",
- "agpm_dirs",
- "agpm_interactions",
- "agpm_pm",
- "agpm_store",
- "agpm_suggestions",
- "clap 4.0.18",
  "directories",
 ]
 
