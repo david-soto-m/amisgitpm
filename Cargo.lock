@@ -6,9 +6,8 @@ version = 3
 name = "agpm"
 version = "0.1.0"
 dependencies = [
- "agpm_glue",
+ "agpm_lib",
  "clap 4.0.18",
- "directories",
 ]
 
 [[package]]
@@ -29,18 +28,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "agpm_glue"
-version = "0.1.0"
-dependencies = [
- "agpm_abstract",
- "agpm_dirs",
- "agpm_interactions",
- "agpm_pm",
- "agpm_store",
- "agpm_suggestions",
-]
-
-[[package]]
 name = "agpm_interactions"
 version = "0.1.0"
 dependencies = [
@@ -52,6 +39,18 @@ dependencies = [
  "prettytable-rs",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "agpm_lib"
+version = "0.1.0"
+dependencies = [
+ "agpm_abstract",
+ "agpm_dirs",
+ "agpm_interactions",
+ "agpm_pm",
+ "agpm_store",
+ "agpm_suggestions",
 ]
 
 [[package]]
@@ -80,6 +79,7 @@ version = "0.1.0"
 dependencies = [
  "agpm_abstract",
  "agpm_interactions",
+ "directories",
  "glob",
  "json_tables",
  "markdown-extract",

@@ -5,7 +5,7 @@
 //! To make everything easy to mix and match there is a preference for
 //! trait based interfaces.
 
-use agpm_glue::{ProjectManager, prelude::*};
+use agpm_lib::{ProjectManager, prelude::*};
 use clap::Parser;
 
 pub mod args;

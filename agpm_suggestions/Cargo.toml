@@ -15,3 +15,5 @@ serde = {version = "^1.0", features = ["derive"]}
 glob = "0.3.0"
 regex = "^1.6"
 
+[build-dependencies]
+directories = "^4.0" # config and local and stuff

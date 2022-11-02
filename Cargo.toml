@@ -6,7 +6,7 @@ members = [
     "agpm_store",
     "agpm_interactions",
     "agpm_suggestions",
-    "agpm_glue",
+    "agpm_lib",
     "agpm"
 ]
 [workspace.package]

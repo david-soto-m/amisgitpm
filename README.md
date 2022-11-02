@@ -29,8 +29,7 @@ problem, but it's a bummer
 
 # TODO
 
-- Update
-- glob in suggestions
-- Use thiserror
 - Document, Document, and Document
-- Write Wiki
+- Test everything
+- Test manual operations
+- make suggestions optional?
