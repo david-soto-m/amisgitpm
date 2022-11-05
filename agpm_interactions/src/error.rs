@@ -9,6 +9,7 @@ pub enum InteractError<S: std::error::Error> {
     IO(#[from] std::io::Error),
     #[error(transparent)]
     Serde(#[from] serde_json::Error),
+
     #[error(transparent)]
     Suggestion(S),
     #[error(transparent)]

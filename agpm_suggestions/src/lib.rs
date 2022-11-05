@@ -33,7 +33,7 @@ impl<D: PMDirs> Suggestions<D> {
 impl<D: PMDirs> Suggester for Suggestions<D> {
     type Error = SuggestionsError<D::Error>;
     fn new(name: &str) -> Result<Self, Self::Error> {
-        let path = D::new().map_err(Self::Error::Dirs)?.src().join(name);
+        let path = D::new().map_err(Self::Error::Dirs)?.git().join(name);
         let mut readme: Vec<Vec<String>> = vec![];
         for each in glob::glob(path.join("*.md").to_str().ok_or(SuggestionsError::Path)?)? {
             readme.append(&mut Self::get_build_suggestions(&each?).unwrap_or_default());

@@ -32,9 +32,10 @@ where
 impl<S: Suggester> Interactor<S> {
     fn get_sugg(
         &self,
-        sug: &[Vec<String>],
+        sug: &Vec<Vec<String>>,
         info: &str,
     ) -> Result<Vec<String>, InteractError<S::Error>> {
+        dbg!(sug);
         self.t.clear_screen()?;
         let sug_len = sug.len() as isize;
         let mut idx: isize = sug_len - 1; // if there are no suggestions idx is -1;
@@ -174,6 +175,7 @@ The directory is a name for a folder",
         )?;
         let update_policy = self.get_updates()?;
         let sugg = S::new(&name).map_err(InteractError::Suggestion)?;
+        // panic!("here");
         let install_script = self.get_sugg(
             sugg.get_install(),
             "Now we have to establish how to build and install the program.

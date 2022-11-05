@@ -5,4 +5,4 @@ pub use project::{Project, ProjectStore, UpdatePolicy};
 mod dirs;
 pub use dirs::PMDirs;
 mod pm;
-pub use pm::*;
+pub use pm::{CommonPMErrors, PMBasics, PMExtended, PMInteractive, PMOperations, ScriptType};
