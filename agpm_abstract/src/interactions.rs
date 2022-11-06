@@ -1,5 +1,6 @@
 use crate::{Project, ProjectStore};
 use git2::Repository;
+use std::path::Path;
 
 pub trait Interactions
 where
@@ -12,6 +13,7 @@ where
         &self,
         prj_stub: &Project,
         store: &impl ProjectStore,
+        wher: &Path,
     ) -> Result<Project, Self::Error>;
     fn edit(&self, prj: Project) -> Result<Project, Self::Error>;
     fn list<T: ProjectStore>(&self, store: &T) -> Result<(), Self::Error>;

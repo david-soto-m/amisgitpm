@@ -1,14 +1,30 @@
-// use crate::{
-//         dirutils::PMDirs,
-//         package_management::{
-//             CommonError, PMError, PackageManagementBase, PackageManagementCore,
-//             PackageManagerDefault,
-//         },
-//         projects::{Project, UpdatePolicy},
-//     };
-//
-// use std::{fs::canonicalize, io::prelude::*, path::PathBuf};
-// use subprocess::Exec;
+use agpm_abstract::PMDirs;
+use std::path::{Path, PathBuf};
+use thiserror::Error;
+struct TestDirs {}
+
+#[derive(Debug, Error)]
+enum EmptyError {}
+
+impl PMDirs for TestDirs {
+    type Error = EmptyError;
+    fn new() -> Result<Self, Self::Error> {
+        Ok(Self {})
+    }
+    fn projects_db(&self) -> PathBuf {
+        Path::new("tests/config").to_path_buf()
+    }
+    fn src(&self) -> PathBuf {
+        Path::new("tests/cache/src").to_path_buf()
+    }
+    fn git(&self) -> PathBuf {
+        Path::new("tests/cache/git").to_path_buf()
+    }
+    fn old(&self) -> PathBuf {
+        Path::new("tests/cache/old").to_path_buf()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -16,32 +32,6 @@ mod tests {
         let result = 2 + 2;
         assert_eq!(result, 4);
     }
-    // use crate::origins::SuggestionsTable;
-    // use std::path::{Path, PathBuf};
-    // #[test]
-    // fn makes_suggestions() {
-    //     let table = SuggestionsTable::new().unwrap();
-    //     let len = table
-    //         .get_suggestions(&Path::new("tests/projects/mess_project"))
-    //         .len();
-    //
-    //     assert_eq!(len, 3);
-    // }
-    // #[test]
-    // fn all_build_aux_json_is_correct() {
-    //     SuggestionsTable::new().unwrap();
-    //     assert!(true)
-    // }
-    // #[test]
-    // fn gets_different_sections() {
-    //     let hx = super::get_build_suggestions(&PathBuf::from("tests/mdowns/Helix.md")).unwrap();
-    //     assert_eq!(hx[0].len(), 48);
-    //     let swave =
-    //         super::get_build_suggestions(&PathBuf::from("tests/mdowns/Shortwave.md")).unwrap();
-    //     assert_eq!(swave.len(), 2);
-    //     assert_eq!(swave[0].len(), 10);
-    //     assert_eq!(swave[1].len(), 26);
-    // }
 
     // #[test]
     // fn install_uninstall_project() {
@@ -135,5 +125,4 @@ mod tests {
     //     );
     //     pm.uninstall("git_upd").unwrap();
     // }
-}
 }

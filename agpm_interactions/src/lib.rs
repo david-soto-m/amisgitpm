@@ -1,75 +1,66 @@
-use agpm_abstract::{Interactions, Project, ProjectStore, UpdatePolicy};
+use agpm_abstract::{Interactions, PMDirs, Project, ProjectStore, UpdatePolicy};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::{BranchType, Repository};
 use prettytable as pt;
 use prettytable::row;
-use std::marker::PhantomData;
+use std::{marker::PhantomData, path::Path};
 
 mod error;
 pub use error::InteractError;
 
-pub struct Interactor<S: Suggester> {
+mod suggestions;
+use suggestions::Suggestions;
+
+pub struct Interactor<T: PMDirs> {
     t: Term,
-    sugg: PhantomData<*const S>,
+    dirs: PhantomData<T>,
 }
 
-/// A trait that standardizes how to provide build suggestions for the install process
-pub trait Suggester
-where
-    Self: Sized,
-{
-    /// An error for new operations
-    type Error: std::error::Error;
-    /// The declaration of a new structure that implements the trait
-    fn new(name: &str) -> Result<Self, Self::Error>;
-    /// Get a reference to a list of install suggestions, these being a list of strings
-    fn get_install(&self) -> &Vec<Vec<String>>;
-    /// Get a reference to a list of uninstall suggestions, these being a list of strings
-    fn get_uninstall(&self) -> &Vec<Vec<String>>;
-}
-
-impl<S: Suggester> Interactor<S> {
+impl<T: PMDirs> Interactor<T> {
     fn get_sugg(
         &self,
         sug: &Vec<Vec<String>>,
         info: &str,
-    ) -> Result<Vec<String>, InteractError<S::Error>> {
-        dbg!(sug);
+    ) -> Result<Vec<String>, <Self as Interactions>::Error> {
         self.t.clear_screen()?;
-        let sug_len = sug.len() as isize;
-        let mut idx: isize = sug_len - 1; // if there are no suggestions idx is -1;
         let mut edit_string = String::new();
-        if idx >= 0 {
+        if !sug.is_empty() {
             println!("{}", info);
             let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
             choices.push("Stop previews".into());
-            while idx != sug_len {
-                idx = Select::new()
+            loop {
+                let idx = Select::new()
                     .items(&choices)
-                    .default(sug_len as usize)
-                    .with_prompt("Please select one of these to preview")
-                    .interact()? as isize;
-                if idx != sug_len {
-                    println!("{:#?}", sug[idx as usize]);
+                    .default(choices.len())
+                    .with_prompt(format!(
+                        "Please select one of these to preview pressing {}",
+                        style("space").bold()
+                    ))
+                    .interact()?;
+                if idx == choices.len() - 1 {
+                    break;
                 }
+                println!("{:#?}", sug[idx]);
             }
             choices.pop().unwrap();
             let choices = MultiSelect::new()
                 .items(&choices)
                 .with_prompt(
-"Please select all the suggestions you'd like to edit, press space next to all that apply"
+                    format!(
+"Please select {} the suggestions you'd like to edit, press {} next to all that apply
+when you are done press {}", style("all").bold(), style("space").bold(), style("enter").bold()),
                 )
                 .report(false)
                 .interact()?;
-            choices.iter().for_each(|&i| {
-                sug[i].iter().for_each(|string| {
+            for &i in &choices {
+                for string in &sug[i] {
                     if !edit_string.is_empty() {
                         edit_string.push('\n');
                     }
-                    edit_string.push_str(string)
-                })
-            });
+                    edit_string.push_str(string);
+                }
+            }
         };
         if let Some(final_install) = Editor::new().edit(&edit_string)? {
             Ok(final_install.split('\n').map(|e| e.to_string()).collect())
@@ -83,7 +74,7 @@ impl<S: Suggester> Interactor<S> {
         sugg: &str,
         prompts: (&str, &str, &str),
         check: impl Fn(&str) -> bool,
-    ) -> Result<String, InteractError<S::Error>> {
+    ) -> Result<String, <Self as Interactions>::Error> {
         self.t.clear_screen()?;
         println!("{}", prompts.0);
         loop {
@@ -106,7 +97,7 @@ impl<S: Suggester> Interactor<S> {
         }
     }
 
-    fn get_updates(&self) -> Result<UpdatePolicy, InteractError<S::Error>> {
+    fn get_updates(&self) -> Result<UpdatePolicy, <Self as Interactions>::Error> {
         self.t.clear_screen()?;
         println!("Now we are trying to get an update policy");
         let update_array = vec![UpdatePolicy::Ask, UpdatePolicy::Always, UpdatePolicy::Never];
@@ -114,12 +105,13 @@ impl<S: Suggester> Interactor<S> {
         Ok(update_array[idx])
     }
 }
-impl<S: Suggester> Interactions for Interactor<S> {
-    type Error = InteractError<S::Error>;
+
+impl<T: PMDirs> Interactions for Interactor<T> {
+    type Error = InteractError;
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {
             t: Term::stdout(),
-            sugg: PhantomData::default(),
+            dirs: PhantomData::default(),
         })
     }
     fn refs(&self, repo: &Repository) -> Result<String, Self::Error> {
@@ -134,18 +126,20 @@ impl<S: Suggester> Interactions for Interactor<S> {
             .with_prompt("Please, choose a reference")
             .items(&branch_arr)
             .interact()?;
-        Ok(branch_arr[branch_idx].to_owned())
+        Ok(branch_arr[branch_idx].clone())
     }
     fn create_project(
         &self,
         prj_stub: &Project,
         store: &impl ProjectStore,
+        wher: &Path,
     ) -> Result<Project, Self::Error> {
+        let sugg = Suggestions::new::<T>(wher)?;
         let sugg_name = prj_stub
             .url
             .split('/')
             .last()
-            .map_or("".into(), |potential_dir| {
+            .map_or(String::new(), |potential_dir| {
                 potential_dir
                     .to_string()
                     .rsplit_once('.')
@@ -174,28 +168,32 @@ The directory is a name for a folder",
             |a| !store.check_dir_free(a),
         )?;
         let update_policy = self.get_updates()?;
-        let sugg = S::new(&name).map_err(InteractError::Suggestion)?;
         // panic!("here");
         let install_script = self.get_sugg(
             sugg.get_install(),
-            "Now we have to establish how to build and install the program.
+            &format!("Now we have to establish how to build and install the program.
 Please keep two things in mind:
-1) The script will be run from the topmost directory of the project.
-2) All the lines in your script will be joined by `&&`. If you want to detach some
+1) The script will be run from the {} of the project.
+2) All the lines in your script will be {}. If you want to detach some
 commands you might want to do something like this `command-to-detach & cd .`",
-        )?;
+        style("topmost directory").bold()
+        ,style("joined by `&&`").bold()))?;
         let uninstall_script = self.get_sugg(
             sugg.get_uninstall(),
-            "Now we have to establish how to uninstall the program.
+            &format!("Now we have to establish how to uninstall the program.
 You might want to trace:
 - Different executables/binaries
 - Cache that the program generates
 - Other files you don't think you will want to keep after uninstalling
 Please keep two things in mind:
-1) The script will be run from the topmost directory of the project.
-2) All the lines in your script will be joined by `&&`. If you want to detach some
+1) The script will be run from the {} of the project.
+2) All the lines in your script will be {}. If you want to detach some
 commands you might want to do something like this `command-to-detach & cd .`",
+        style("topmost directory").bold()
+        ,style("joined by `&&`").bold())
         )?;
+        self.t.clear_screen()?;
+        println!("Setup is finished, starting to build");
         Ok(Project {
             name,
             dir,
@@ -214,7 +212,7 @@ commands you might want to do something like this `command-to-detach & cd .`",
             Ok(prj)
         }
     }
-    fn list<T: ProjectStore>(&self, store: &T) -> Result<(), Self::Error> {
+    fn list<S: ProjectStore>(&self, store: &S) -> Result<(), Self::Error> {
         let mut show_table = pt::Table::new();
         show_table.set_titles(row![
             "Name",

@@ -48,7 +48,7 @@ pub enum Commands {
         /// If not provided all packages are updated
         package: Option<String>,
         #[clap(short, long)]
-        // A flag to force update all packages configured to ask
+        /// A flag to force update all packages configured to ask
         force: bool,
     },
 

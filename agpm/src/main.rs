@@ -1,9 +1,5 @@
-//! This is the library associated with the amisgitpm.
+#![warn(missing_docs)]
 //!
-//! The idea of this library is to make programmatic interactions with the
-//! project as painless as possible.
-//! To make everything easy to mix and match there is a preference for
-//! trait based interfaces.
 
 use agpm_lib::{prelude::*, ProjectManager};
 use clap::Parser;
@@ -11,7 +7,9 @@ use clap::Parser;
 pub mod args;
 use crate::args::{Cli, Commands};
 
-pub fn matcher(args: Cli, pm: &mut (impl PMBasics + PMExtended + PMInteractive)) {
+fn main() {
+    let args = Cli::parse();
+    let mut pm = ProjectManager::new().unwrap();
     match args.com {
         Commands::Install { url } => pm.inter_install(&url),
         Commands::Uninstall { package } => pm.uninstall(&package),
@@ -25,10 +23,4 @@ pub fn matcher(args: Cli, pm: &mut (impl PMBasics + PMExtended + PMInteractive))
         Commands::Bootstrap => pm.bootstrap(),
     }
     .unwrap_or_else(|e| println!("{e}"));
-}
-
-fn main() {
-    let args = Cli::parse();
-    let mut pm = ProjectManager::new().unwrap();
-    matcher(args, &mut pm);
 }

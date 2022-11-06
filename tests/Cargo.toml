@@ -1,13 +1,18 @@
 [package]
-name = "agpm_lib"
+name = "tests"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[dev-dependencies]
 agpm_abstract = {path = "../agpm_abstract", features = ["serde"] }
 agpm_pm = {path = "../agpm_pm"}
 agpm_dirs = {path = "../agpm_dirs"}
 agpm_store = {path = "../agpm_store"}
-agpm_interactions = {path = "../agpm_interactions"}
+thiserror = "^1.0"
+
+
+
+[[test]]
+name = "test"
+path = "test.rs"

@@ -13,4 +13,12 @@ console = "0.15.2"
 fs_extra = "^1.2"
 prettytable-rs = {version = "^0.9", default-features = false}
 git2 = "^0.15"
+markdown-extract = "^2.0"
+json_tables = "^0.0" # table managements
+glob = "0.3.0"
+regex = "^1.6"
 serde_json = "^1.0"
+serde = {version = "^1.0", features = ["derive"]}
+
+[build-dependencies]
+directories = "^4.0" # config and local and stuff

@@ -5,10 +5,11 @@ members = [
     "agpm_dirs",
     "agpm_store",
     "agpm_interactions",
-    "agpm_suggestions",
     "agpm_lib",
-    "agpm"
+    "agpm",
+    "tests"
 ]
+
 [workspace.package]
 license = "Unlicense OR CC0-1.0 OR MIT"
 repository = "https://github.com/david-soto-m/"
