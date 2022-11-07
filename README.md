@@ -9,6 +9,7 @@ might want to check them out instead of this crate
 - [git-repo-updater](https://github.com/earwig/git-repo-updater)
 - [huber](https://github.com/innobead/huber)
 - [topgrade](https://github.com/r-darwish/topgrade)
+- [nix](https://nixos.wiki/wiki/Nix_package_manager)
 
 However, I have published this crate. My reasons are:
 
