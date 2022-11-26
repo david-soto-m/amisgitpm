@@ -1,4 +1,4 @@
-use agpm_abstract::{CommonPMErrors, ScriptType};
+use amisgitpm::{CommonPMErrors, ScriptType};
 use thiserror::Error;
 
 #[non_exhaustive]

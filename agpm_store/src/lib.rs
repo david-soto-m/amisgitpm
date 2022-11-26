@@ -2,13 +2,13 @@
 //! A module to regulate the information for installed projects and
 //! how installed projects are stored and internally queried.
 
-use agpm_abstract::{PMDirs, Project, ProjectStore};
+use amisgitpm::{PMDirs, Project, ProjectStore};
 use json_tables::{Table, TableError};
 mod error;
 pub use error::ProjectStoreError;
 use std::marker::PhantomData;
 
-/// A struct that implements the [`ProjectStore`](agpm_abstract::ProjectStore)
+/// A struct that implements the [`ProjectStore`](amisgitpm::ProjectStore)
 /// trait using a [`json_tables::Table`]
 pub struct ProjectTable<D: PMDirs> {
     table: Table<Project>,

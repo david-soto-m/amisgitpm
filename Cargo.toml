@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "agpm_abstract",
+    "amisgitpm",
     "agpm_pm",
     "agpm_dirs",
     "agpm_store",

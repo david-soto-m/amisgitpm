@@ -1,5 +1,8 @@
+//! This is the crate to use if you completely buy into my particular
+//! implementation of amisgitpm
+
 pub mod prelude {
-    pub use agpm_abstract::*;
+    pub use amisgitpm::*;
 }
 pub use agpm_dirs::PMDirsImpl;
 

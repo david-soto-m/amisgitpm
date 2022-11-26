@@ -8,6 +8,7 @@ pub enum ScriptType {
     UnIScript,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum CommonPMErrors {
     AlreadyExisting,
@@ -229,18 +230,7 @@ pub trait PMExtended: PMBasics {
         self.script_runner(prj, ScriptType::IScript)?;
         Ok(())
     }
-    fn bootstrap(&mut self) -> Result<(), Self::Error> {
-        let prj = Project {
-            name: "amisgitpm".into(),
-            dir: "amisgitpm".into(),
-            url: "https://github.com/david-soto-m/amisgitpm.git".into(),
-            ref_string: "refs/heads/main".into(),
-            update_policy: UpdatePolicy::Always,
-            install_script: vec!["cargo install --path . --root ~/.local/".into()],
-            uninstall_script: vec!["cargo uninstall amisgitpm --root ~/.local/".into()],
-        };
-        self.install(prj)
-    }
+    fn bootstrap(&mut self) -> Result<(), Self::Error>;
 }
 pub trait PMInteractive: PMBasics {
     type Interact: Interactions;

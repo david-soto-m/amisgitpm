@@ -1,24 +1,24 @@
-// #![warn(missing_docs)]
-//! Shortcuts to the different recurrent paths
+#![warn(missing_docs)]
+//! In this crate the `PMDirsImpl` structure implements the `PMDirs` trait.
+//! It uses the [`directories::ProjectDirs`] structure to use the default
+//! locations for the different OSes.
 
-use agpm_abstract::PMDirs;
+use amisgitpm::PMDirs;
 use directories::ProjectDirs;
 use std::path::PathBuf;
 use thiserror::Error;
 
-/// An implementor for the [`PMDirs`](agpm_abstract::PMDirs) trait, it uses
-/// the [`directories::ProjectDirs`] type internally
+/// An implementor for the [`PMDirs`](amisgitpm::PMDirs) trait
 pub struct PMDirsImpl {
     p_dirs: ProjectDirs,
 }
 
 impl PMDirs for PMDirsImpl {
     type Error = DirError;
-    /// A creator object It will **panic** if there is no valid
-    /// `$HOME` path or known equivalent in your platform
+    ///
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {
-            p_dirs: ProjectDirs::from("org", "amisoft", "amisgitpm").unwrap(),
+            p_dirs: ProjectDirs::from("org", "amisoft", "amisgitpm").ok_or(Self::Error::HomeNotFound)?
         })
     }
     ///`~/.config/amisgitpm/projects` in Linux
@@ -40,5 +40,11 @@ impl PMDirs for PMDirsImpl {
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug, Error)]
-pub enum DirError {}
+/// An error type to return from the new instance
+pub enum DirError {
+    /// An error when no project-based default directories can be found
+    #[error("Couldn't find a $HOME or equivalent in your platform")]
+    HomeNotFound
+}

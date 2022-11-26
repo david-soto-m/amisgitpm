@@ -3,20 +3,18 @@
 //! It also defines a struct that implements the trait and the auxiliary
 //! structs and functions that are needed for that.
 use crate::error::SuggestionsError;
-use agpm_abstract::PMDirs;
+use amisgitpm::PMDirs;
+use json_tables::{Deserialize, Serialize, Table, TableError};
 use regex::Regex;
 use std::path::{Path, PathBuf};
 
-/// A structure that implements the `BuildSuggester` trait
 pub struct Suggestions {
     install: Vec<Vec<String>>,
     uninstall: Vec<Vec<String>>,
 }
 
 impl Suggestions {
-    fn get_build_suggestions(
-        readme_file: &PathBuf,
-    ) -> Result<Vec<Vec<String>>, SuggestionsError> {
+    fn get_build_suggestions(readme_file: &PathBuf) -> Result<Vec<Vec<String>>, SuggestionsError> {
         let regex = Regex::new(r"((?i)compil|instal|build)").unwrap();
         markdown_extract::extract_from_path(readme_file, &regex).map_err(|e| e.into())
     }
@@ -65,13 +63,12 @@ impl Suggestions {
     }
 }
 
-use json_tables::{Deserialize, Serialize, Table, TableError};
 /// This function examines a given markdown file for headers that matches with
 /// the case insensitive regex `(compil|instal|build)`
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct SuggestionsItem {
+struct SuggestionsItem {
     /// File names to detect in order to make the suggestions contained bellow
     pub file_types: Vec<String>,
     /// The set of suggestions in order to build and install a project
@@ -80,8 +77,8 @@ pub struct SuggestionsItem {
     pub uninstall_suggestions: Vec<Vec<String>>,
 }
 
-pub struct SuggestionsTable {
-    pub table: Table<SuggestionsItem>,
+struct SuggestionsTable {
+    table: Table<SuggestionsItem>,
 }
 
 impl SuggestionsTable {
@@ -112,7 +109,7 @@ impl SuggestionsTable {
 #[cfg(test)]
 mod tests {
     use super::SuggestionsTable;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     #[test]
     fn makes_suggestions() {
         let db_loc = Path::new("suggestions");
@@ -127,16 +124,16 @@ mod tests {
         let db_loc = Path::new("suggestions");
         SuggestionsTable::new(db_loc).unwrap();
     }
-    use std::path::PathBuf;
     #[test]
     fn gets_different_sections() {
-        let hx = super::Suggestions
-            ::get_build_suggestions(&PathBuf::from("../tests/mdowns/Helix.md"))
-            .unwrap();
+        let hx =
+            super::Suggestions::get_build_suggestions(&PathBuf::from("../tests/mdowns/Helix.md"))
+                .unwrap();
         assert_eq!(hx[0].len(), 48);
-        let swave = super::Suggestions::
-            get_build_suggestions(&PathBuf::from("../tests/mdowns/Shortwave.md"))
-            .unwrap();
+        let swave = super::Suggestions::get_build_suggestions(&PathBuf::from(
+            "../tests/mdowns/Shortwave.md",
+        ))
+        .unwrap();
         assert_eq!(swave.len(), 2);
         assert_eq!(swave[0].len(), 10);
         assert_eq!(swave[1].len(), 26);

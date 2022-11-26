@@ -1,5 +1,5 @@
 use crate::{PMError, ProjectManager};
-use agpm_abstract::{Interactions, PMDirs, PMOperations, Project, ProjectStore, ScriptType};
+use amisgitpm::{Interactions, PMDirs, PMOperations, Project, ProjectStore, ScriptType};
 use fs_extra::dir::{self, CopyOptions};
 use std::marker::PhantomData;
 use std::path::Path;

@@ -1,5 +1,5 @@
 #![warn(missing_docs)]
-//!
+//! This is the main execution file for my agpm package manager implementation.
 
 use agpm_lib::{prelude::*, ProjectManager};
 use clap::Parser;

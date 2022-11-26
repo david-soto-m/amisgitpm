@@ -1,4 +1,10 @@
-use agpm_abstract::{Interactions, PMDirs, Project, ProjectStore, UpdatePolicy};
+#![warn(missing_docs)]
+
+//! This crate implements the [`Interactions`](agpm_abstract::Interactions) in
+//! with the [`Interactor`](crate::Interactor) struct. It brings some suggestions
+//! with the a private `Suggestions` type.
+
+use amisgitpm::{Interactions, PMDirs, Project, ProjectStore, UpdatePolicy};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::{BranchType, Repository};
@@ -7,11 +13,12 @@ use prettytable::row;
 use std::{marker::PhantomData, path::Path};
 
 mod error;
-pub use error::InteractError;
+pub use error::{InteractError, SuggestionsError};
 
 mod suggestions;
 use suggestions::Suggestions;
 
+/// This struct implements the [`Interactions`](agpm_abstract::Interactions) trait. To that purpose
 pub struct Interactor<T: PMDirs> {
     t: Term,
     dirs: PhantomData<T>,
@@ -171,16 +178,20 @@ The directory is a name for a folder",
         // panic!("here");
         let install_script = self.get_sugg(
             sugg.get_install(),
-            &format!("Now we have to establish how to build and install the program.
+            &format!(
+                "Now we have to establish how to build and install the program.
 Please keep two things in mind:
 1) The script will be run from the {} of the project.
 2) All the lines in your script will be {}. If you want to detach some
 commands you might want to do something like this `command-to-detach & cd .`",
-        style("topmost directory").bold()
-        ,style("joined by `&&`").bold()))?;
+                style("topmost directory").bold(),
+                style("joined by `&&`").bold()
+            ),
+        )?;
         let uninstall_script = self.get_sugg(
             sugg.get_uninstall(),
-            &format!("Now we have to establish how to uninstall the program.
+            &format!(
+                "Now we have to establish how to uninstall the program.
 You might want to trace:
 - Different executables/binaries
 - Cache that the program generates
@@ -189,8 +200,9 @@ Please keep two things in mind:
 1) The script will be run from the {} of the project.
 2) All the lines in your script will be {}. If you want to detach some
 commands you might want to do something like this `command-to-detach & cd .`",
-        style("topmost directory").bold()
-        ,style("joined by `&&`").bold())
+                style("topmost directory").bold(),
+                style("joined by `&&`").bold()
+            ),
         )?;
         self.t.clear_screen()?;
         println!("Setup is finished, starting to build");

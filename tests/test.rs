@@ -1,4 +1,4 @@
-use agpm_abstract::PMDirs;
+use amisgitpm::PMDirs;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 struct TestDirs {}
