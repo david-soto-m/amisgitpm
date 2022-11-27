@@ -1,11 +1,13 @@
 [package]
-name = "agpm_store"
+name = "agpm_project"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+serde = {version = "^1.0", features = ["derive"], optional = true}
 amisgitpm = {path = "../amisgitpm"}
-thiserror = "^1.0"
-json_tables = "^0.0" # table management
+
+[features]
+serde = ["dep:serde"]

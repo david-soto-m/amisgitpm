@@ -1,14 +1,13 @@
-#![warn(missing_docs)]
 //! This crate defines the traits for a package manager.
 //!
 //! An amisgitpm compliant package manager must do six tasks
 //!
-//! - To install from an url
-//! - To know what has been installed
-//! - To update installed projects
-//! - To edit project setups
-//! - To go back to the previous version
-//! - To uninstall projects
+//! 1. Install from an URL
+//! 2. Know what has been installed
+//! 3. Update installed projects
+//! 4. Edit project setups
+//! 5. Go back to the previous version
+//! 6. Uninstall projects
 //!
 //! The `PMOperations` is a trait that makes easy implementing the other traits
 //! easier or automatic. It does no "high level" operation, but is concerned with
@@ -176,7 +175,7 @@ where
 
 /// A trait that implement the six tasks based on the `PMOperations` trait.
 /// It is designed for programtic use of the project
-pub trait PMProgramatic: PMOperations {
+pub trait PMProgrammatic: PMOperations {
     /// Install a project from a known Project in which all parameters are known
     fn install(&mut self, prj: Self::Project) -> Result<(), Self::Error> {
         if !self.get_store().check_unique(prj.get_name(), prj.get_dir()) {
@@ -252,7 +251,7 @@ pub trait PMProgramatic: PMOperations {
 /// This trait defines methods for the six tasks to be interactive, it provides
 /// none of the methods, as different implementors will bring different preferences
 /// for dependencies and ways of interacting with the user.
-pub trait PMInteractive: PMProgramatic {
+pub trait PMInteractive: PMProgrammatic {
     /// With this function a project should be downloaded, ask for the necessary
     /// information and then build and install itself
     /// The contents could look something like:

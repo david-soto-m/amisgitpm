@@ -1,9 +1,19 @@
+//! This couple of traits define how projects are stored and interacted with by
+//! package managers.
+
+/// A trait that is used to know to set up a project
 pub trait ProjectT: Clone{
+    /// Get the name of the project
     fn get_name(&self)-> &str;
+    /// Get the directory name to use for this project
     fn get_dir(&self)-> &str;
+    /// Get the url from which to clone the project
     fn get_url(&self)-> &str;
+    /// Get the reference string
     fn get_ref_string(&self)-> &str;
+    /// Get the install script
     fn get_install(&self)-> &[String];
+    /// Get the uninstall script
     fn get_uninstall(&self)-> &[String];
 }
 

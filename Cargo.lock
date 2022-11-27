@@ -6,7 +6,6 @@ version = 3
 name = "agpm"
 version = "0.1.0"
 dependencies = [
- "agpm_lib",
  "clap 4.0.27",
 ]
 
@@ -40,17 +39,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "agpm_lib"
-version = "0.1.0"
-dependencies = [
- "agpm_dirs",
- "agpm_interactions",
- "agpm_pm",
- "agpm_store",
- "amisgitpm",
-]
-
-[[package]]
 name = "agpm_pm"
 version = "0.1.0"
 dependencies = [
@@ -59,6 +47,14 @@ dependencies = [
  "git2",
  "subprocess",
  "thiserror",
+]
+
+[[package]]
+name = "agpm_project"
+version = "0.1.0"
+dependencies = [
+ "amisgitpm",
+ "serde",
 ]
 
 [[package]]
@@ -84,7 +80,6 @@ name = "amisgitpm"
 version = "0.1.0"
 dependencies = [
  "git2",
- "serde",
 ]
 
 [[package]]
@@ -432,9 +427,9 @@ dependencies = [
 
 [[package]]
 name = "json_tables"
-version = "0.0.3"
+version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4debb4ace4149a83c078b2332c00afed6ef56b6ba868af2d45da65e9d1003a6"
+checksum = "dffd8b2417fd47a80a8a4ceb133711936f1ff33054e87b3dae6c7602f9e08504"
 dependencies = [
  "serde",
  "serde_json",

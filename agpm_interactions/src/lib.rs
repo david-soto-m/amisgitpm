@@ -4,7 +4,7 @@
 //! with the [`Interactor`](crate::Interactor) struct. It brings some suggestions
 //! with the a private `Suggestions` type.
 
-use amisgitpm::{Interactions, PMDirs, Project, ProjectStore, UpdatePolicy};
+use amisgitpm::{ PMDirs, ProjectStore};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::{BranchType, Repository};

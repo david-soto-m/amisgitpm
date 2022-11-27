@@ -17,9 +17,10 @@ However, I have published this crate. My reasons are:
 2. I wanted to know what I had installed with the package manager.
 3. I wanted to update to the latest changes available without having to
 manually download the new version and build it.
-4. I wanted to be able to always go back to the previous version if things
+4. I wanted to edit the project setup
+5. I wanted to be able to always go back to the previous version if things
 stopped working.
-5. I wanted to uninstall the software once I was done with it.
+6. I wanted to uninstall the software once I was done with it.
 
 This requirements came from using the [Helix editor](https://helix-editor.com/)
 ❤️❤️❤️ before it was as mature as it is today. I still want to follow the
@@ -49,7 +50,7 @@ problem, but it's a bummer
 
 # TODO
 
-- Get the projects structure out, and set a trait for it.
+- Make everything work again
 - Document, Document, and Document
 - Test everything
 

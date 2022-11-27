@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dev-dependencies]
-amisgitpm = {path = "../amisgitpm", features = ["serde"] }
+amisgitpm = {path = "../amisgitpm"}
 agpm_pm = {path = "../agpm_pm"}
 agpm_dirs = {path = "../agpm_dirs"}
 agpm_store = {path = "../agpm_store"}

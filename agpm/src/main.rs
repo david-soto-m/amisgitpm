@@ -1,7 +1,6 @@
 #![warn(missing_docs)]
 //! This is the main execution file for my agpm package manager implementation.
 
-use agpm_lib::{prelude::*, ProjectManager};
 use clap::Parser;
 
 pub mod args;
@@ -20,7 +19,18 @@ fn main() {
         Commands::List { package } => pm.list(package),
         Commands::Edit { package } => pm.inter_edit(&package),
         Commands::Cleanup => pm.cleanup(),
-        Commands::Bootstrap => pm.bootstrap(),
+        Commands::Bootstrap => {
+            let prj = Project {
+                name: "amisgitpm".into(),
+                dir: "amisgitpm".into(),
+                url: "https://github.com/david-soto-m/amisgitpm.git".into(),
+                ref_string: "refs/heads/main".into(),
+                update_policy: UpdatePolicy::Always,
+                install_script: vec!["cargo install --path . --root ~/.local/".into()],
+                uninstall_script: vec!["cargo uninstall amisgitpm --root ~/.local/".into()],
+            };
+            pm.install(prj)
+        },
     }
     .unwrap_or_else(|e| println!("{e}"));
 }

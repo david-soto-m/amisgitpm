@@ -1,9 +1,14 @@
+//! This crate defines the `PMDirs` trait, which allows package managers and stores
+//! to know where to place their files
+
 use std::path::PathBuf;
+
 /// A trait to standarize the directories that are used in the crate
 pub trait PMDirs
 where
     Self: Sized,
 {
+    /// An error that you can return while creating the implementor of `PMDirs`
     type Error: std::error::Error;
     /// new the object that implements this trait
     fn new() -> Result<Self, Self::Error>;

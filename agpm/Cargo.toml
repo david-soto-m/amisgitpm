@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "^4", features = ["derive"] } # arguments
-agpm_lib = {path = "../agpm_lib"}

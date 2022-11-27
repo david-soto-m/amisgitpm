@@ -4,8 +4,8 @@ members = [
     "agpm_pm",
     "agpm_dirs",
     "agpm_store",
+    "agpm_project",
     "agpm_interactions",
-    "agpm_lib",
     "agpm",
     "tests"
 ]

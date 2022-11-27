@@ -1,11 +1,12 @@
 use crate::{PMError, ProjectManager};
-use amisgitpm::{Interactions, PMDirs, PMOperations, Project, ProjectStore, ScriptType};
+use amisgitpm::{PMDirs, PMOperations, ProjectStore};
 use fs_extra::dir::{self, CopyOptions};
 use std::marker::PhantomData;
 use std::path::Path;
 use subprocess::Exec;
 
 impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManager<D, PS, I> {
+    // type Project =;
     type Store = PS;
     type Dirs = D;
     type Error = PMError<D::Error, PS::Error, I::Error>;
@@ -29,7 +30,7 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
     fn get_mut_store(&mut self) -> &mut Self::Store {
         &mut self.store
     }
-    fn get_dir(&self) -> &Self::Dirs {
+    fn get_dirs(&self) -> &Self::Dirs {
         &self.dirs
     }
     fn copy_directory<T: AsRef<Path>, Q: AsRef<Path>>(
@@ -45,16 +46,14 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
         dir::copy(from, to, &opts)?;
         Ok(())
     }
-    fn script_runner(&self, prj: &Project, scr_run: ScriptType) -> Result<(), Self::Error> {
-        let src_dir = self.dirs.src().join(&prj.dir);
-        let script = match scr_run {
-            ScriptType::IScript => prj.install_script.join("&&"),
-            ScriptType::UnIScript => prj.uninstall_script.join("&&"),
-        };
-        if Exec::shell(script).cwd(&src_dir).join()?.success() {
-            Ok(())
-        } else {
-            Err(Self::Error::Exec(prj.name.to_string(), scr_run))?
-        }
+    fn script_runner(&self, dir: &str, script: &[String]) -> Result<(), Self::Error> {
+        let src_dir = self.dirs.src().join(dir);
+        Exec::shell(script).cwd(&src_dir).join().map(|e|
+            if e.success(){
+
+            } else{
+            }
+
+        )
     }
 }
