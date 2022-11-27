@@ -1,58 +1,16 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-/// What to do when updating a project
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Copy, Default)]
-pub enum UpdatePolicy {
-    /// Update the project to the newest version every time
-    Always,
-    /// Ask whether to update or not
-    Ask,
-    /// Do not update the repo, **default** value
-    #[default]
-    Never,
-}
-
-impl std::fmt::Display for UpdatePolicy {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Always => {
-                write!(f, "Always try to update the project")
-            }
-            Self::Ask => {
-                write!(f, "Ask wether ot update or not")
-            }
-            Self::Never => {
-                write!(f, "Never try to update the project")
-            }
-        }
-    }
-}
-
-/// The structure that all installed projects must have
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Default)]
-pub struct Project {
-    /// The name of the projects
-    pub name: String,
-    /// The name of the directory in which the project is going to be stored
-    pub dir: String,
-    /// The url from which to git clone the project, it can be a file url
-    pub url: String,
-    /// A string to identify the branch which you want installed
-    pub ref_string: String,
-    /// Whether to update, ask or never update the project
-    pub update_policy: UpdatePolicy,
-    /// How to install the project. The elements are joined with && before execution
-    pub install_script: Vec<String>,
-    /// How to uninstall the project. The elements are joined with && before execution
-    pub uninstall_script: Vec<String>,
+pub trait ProjectT: Clone{
+    fn get_name(&self)-> &str;
+    fn get_dir(&self)-> &str;
+    fn get_url(&self)-> &str;
+    fn get_ref_string(&self)-> &str;
+    fn get_install(&self)-> &[String];
+    fn get_uninstall(&self)-> &[String];
 }
 
 /// How to interact with however your projects are stored
 /// The idea is that you can implement this trait with any technology you want
 /// to use. Any kind of database, a xml document, a collection of json docs...
-pub trait ProjectStore
+pub trait ProjectStore<T: ProjectT>
 where
     Self: Sized,
 {
@@ -61,15 +19,15 @@ where
     /// A function to start up your store
     fn new() -> Result<Self, Self::Error>;
     /// Add an item to the store
-    fn add(&mut self, prj: Project) -> Result<(), Self::Error>;
+    fn add(&mut self, prj: T) -> Result<(), Self::Error>;
     /// Remove an item from the store
     fn remove(&mut self, prj_name: &str) -> Result<(), Self::Error>;
     /// Get a reference to an item inside the store
-    fn get_ref<'a>(&'a self, prj_name: &str) -> Option<&'a Project>;
+    fn get_ref<'a>(&'a self, prj_name: &str) -> Option<&'a T>;
     /// Return a cloned instance of a project in the store
-    fn get_clone(&self, prj_name: &str) -> Option<Project>;
+    fn get_clone(&self, prj_name: &str) -> Option<T>;
     /// Replace the project that used to go by the `old_prj_name` name with the `new_prj` item
-    fn edit(&mut self, old_prj_name: &str, new_prj: Project) -> Result<(), Self::Error> {
+    fn edit(&mut self, old_prj_name: &str, new_prj: T) -> Result<(), Self::Error> {
         self.remove(old_prj_name)?;
         self.add(new_prj)?;
         Ok(())
@@ -83,7 +41,7 @@ where
         self.check_dir_free(dir) && self.check_name_free(prj_name)
     }
     /// Return an iterator over refereneces of Project Items
-    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &Project> + 'a>;
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &T> + 'a>;
     /// Check if there are elements in the store
     fn is_empty(&self) -> bool;
 }

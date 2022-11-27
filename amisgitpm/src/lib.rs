@@ -1,8 +1,6 @@
-mod interactions;
-pub use interactions::Interactions;
-mod project;
-pub use project::{Project, ProjectStore, UpdatePolicy};
-mod dirs;
+pub mod project;
+pub use project::{ProjectStore, ProjectT};
+pub mod dirs;
 pub use dirs::PMDirs;
-mod pm;
-pub use pm::{CommonPMErrors, PMBasics, PMExtended, PMInteractive, PMOperations, ScriptType};
+pub mod pm;
+pub use pm::{CommonPMErrors, PMProgramatic, PMInteractive, PMOperations};
