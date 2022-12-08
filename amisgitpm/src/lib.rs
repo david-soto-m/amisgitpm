@@ -6,4 +6,4 @@ pub use project::{ProjectStore, ProjectT};
 pub mod dirs;
 pub use dirs::PMDirs;
 pub mod pm;
-pub use pm::{CommonPMErrors, PMProgrammatic, PMInteractive, PMOperations};
+pub use pm::{CommonPMErrors, PMInteractive, PMOperations, PMProgrammatic};

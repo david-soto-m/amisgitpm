@@ -48,10 +48,10 @@ impl std::fmt::Display for CommonPMErrors {
             Self::AlreadyExisting => {
                 write!(f, "A project with that name or directory already exists")
             }
-            Self::NonExisting => write!(f,"That project that doesn't exist!"),
+            Self::NonExisting => write!(f, "That project that doesn't exist!"),
             Self::Os2Str => write!(f, "Couldn't convert from &Osstr to utf-8 &str"),
             Self::BadRef => write!(f, "Couldn't find a reference to a non detached HEAD"),
-            Self::ImposibleUpdate=> write!(f,"Update couldn't be solved by a fast forward."),
+            Self::ImposibleUpdate => write!(f, "Update couldn't be solved by a fast forward."),
         }
     }
 }
@@ -75,20 +75,20 @@ where
     fn new() -> Result<Self, Self::Error>;
     /// Map the errors created by your store to package manager errors
     /// Typically
-    /// ```
+    /// ```ignore
     ///Self::Error::Store(err)
     ///```
     fn map_store_error(err: <Self::Store as ProjectStore<Self::Project>>::Error) -> Self::Error;
     /// Map the errors produced by your `PMDirs` implementer to package manager errors
     /// Typically
-    /// ```
+    /// ```ignore
     ///Self::Error::Dirs(err)
     ///```
     fn map_dir_error(err: <Self::Dirs as PMDirs>::Error) -> Self::Error;
     /// Provide a reference to whatever store you are using.
     /// If you are using a structure to implement the package manager and you
     /// want your package manager to hold within itself a store then its a easy as
-    /// ```
+    /// ```ignore
     /// &self.store
     /// ```
     fn get_store(&self) -> &Self::Store;
@@ -98,7 +98,7 @@ where
     fn get_dirs(&self) -> &Self::Dirs;
     /// Copy a directory completely from one place to another. With the `fs_extra` crate
     /// this function is as easy as
-    ///```
+    ///```ignore
     /// let opts = CopyOptions {
     ///     overwrite: true,
     ///     copy_inside: true,
@@ -142,7 +142,7 @@ where
         }
         self.copy_directory(path, &src_dir)?;
         std::fs::remove_dir_all(path)?;
-        self.script_runner(prj.get_dir(),prj.get_install())?;
+        self.script_runner(prj.get_dir(), prj.get_install())?;
         Ok(())
     }
     /// Update a repo, getting the latest changes if they can be fast forwarded to,
@@ -239,11 +239,14 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     /// Get the project configuration, given it's name
-    fn get_one(&self, prj_name: &str) -> Result<&Self::Project, Self::Error>{
-        Ok(self.get_store().get_ref(prj_name).ok_or(CommonPMErrors::NonExisting)?)
+    fn get_one(&self, prj_name: &str) -> Result<&Self::Project, Self::Error> {
+        Ok(self
+            .get_store()
+            .get_ref(prj_name)
+            .ok_or(CommonPMErrors::NonExisting)?)
     }
     /// Get a list of references to all the projects in storage
-    fn get_all(&self)-> Vec<&Self::Project>{
+    fn get_all(&self) -> Vec<&Self::Project> {
         self.get_store().iter().collect()
     }
 }
@@ -255,7 +258,7 @@ pub trait PMInteractive: PMProgrammatic {
     /// With this function a project should be downloaded, ask for the necessary
     /// information and then build and install itself
     /// The contents could look something like:
-    /// ```
+    /// ```ignore
     /// let project : Project{
     ///     directory : somehow_get_directory()
     ///     url: url
@@ -267,12 +270,12 @@ pub trait PMInteractive: PMProgrammatic {
     /// self.get_mut_store()
     ///     .add(project.clone())
     ///     .map_err(Self::map_store_error)?;
-    /// self.build_rm(&project, &git_dir)?;
+    /// self.mv_build(&project, &git_dir)?;
     /// Ok(())
     /// ```
     fn i_install(&mut self, url: &str) -> Result<(), Self::Error>;
     /// This function should give the available information of the projects
-    fn i_list(&self, prj_names:&[&str]) -> Result<(), Self::Error>;
+    fn i_list(&self, prj_names: &[&str]) -> Result<(), Self::Error>;
     /// Edit a projects information and store that
     fn i_edit(&mut self, package: &str) -> Result<(), Self::Error>;
     /// Update the projects, (Possibly a forwarding of the `PMBasics` update
@@ -283,5 +286,5 @@ pub trait PMInteractive: PMProgrammatic {
     fn i_restore(self, prj_names: &[&str]) -> Result<(), Self::Error>;
     /// Uninstall a project and delete the related information that the
     /// package manager has about it. (Possibly a forwarding of the `PMBasics` uninstall method)
-    fn i_uninstall(self, prj_names: &[&str]) -> Result<(), Self::Error>;
+    fn i_uninstall(&mut self, prj_names: &[&str]) -> Result<(), Self::Error>;
 }

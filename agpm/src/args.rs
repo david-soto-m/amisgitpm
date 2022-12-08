@@ -46,10 +46,7 @@ pub enum Commands {
         #[clap(value_parser)]
         /// An optional package name to update independently.
         /// If not provided all packages are updated
-        package: Option<String>,
-        #[clap(short, long)]
-        /// A flag to force update all packages configured to ask
-        force: bool,
+        package: String,
     },
 
     /// Uninstall a package
@@ -84,7 +81,7 @@ pub enum Commands {
     ///
     /// It is `O(N^2)`, with `N` the number of installed packages
     /// It is parallelized, and therefore is panicky rather than reporting
-    Cleanup,
+    Clean,
 
     /// Edit the configuration of a project
     Edit {
@@ -97,7 +94,7 @@ pub enum Commands {
     List {
         #[clap(value_parser)]
         /// Packages from which to get detailed information
-        package: Vec<String>,
+        package: String,
     },
 
     /// Install amisgitpm with amisgitpm, check that everything is in place

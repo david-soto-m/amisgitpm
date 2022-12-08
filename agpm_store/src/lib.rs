@@ -3,7 +3,7 @@
 //! how installed projects are stored and internally queried.
 
 use amisgitpm::{PMDirs, ProjectStore, ProjectT};
-use json_tables::{Table, TableError, Deserialize, Serialize};
+use json_tables::{Deserialize, Serialize, Table, TableError};
 use std::marker::PhantomData;
 
 mod error;
@@ -18,7 +18,8 @@ pub struct Store<D: PMDirs, T: ProjectT + Serialize + for<'d> Deserialize<'d>> {
 
 impl<D: PMDirs, T> ProjectStore<T> for Store<D, T>
 where
-T: ProjectT + Serialize + for<'d> Deserialize<'d>{
+    T: ProjectT + Serialize + for<'d> Deserialize<'d>,
+{
     type Error = ProjectStoreError<D::Error>;
     fn new() -> Result<Self, Self::Error> {
         let dirs = <D as PMDirs>::new().map_err(Self::Error::Dirs)?;

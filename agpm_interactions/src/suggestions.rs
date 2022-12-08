@@ -2,11 +2,13 @@
 //!
 //! It also defines a struct that implements the trait and the auxiliary
 //! structs and functions that are needed for that.
-use crate::error::SuggestionsError;
+use agpm_dirs::PMDirsImpl;
 use amisgitpm::PMDirs;
+use glob::{GlobError, PatternError};
 use json_tables::{Deserialize, Serialize, Table, TableError};
 use regex::Regex;
 use std::path::{Path, PathBuf};
+use thiserror::Error;
 
 pub struct Suggestions {
     install: Vec<Vec<String>>,
@@ -18,13 +20,11 @@ impl Suggestions {
         let regex = Regex::new(r"((?i)compil|instal|build)").unwrap();
         markdown_extract::extract_from_path(readme_file, &regex).map_err(|e| e.into())
     }
-    pub fn new<T: PMDirs>(for_: impl AsRef<Path>) -> Result<Self, SuggestionsError> {
-        let from = T::new()
+    pub fn new(for_: impl AsRef<Path>) -> Result<Self, SuggestionsError> {
+        let from = PMDirsImpl::new()
             .map_err(|e| SuggestionsError::DirsError(e.to_string()))?
-            .projects_db()
-            .parent()
-            .unwrap()
-            .join("suggestions");
+            .suggestions_dir();
+
         let mut readme: Vec<Vec<String>> = vec![];
         for each in glob::glob(
             for_.as_ref()
@@ -34,6 +34,7 @@ impl Suggestions {
         )? {
             readme.append(&mut Self::get_build_suggestions(&each?).unwrap_or_default());
         }
+        println!("{from:?}");
         match SuggestionsTable::new(from.as_ref()) {
             Ok(db) => {
                 let db_sug = db.get_suggestions(for_.as_ref());
@@ -138,4 +139,30 @@ mod tests {
         assert_eq!(swave[0].len(), 10);
         assert_eq!(swave[1].len(), 26);
     }
+}
+
+#[non_exhaustive]
+#[derive(Error, Debug)]
+/// An error type for the `BuildSuggestions` struct.
+pub enum SuggestionsError {
+    /// The creation has had an error with some file operation
+    #[error(transparent)]
+    FileOp(#[from] std::io::Error),
+    /// The creation has had an error with a json_table
+
+    #[error(transparent)]
+    Table(#[from] TableError),
+    /// Couldn't read file to determine if it matches pattern
+    #[error(transparent)]
+    Glob(#[from] GlobError),
+    /// A glob pattern was bad
+    #[error(transparent)]
+    Pattern(#[from] PatternError),
+    /// The path is not utf-8
+    #[error("A path is not utf-8 compatible")]
+    Path,
+    /// A field to place errors that don't fit in with the other variants when
+    /// re-implementing the BuildSuggestions
+    #[error("{0}")]
+    DirsError(String),
 }

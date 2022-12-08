@@ -1,7 +1,7 @@
 use json_tables::{TableBuilderError, TableError};
 use thiserror::Error;
 
-/// An error for the [`ProjectTable`](crate::ProjectTable)
+/// An error for the [`ProjectStore`](amisgitpm::ProjectStore) struct
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum ProjectStoreError<D: std::error::Error> {

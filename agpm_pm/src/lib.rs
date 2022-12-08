@@ -1,61 +1,47 @@
 use amisgitpm::{
-    PMProgrammatic, PMDirs, PMInteractive, ProjectStore, CommonPMErrors
+    CommonPMErrors, PMDirs, PMInteractive, PMOperations, PMProgrammatic, ProjectStore, ProjectT,
 };
 use std::marker::PhantomData;
 mod error;
 pub use error::PMError;
+mod interactions;
 mod operations;
+pub use interactions::Interactions;
 
-pub struct ProjectManager<D: PMDirs, PS: ProjectStore, I: Interactions> {
+pub struct PrjManager<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> {
     dirs: D,
     store: PS,
     inter_data: PhantomData<I>,
+    p_data: PhantomData<P>,
 }
-impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMProgrammatic for ProjectManager<D, PS, I> {}
 
+impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMProgrammatic
+    for PrjManager<P, D, PS, I>
+{
+}
 
-impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMInteractive for ProjectManager<D, PS, I> {
-    type Interact = I;
-
-    fn map_inter_error(err: <Self::Interact as Interactions>::Error) -> Self::Error {
-        Self::Error::Interact(err)
-    }
+impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInteractive
+    for PrjManager<P, D, PS, I>
+{
     fn i_install(&mut self, url: &str) -> Result<(), Self::Error> {
-        let url = if url.ends_with('/') {
-            let (a, _) = url.rsplit_once('/').unwrap();
-            a
-        } else {
-            url
-        };
-        let inter = Self::Interact::new().map_err(Self::map_inter_error)?;
-        let sugg = url
-            .split('/')
-            .last()
-            .map_or("temp".into(), |potential_dir| {
-                potential_dir
-                    .to_string()
-                    .rsplit_once('.')
-                    .map_or(potential_dir.to_string(), |(dir, _)| dir.to_string())
-            });
-        let mut proj_stub = Project {
-            url: url.to_string(),
-            dir: sugg,
-            ..Default::default()
-        };
-        let (repo, git_dir) = self.download(&proj_stub)?;
-        proj_stub.ref_string = inter.refs(&repo).map_err(Self::map_inter_error)?;
-        self.switch_branch(&proj_stub, &repo)?;
+        let inter = I::new().map_err(Self::map_inter_error)?;
+        let prj_stub = inter.url_to_download(url).map_err(Self::map_inter_error)?;
+        let (repo, git_dir) = self.download(&prj_stub)?;
+        let prj_stub = inter
+            .repo_to_checkout_branch(prj_stub, &repo)
+            .map_err(Self::map_inter_error)?;
+        self.switch_branch(&prj_stub, &repo)?;
         let project = inter
-            .create_project(&proj_stub, self.get_store(), &git_dir)
+            .create_project(&prj_stub, self.get_store(), &git_dir)
             .map_err(Self::map_inter_error)?;
         self.get_mut_store()
             .add(project.clone())
             .map_err(Self::map_store_error)?;
-        self.build_rm(&project, &git_dir)?;
+        self.mv_build(&project, &git_dir)?;
         Ok(())
     }
     fn i_list(&self, prj_names: &[&str]) -> Result<(), Self::Error> {
-        let inter = Self::Interact::new().map_err(Self::map_inter_error)?;
+        let inter = I::new().map_err(Self::map_inter_error)?;
         if prj_names.is_empty() {
             inter
                 .list(self.get_store())
@@ -73,42 +59,53 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMInteractive for ProjectMana
         Ok(())
     }
     fn i_edit(&mut self, package: &str) -> Result<(), Self::Error> {
-        let inter = Self::Interact::new().map_err(Self::map_inter_error)?;
+        let inter = I::new().map_err(Self::map_inter_error)?;
         if let Some(element) = self.get_store().get_clone(package) {
-            let old_name = element.name.clone();
+            let old_name = element.get_name().to_owned();
             let prj = inter.edit(element).map_err(Self::map_inter_error)?;
             self.edit(&old_name, prj)?;
         }
         Ok(())
     }
-    fn i_update(&self, prj_name: Option<String>) -> Result<(), Self::Error> {
-        let inter = Self::Interact::new().map_err(Self::map_inter_error)?;
-        if let Some(package) = prj_name {
-            self.get_store()
-                .get_ref(&package)
-                .ok_or(CommonPMErrors::NonExisting)?;
-            self.update(&package)?;
-            Ok(())
-        } else {
+    fn i_update(&self, prj_names: &[&str]) -> Result<(), Self::Error> {
+        let inter = I::new().map_err(Self::map_inter_error)?;
+        if prj_names.is_empty() {
             self.get_store()
                 .iter()
-                .filter(|e| match e.update_policy {
-                    UpdatePolicy::Always => true,
-                    UpdatePolicy::Ask => {
-                        inter.update_confirm(&e.name).unwrap_or_default()
-                    }
-                    UpdatePolicy::Never => false,
-                })
-                .try_for_each(|e| self.update(&e.name))?;
-            Ok(())
+                .filter(|e| inter.update_confirm(e))
+                .try_for_each(|e| self.update(&e.get_name()))?;
+        } else {
+            for project in prj_names {
+                self.get_store()
+                    .get_ref(&project)
+                    .ok_or(CommonPMErrors::NonExisting)?;
+                self.update(&project)?;
+            }
         }
+        Ok(())
+    }
+    fn i_restore(self, prj_names: &[&str]) -> Result<(), Self::Error> {
+        for prj in prj_names {
+            self.restore(prj)?
+        }
+        Ok(())
+    }
+    fn i_uninstall(&mut self, prj_names: &[&str]) -> Result<(), Self::Error> {
+        for prj in prj_names {
+            self.uninstall(prj)?
+        }
+        Ok(())
     }
 }
 
-impl<D: PMDirs, PS: ProjectStore, I: Interactions> ProjectManager<D, PS, I> {
+impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PrjManager<P, D, PS, I> {
+    fn map_inter_error(e: I::Error) -> <Self as PMOperations>::Error {
+        <Self as PMOperations>::Error::Interact(e)
+    }
+
     /// Uninstall a project, and then install it again
     /// Have you tried turning it off and on again?
-    fn reinstall(&mut self, prj_name: &str) -> Result<(), Self::Error> {
+    pub fn reinstall(&mut self, prj_name: &str) -> Result<(), <Self as PMOperations>::Error> {
         let prj = self
             .get_store()
             .get_clone(prj_name)
@@ -118,7 +115,7 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> ProjectManager<D, PS, I> {
         Ok(())
     }
     /// Run the build script over an existing project.
-    fn rebuild(&self, prj_name: &str) -> Result<(), Self::Error> {
+    pub fn rebuild(&self, prj_name: &str) -> Result<(), <Self as PMOperations>::Error> {
         let prj = self
             .get_store()
             .get_ref(prj_name)
@@ -128,12 +125,12 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> ProjectManager<D, PS, I> {
     }
     /// Clean all the files that might be left over from manually touching
     /// config files or unsuccessful uninstallations
-    fn cleanup(&self) -> Result<(), Self::Error> {
-        let new_dir = self.get_dir().git();
+    pub fn cleanup(&self) -> Result<(), <Self as PMOperations>::Error> {
+        let new_dir = self.get_dirs().git();
         if new_dir.exists() {
             std::fs::remove_dir_all(new_dir)?;
         }
-        let src_dir = self.get_dir().src();
+        let src_dir = self.get_dirs().src();
         if src_dir.exists() {
             std::fs::read_dir(src_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
@@ -144,10 +141,10 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> ProjectManager<D, PS, I> {
                         std::fs::remove_dir_all(entry.path())?;
                     }
                 }
-                Ok::<(), Self::Error>(())
+                Ok::<(), <Self as PMOperations>::Error>(())
             })?;
         }
-        let old_dir = self.get_dir().old();
+        let old_dir = self.get_dirs().old();
         if old_dir.exists() {
             std::fs::read_dir(&old_dir)?.try_for_each(|e| {
                 if let Ok(entry) = e {
@@ -158,7 +155,7 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> ProjectManager<D, PS, I> {
                         std::fs::remove_dir_all(entry.path())?;
                     }
                 }
-                Ok::<(), Self::Error>(())
+                Ok::<(), <Self as PMOperations>::Error>(())
             })?;
         }
         Ok(())

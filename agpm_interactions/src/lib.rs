@@ -1,36 +1,36 @@
 #![warn(missing_docs)]
 
-//! This crate implements the [`Interactions`](agpm_abstract::Interactions) in
-//! with the [`Interactor`](crate::Interactor) struct. It brings some suggestions
-//! with the a private `Suggestions` type.
+//! This crate implements the [`agpm_pm::Interactions`] trait with the
+//! [`Interactor`] struct. It brings some suggestions with the a private
+//! `Suggestions` type.
 
-use amisgitpm::{ PMDirs, ProjectStore};
+use agpm_pm::Interactions;
+use agpm_project::{Project, UpdatePolicy};
+use amisgitpm::{PMDirs, ProjectStore};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::{BranchType, Repository};
 use prettytable as pt;
 use prettytable::row;
 use std::{marker::PhantomData, path::Path};
-
 mod error;
-pub use error::{InteractError, SuggestionsError};
+pub use error::InteractError;
 
+#[cfg(feature = "suggestions")]
 mod suggestions;
+#[cfg(feature = "suggestions")]
 use suggestions::Suggestions;
+#[cfg(feature = "suggestions")]
+pub use suggestions::SuggestionsError;
 
-/// This struct implements the [`Interactions`](agpm_abstract::Interactions) trait. To that purpose
+/// This struct implements the [`agpm_pm::Interactions`] trait. To that purpose
 pub struct Interactor<T: PMDirs> {
     t: Term,
     dirs: PhantomData<T>,
 }
 
 impl<T: PMDirs> Interactor<T> {
-    fn get_sugg(
-        &self,
-        sug: &Vec<Vec<String>>,
-        info: &str,
-    ) -> Result<Vec<String>, <Self as Interactions>::Error> {
-        self.t.clear_screen()?;
+    fn get_sugg(&self, sug: &Vec<Vec<String>>, info: &str) -> Result<Vec<String>, InteractError> {
         let mut edit_string = String::new();
         if !sug.is_empty() {
             println!("{}", info);
@@ -81,7 +81,7 @@ when you are done press {}", style("all").bold(), style("space").bold(), style("
         sugg: &str,
         prompts: (&str, &str, &str),
         check: impl Fn(&str) -> bool,
-    ) -> Result<String, <Self as Interactions>::Error> {
+    ) -> Result<String, InteractError> {
         self.t.clear_screen()?;
         println!("{}", prompts.0);
         loop {
@@ -104,7 +104,7 @@ when you are done press {}", style("all").bold(), style("space").bold(), style("
         }
     }
 
-    fn get_updates(&self) -> Result<UpdatePolicy, <Self as Interactions>::Error> {
+    fn get_updates(&self) -> Result<UpdatePolicy, InteractError> {
         self.t.clear_screen()?;
         println!("Now we are trying to get an update policy");
         let update_array = vec![UpdatePolicy::Ask, UpdatePolicy::Always, UpdatePolicy::Never];
@@ -113,7 +113,7 @@ when you are done press {}", style("all").bold(), style("space").bold(), style("
     }
 }
 
-impl<T: PMDirs> Interactions for Interactor<T> {
+impl<T: PMDirs, ST: ProjectStore<Project>> Interactions<Project, ST> for Interactor<T> {
     type Error = InteractError;
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {
@@ -121,7 +121,11 @@ impl<T: PMDirs> Interactions for Interactor<T> {
             dirs: PhantomData::default(),
         })
     }
-    fn refs(&self, repo: &Repository) -> Result<String, Self::Error> {
+    fn repo_to_checkout_branch(
+        &self,
+        mut prj: Project,
+        repo: &Repository,
+    ) -> Result<Project, Self::Error> {
         let branch_arr: Vec<String> = repo
             .branches(Some(BranchType::Local))?
             .filter_map(|br| br.ok())
@@ -133,15 +137,16 @@ impl<T: PMDirs> Interactions for Interactor<T> {
             .with_prompt("Please, choose a reference")
             .items(&branch_arr)
             .interact()?;
-        Ok(branch_arr[branch_idx].clone())
+        prj.ref_string = branch_arr[branch_idx].clone();
+        Ok(prj)
     }
     fn create_project(
         &self,
         prj_stub: &Project,
-        store: &impl ProjectStore,
+        store: &ST,
         wher: &Path,
     ) -> Result<Project, Self::Error> {
-        let sugg = Suggestions::new::<T>(wher)?;
+        let (ins, unins) = provide_suggestions(wher);
         let sugg_name = prj_stub
             .url
             .split('/')
@@ -175,9 +180,8 @@ The directory is a name for a folder",
             |a| !store.check_dir_free(a),
         )?;
         let update_policy = self.get_updates()?;
-        // panic!("here");
         let install_script = self.get_sugg(
-            sugg.get_install(),
+            &ins,
             &format!(
                 "Now we have to establish how to build and install the program.
 Please keep two things in mind:
@@ -189,7 +193,7 @@ commands you might want to do something like this `command-to-detach & cd .`",
             ),
         )?;
         let uninstall_script = self.get_sugg(
-            sugg.get_uninstall(),
+            &unins,
             &format!(
                 "Now we have to establish how to uninstall the program.
 You might want to trace:
@@ -224,7 +228,7 @@ commands you might want to do something like this `command-to-detach & cd .`",
             Ok(prj)
         }
     }
-    fn list<S: ProjectStore>(&self, store: &S) -> Result<(), Self::Error> {
+    fn list(&self, store: &ST) -> Result<(), Self::Error> {
         let mut show_table = pt::Table::new();
         show_table.set_titles(row![
             "Name",
@@ -246,10 +250,52 @@ commands you might want to do something like this `command-to-detach & cd .`",
         println!("{:#?}", prj);
         Ok(())
     }
-    fn update_confirm(&self, package_name: &str) -> Result<bool, Self::Error> {
-        let res = Confirm::new()
-            .with_prompt(format!("Would you like to update {}", package_name))
-            .interact()?;
-        Ok(res)
+    fn update_confirm(&self, prj: &Project) -> bool {
+        match prj.update_policy {
+            UpdatePolicy::Always => true,
+            UpdatePolicy::Ask => Confirm::new()
+                .with_prompt(format!("Would you like to update {}", prj.name))
+                .interact()
+                .unwrap_or_default(),
+            UpdatePolicy::Never => false,
+        }
     }
+    fn url_to_download(&self, url: &str) -> Result<Project, Self::Error> {
+        let url = if url.ends_with('/') {
+            let (a, _) = url.rsplit_once('/').unwrap();
+            a
+        } else {
+            url
+        };
+        let sugg = url
+            .split('/')
+            .last()
+            .map_or("temp".into(), |potential_dir| {
+                potential_dir
+                    .to_string()
+                    .rsplit_once('.')
+                    .map_or(potential_dir.to_string(), |(dir, _)| dir.to_string())
+            });
+
+        Ok(Project {
+            url: url.to_string(),
+            dir: sugg,
+            ..Default::default()
+        })
+    }
+}
+
+#[allow(unused_variables)]
+#[allow(unreachable_code)]
+fn provide_suggestions(wher: &Path) -> (Vec<Vec<String>>, Vec<Vec<String>>) {
+    #[cfg(feature = "suggestions")]
+    {
+        let sugg = Suggestions::new(wher).unwrap();
+        return (
+            sugg.get_install().to_owned(),
+            sugg.get_uninstall().to_owned(),
+        );
+    }
+    // This code is reachable when the feature suggestions is enabled
+    (vec![], vec![])
 }

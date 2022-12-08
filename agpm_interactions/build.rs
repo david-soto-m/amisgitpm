@@ -1,15 +1,18 @@
-use directories::ProjectDirs;
-use std::fs;
-const PROJECT_INFO: (&str, &str, &str) = ("org", "amisoft", "amisgitpm");
-pub const SUGGESTION_DIR: &str = "suggestions";
+#[cfg(feature = "suggestions")]
+use agpm_dirs::PMDirsImpl;
+#[cfg(feature = "suggestions")]
+use amisgitpm::PMDirs;
 
 fn main() {
-    let dirs = ProjectDirs::from(PROJECT_INFO.0, PROJECT_INFO.1, PROJECT_INFO.2).unwrap();
-    let sugg_dir = dirs.config_dir().join(SUGGESTION_DIR);
-    fs::create_dir_all(&sugg_dir).unwrap();
-    for file in fs::read_dir(SUGGESTION_DIR).unwrap() {
-        let file = file.unwrap();
-        println!("{:?}", file.file_name());
-        fs::copy(file.path(), sugg_dir.join(file.file_name())).unwrap();
+    #[cfg(feature = "suggestions")]
+    {
+        use std::fs;
+        let dirs = PMDirsImpl::new().unwrap();
+        let sugg_dir = dirs.suggestions_dir();
+        fs::create_dir_all(&sugg_dir).unwrap();
+        for file in fs::read_dir("suggestions").unwrap() {
+            let file = file.unwrap();
+            fs::copy(file.path(), sugg_dir.join(file.file_name())).unwrap();
+        }
     }
 }

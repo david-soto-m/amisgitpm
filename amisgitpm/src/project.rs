@@ -2,19 +2,19 @@
 //! package managers.
 
 /// A trait that is used to know to set up a project
-pub trait ProjectT: Clone{
+pub trait ProjectT: Clone {
     /// Get the name of the project
-    fn get_name(&self)-> &str;
+    fn get_name(&self) -> &str;
     /// Get the directory name to use for this project
-    fn get_dir(&self)-> &str;
+    fn get_dir(&self) -> &str;
     /// Get the url from which to clone the project
-    fn get_url(&self)-> &str;
+    fn get_url(&self) -> &str;
     /// Get the reference string
-    fn get_ref_string(&self)-> &str;
+    fn get_ref_string(&self) -> &str;
     /// Get the install script
-    fn get_install(&self)-> &[String];
+    fn get_install(&self) -> &[String];
     /// Get the uninstall script
-    fn get_uninstall(&self)-> &[String];
+    fn get_uninstall(&self) -> &[String];
 }
 
 /// How to interact with however your projects are stored

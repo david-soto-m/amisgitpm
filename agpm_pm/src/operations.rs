@@ -1,12 +1,15 @@
-use crate::{PMError, ProjectManager};
-use amisgitpm::{PMDirs, PMOperations, ProjectStore};
+use crate::{Interactions, PMError, PrjManager};
+use amisgitpm::{PMDirs, PMOperations, ProjectStore, ProjectT};
 use fs_extra::dir::{self, CopyOptions};
 use std::marker::PhantomData;
 use std::path::Path;
 use subprocess::Exec;
 
-impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManager<D, PS, I> {
+impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMOperations
+    for PrjManager<P, D, PS, I>
+{
     // type Project =;
+    type Project = P;
     type Store = PS;
     type Dirs = D;
     type Error = PMError<D::Error, PS::Error, I::Error>;
@@ -16,9 +19,10 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
             dirs,
             store: PS::new().map_err(Self::Error::Store)?,
             inter_data: PhantomData::default(),
+            p_data: PhantomData::default(),
         })
     }
-    fn map_store_error(err: <Self::Store as ProjectStore>::Error) -> Self::Error {
+    fn map_store_error(err: <Self::Store as ProjectStore<P>>::Error) -> Self::Error {
         Self::Error::Store(err)
     }
     fn map_dir_error(err: <Self::Dirs as PMDirs>::Error) -> Self::Error {
@@ -48,12 +52,13 @@ impl<D: PMDirs, PS: ProjectStore, I: Interactions> PMOperations for ProjectManag
     }
     fn script_runner(&self, dir: &str, script: &[String]) -> Result<(), Self::Error> {
         let src_dir = self.dirs.src().join(dir);
-        Exec::shell(script).cwd(&src_dir).join().map(|e|
-            if e.success(){
-
-            } else{
-            }
-
-        )
+        if !Exec::shell(script.join("&&"))
+            .cwd(&src_dir)
+            .join()?
+            .success()
+        {
+            Err(Self::Error::Exec)?
+        }
+        Ok(())
     }
 }

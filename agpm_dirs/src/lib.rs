@@ -18,7 +18,7 @@ impl PMDirs for PMDirsImpl {
     ///
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {
-            p_dirs: ProjectDirs::from("org", "amisoft", "amisgitpm").ok_or(Self::Error::HomeNotFound)?
+            p_dirs: ProjectDirs::from("org", "amisoft", "agpm").ok_or(Self::Error::HomeNotFound)?,
         })
     }
     ///`~/.config/amisgitpm/projects` in Linux
@@ -40,11 +40,22 @@ impl PMDirs for PMDirsImpl {
     }
 }
 
+impl PMDirsImpl {
+    /// An extra function so that its easy to use with suggestions
+    pub fn suggestions_dir(&self) -> PathBuf {
+        self.p_dirs.config_dir().join("suggestions")
+    }
+    /// Reference access to the underlying ProjectDirs structure
+    pub fn get_pdirs(&self) -> &ProjectDirs {
+        &self.p_dirs
+    }
+}
+
 #[non_exhaustive]
 #[derive(Debug, Error)]
 /// An error type to return from the new instance
 pub enum DirError {
     /// An error when no project-based default directories can be found
     #[error("Couldn't find a $HOME or equivalent in your platform")]
-    HomeNotFound
+    HomeNotFound,
 }
