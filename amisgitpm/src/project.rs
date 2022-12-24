@@ -1,5 +1,5 @@
 //! This couple of traits define how projects are stored and interacted with by
-//! package managers.
+//! project managers.
 
 /// A trait that is used to know to set up a project
 pub trait ProjectT: Clone {

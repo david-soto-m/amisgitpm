@@ -1,65 +1,86 @@
 use amisgitpm::PMDirs;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
-struct TestDirs {}
+
+use agpm_interactions::Interactor;
+use agpm_pm::PrjManager;
+pub use agpm_project::{Project, UpdatePolicy};
+use agpm_store::Store;
+
+type Interacts = Interactor<TestDirs>;
+type ProjectsStore = Store<TestDirs, Project>;
+type ProjectManager = PrjManager<Project, TestDirs, ProjectsStore, Interacts>;
 
 #[derive(Debug, Error)]
 enum EmptyError {}
 
+struct TestDirs {}
 impl PMDirs for TestDirs {
     type Error = EmptyError;
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {})
     }
     fn projects_db(&self) -> PathBuf {
-        Path::new("tests/config").to_path_buf()
+        Path::new("../test_sandbox/config/projects").to_path_buf()
     }
     fn src(&self) -> PathBuf {
-        Path::new("tests/cache/src").to_path_buf()
+        Path::new("../test_sandbox/cache/src").to_path_buf()
     }
     fn git(&self) -> PathBuf {
-        Path::new("tests/cache/git").to_path_buf()
+        Path::new("../test_sandbox/cache/git").to_path_buf()
     }
     fn old(&self) -> PathBuf {
-        Path::new("tests/cache/old").to_path_buf()
+        Path::new("../test_sandbox/cache/old").to_path_buf()
+    }
+}
+
+impl TestDirs {
+    fn bin(&self) -> PathBuf {
+        Path::new("../test_sandbox/bin").to_path_buf()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::*;
+    use agpm_pm::PMError;
+    use amisgitpm::{PMOperations, PMProgrammatic};
     #[test]
     fn it_works() {
         let result = 2 + 2;
         assert_eq!(result, 4);
     }
 
-    // #[test]
-    // fn install_uninstall_project() {
-    //     let pm = PackageManagerDefault {};
-    //     let prj = Project {
-    //         name: "Hello-crate".into(),
-    //         dir: "Hello-crate".into(),
-    //         url: "https://github.com/zwang20/rust-hello-world.git".into(),
-    //         ref_string: "refs/heads/master".into(),
-    //         update_policy: UpdatePolicy::Always,
-    //         install_script: vec!["cargo install --path . --root ~/.local".into()],
-    //         uninstall_script: vec!["cargo uninstall --root ~/.local".into()],
-    //     };
-    //     pm.install(&prj).unwrap();
-    //     assert!(directories::BaseDirs::new()
-    //         .unwrap()
-    //         .home_dir()
-    //         .join(".local/bin/rust-hello-world")
-    //         .exists());
-    //     assert!(
-    //         if let Err(PMError::Commons(CommonError::AlreadyExisting)) = pm.install(&prj) {
-    //             true
-    //         } else {
-    //             false
-    //         }
-    //     );
-    //     pm.uninstall(&prj.name).unwrap();
-    // }
+    #[test]
+    fn install_uninstall_project() {
+        let mut pm = ProjectManager::new().unwrap();
+        pm.get_dirs().projects_db();
+        let prj = Project {
+            name: "Hello-crate".into(),
+            dir: "Hello-crate".into(),
+            url: "https://github.com/zwang20/rust-hello-world.git".into(),
+            ref_string: "refs/heads/master".into(),
+            update_policy: UpdatePolicy::Always,
+            install_script: vec!["cargo install --path . --root ../../..".into()],
+            uninstall_script: vec!["cargo uninstall --root ../../..".into()],
+        };
+        pm.install(prj.clone()).unwrap();
+        assert!(TestDirs::new()
+            .unwrap()
+            .bin()
+            .join("rust-hello-world")
+            .exists());
+        assert!(
+            if let Err(PMError::Common(amisgitpm::CommonPMErrors::AlreadyExisting)) =
+                pm.install(prj.clone())
+            {
+                true
+            } else {
+                false
+            }
+        );
+        pm.uninstall(&prj.name).unwrap();
+    }
     // #[test]
     // fn updates() {
     //     let dir = canonicalize(PathBuf::from(".").join("tests/projects/git_upd")).unwrap();

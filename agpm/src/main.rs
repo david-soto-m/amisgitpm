@@ -1,8 +1,8 @@
 #![warn(missing_docs)]
-//! This is the main execution file for my agpm package manager implementation.
+//! This is the main execution file for my agpm project manager implementation.
 
 use clap::Parser;
-use color_eyre::eyre::{eyre, Result, WrapErr};
+use color_eyre::eyre::{eyre, Result};
 
 use agpm::{
     args::{Cli, Commands},
@@ -17,29 +17,52 @@ fn main() -> Result<()> {
     match args.com {
         Commands::Install { url } => pm.i_install(&url).map_err(|e|{
             match e{
-                agpm_pm::PMError::Git(_) => {
-                    eyre!(e).wrap_err(
-"Had a git error while installing.
-Try running `agpm clean` and then installing again")
+                agpm_pm::PMError::Git(_)| agpm_pm::PMError::Store(_)|agpm_pm::PMError::Interact(_) => {
+                    eyre!(e).wrap_err(format!(
+"Had a git or store error while installing. If the url is correct, run
+`agpm clean`
+and then install again"))
                 },
                 agpm_pm::PMError::FileExt(_) =>{ eyre!(e).wrap_err(format!(
 "Error while moving files.
 Check for read and write permissions in the directories:
     - {:?}
-    - {:?}", PMDirsImpl::new().unwrap().git(), PMDirsImpl::new().unwrap().src()))
+    - {:?}
+Then manually move the files from the first directory to the second and run:
+`agpm rebuild {{your project name}}`", PMDirsImpl::new().unwrap().git(), PMDirsImpl::new().unwrap().src()))
                 },
-                agpm_pm::PMError::Spawn(_) => eyre!(e).wrap_err(""),
+                agpm_pm::PMError::Spawn(_)| agpm_pm::PMError::Exec => eyre!(e).wrap_err(
+"Had some illegal arguments or problems with io, or failed at building.
+Please edit with:
+`agpm edit {{your project name}}`
+And then run run:
+`agpm rebuild {{your project name}}`"),
                 _ => eyre!(e).wrap_err(
-"You had a really weird error, please open an issue at https://github.com/david-soto-m/amisgitpm/issues
-with the whole error message"),
+"Currently no fixes are available for your error. Try opening another terminal, then run:
+`agpm clean`
+and then try installing yout project again"),
         }})?,
-        Commands::Uninstall { package } => pm.i_uninstall(&[&package])?,
-        Commands::Update { package} => pm.i_update(&[& package])?,
-        Commands::Restore { package } => pm.i_restore(&[&package])?,
-        Commands::Reinstall { package } => pm.reinstall(&package)?,
-        Commands::Rebuild { package } => pm.rebuild(&package)?,
-        Commands::List { package } => pm.i_list(&[&package])?,
-        Commands::Edit { package } => pm.i_edit(&package)?,
+        Commands::Uninstall { project } => {
+            pm.i_uninstall(&[&project]).map_err(|e|{
+            match e{
+             agpm_pm::PMError::Spawn(_)| agpm_pm::PMError::Exec => eyre!(e).wrap_err(
+"Had some illegal arguments or problems with io, or failed at building.
+Please edit with:
+`agpm edit {{project that failed}}`
+And then run run:
+`agpm uninstall {{all not uninstalled projects}}`"),
+            _ => eyre!(e).wrap_err(
+"Currently no fixes are available for your error. Try opening another terminal, then run:
+`agpm clean`
+and then try installing yout project again"),
+            }
+        })?},
+        Commands::Update { project} => pm.i_update(&[& project])?,
+        Commands::Restore { project } => pm.i_restore(&[&project])?,
+        Commands::Reinstall { project } => pm.reinstall(&project)?,
+        Commands::Rebuild { project } => pm.rebuild(&project)?,
+        Commands::List { project } => pm.i_list(&[&project])?,
+        Commands::Edit { project } => pm.i_edit(&project)?,
         Commands::Clean => pm.cleanup()?,
         Commands::Bootstrap => {
             let prj = Project {

@@ -41,60 +41,60 @@ pub enum Commands {
         url: String,
     },
 
-    /// Update package(s)
+    /// Update project(s)
     Update {
         #[clap(value_parser)]
-        /// An optional package name to update independently.
-        /// If not provided all packages are updated
-        package: String,
+        /// An optional project name to update independently.
+        /// If not provided all projects are updated
+        project: String,
     },
 
-    /// Uninstall a package
+    /// Uninstall a project
     Uninstall {
         #[clap(value_parser)]
-        /// The package name to uninstall
-        package: String,
+        /// The project name to uninstall
+        project: String,
     },
 
-    /// Get the last version of the package
+    /// Get the last version of the project
     Restore {
         #[clap(value_parser)]
-        /// The package to downgrade
-        package: String,
+        /// The project to downgrade
+        project: String,
     },
 
-    /// Uninstall then install a package
+    /// Uninstall then install a project
     Reinstall {
         #[clap(value_parser)]
-        /// The package name to reinstall
-        package: String,
+        /// The project name to reinstall
+        project: String,
     },
 
-    /// Run the build instructions of a package
+    /// Run the build instructions of a project
     Rebuild {
         #[clap(value_parser)]
-        /// The package name to rebuild
-        package: String,
+        /// The project name to rebuild
+        project: String,
     },
 
     /// Remove all srcs with no project associated
     ///
-    /// It is `O(N^2)`, with `N` the number of installed packages
+    /// It is `O(N^2)`, with `N` the number of installed projects
     /// It is parallelized, and therefore is panicky rather than reporting
     Clean,
 
     /// Edit the configuration of a project
     Edit {
         #[clap(value_parser)]
-        /// The name of package to edit
-        package: String,
+        /// The name of project to edit
+        project: String,
     },
 
     /// Show the list of installed applications and their version
     List {
         #[clap(value_parser)]
         /// Packages from which to get detailed information
-        package: String,
+        project: String,
     },
 
     /// Install amisgitpm with amisgitpm, check that everything is in place

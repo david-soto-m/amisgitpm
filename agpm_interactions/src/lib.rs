@@ -6,6 +6,8 @@
 
 use agpm_pm::Interactions;
 use agpm_project::{Project, UpdatePolicy};
+#[cfg(feature = "suggestions")]
+use agpm_suggestions::SuggesionsDirs;
 use amisgitpm::{PMDirs, ProjectStore};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
@@ -16,20 +18,20 @@ use std::{marker::PhantomData, path::Path};
 mod error;
 pub use error::InteractError;
 
-#[cfg(feature = "suggestions")]
-mod suggestions;
-#[cfg(feature = "suggestions")]
-use suggestions::Suggestions;
-#[cfg(feature = "suggestions")]
-pub use suggestions::SuggestionsError;
-
 /// This struct implements the [`agpm_pm::Interactions`] trait. To that purpose
-pub struct Interactor<T: PMDirs> {
+pub struct Interactor<
+    #[cfg(not(feature = "suggestions"))] T: PMDirs,
+    #[cfg(feature = "suggestions")] T: PMDirs + SuggesionsDirs,
+> {
     t: Term,
     dirs: PhantomData<T>,
 }
 
-impl<T: PMDirs> Interactor<T> {
+impl<
+        #[cfg(not(feature = "suggestions"))] T: PMDirs,
+        #[cfg(feature = "suggestions")] T: PMDirs + SuggesionsDirs,
+    > Interactor<T>
+{
     fn get_sugg(&self, sug: &Vec<Vec<String>>, info: &str) -> Result<Vec<String>, InteractError> {
         let mut edit_string = String::new();
         if !sug.is_empty() {
@@ -111,9 +113,25 @@ when you are done press {}", style("all").bold(), style("space").bold(), style("
         let idx = Select::new().items(&update_array).interact()?;
         Ok(update_array[idx])
     }
+
+    #[allow(unused_variables)]
+    #[allow(unreachable_code)]
+    fn provide_suggestions(wher: &Path) -> (Vec<Vec<String>>, Vec<Vec<String>>) {
+        #[cfg(feature = "suggestions")]
+        {
+            return agpm_suggestions::get_suggestions::<T>(wher).unwrap();
+        }
+        // This code is reachable when the feature suggestions is enabled
+        (vec![], vec![])
+    }
 }
 
-impl<T: PMDirs, ST: ProjectStore<Project>> Interactions<Project, ST> for Interactor<T> {
+impl<
+        #[cfg(not(feature = "suggestions"))] T: PMDirs,
+        #[cfg(feature = "suggestions")] T: PMDirs + SuggesionsDirs,
+        ST: ProjectStore<Project>,
+    > Interactions<Project, ST> for Interactor<T>
+{
     type Error = InteractError;
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {
@@ -146,7 +164,7 @@ impl<T: PMDirs, ST: ProjectStore<Project>> Interactions<Project, ST> for Interac
         store: &ST,
         wher: &Path,
     ) -> Result<Project, Self::Error> {
-        let (ins, unins) = provide_suggestions(wher);
+        let (ins, unins) = Self::provide_suggestions(wher);
         let sugg_name = prj_stub
             .url
             .split('/')
@@ -283,19 +301,4 @@ commands you might want to do something like this `command-to-detach & cd .`",
             ..Default::default()
         })
     }
-}
-
-#[allow(unused_variables)]
-#[allow(unreachable_code)]
-fn provide_suggestions(wher: &Path) -> (Vec<Vec<String>>, Vec<Vec<String>>) {
-    #[cfg(feature = "suggestions")]
-    {
-        let sugg = Suggestions::new(wher).unwrap();
-        return (
-            sugg.get_install().to_owned(),
-            sugg.get_uninstall().to_owned(),
-        );
-    }
-    // This code is reachable when the feature suggestions is enabled
-    (vec![], vec![])
 }

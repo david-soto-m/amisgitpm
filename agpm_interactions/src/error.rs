@@ -1,5 +1,5 @@
 #[cfg(feature = "suggestions")]
-use crate::suggestions::SuggestionsError;
+use agpm_suggestions::SuggestionsError;
 use thiserror::Error;
 
 #[non_exhaustive]

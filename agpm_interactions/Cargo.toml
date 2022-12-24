@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 amisgitpm = {path = "../amisgitpm"}
-agpm_dirs = {path = "../agpm_dirs", optional = true}
 agpm_pm = {path = "../agpm_pm"}
 agpm_project = {path = "../agpm_project", features=["serde"]}
 thiserror = "^1.0"
@@ -15,18 +14,10 @@ dialoguer = "^0.10" # general cli utils
 console = "0.15.2"
 prettytable-rs = {version = "^0.9", default-features = false}
 git2 = "^0.15"
-markdown-extract = {version = "^2.0", optional = true}
-json_tables = {version = "^0.0", optional = true} # table managements
-glob = {version = "^0.3", optional  = true}
-regex = {version = "^1.6", optional = true}
 serde_json = {version = "^1.0"}
-serde = {version = "^1.0", features = ["derive"], optional = true}
+agpm_suggestions = {path = "../agpm_suggestions", optional=true}
 
 
-
-[build-dependencies]
-agpm_dirs = {path = "../agpm_dirs", optional = true}
-amisgitpm = {path = "../amisgitpm", optional = true}
 
 [features]
-suggestions = ["agpm_dirs", "amisgitpm", "regex", "glob", "serde", "markdown-extract", "json_tables"]
+suggestions = ["agpm_suggestions"]

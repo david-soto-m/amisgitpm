@@ -1,4 +1,4 @@
-//! This crate defines the `PMDirs` trait, which allows package managers and stores
+//! This crate defines the `PMDirs` trait, which allows project managers and stores
 //! to know where to place their files
 
 use std::path::PathBuf;

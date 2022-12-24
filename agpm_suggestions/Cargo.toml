@@ -1,0 +1,21 @@
+[package]
+name = "agpm_suggestions"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+amisgitpm = {path = "../amisgitpm"}
+agpm_dirs = {path = "../agpm_dirs"}
+glob = "^0.3"
+regex = "^1.6"
+markdown-extract = "^2.0"
+json_tables = "^0.0"
+thiserror = "^1.0"
+serde = {version = "^1.0", features = ["derive"]}
+
+
+[build-dependencies]
+agpm_dirs = {path = "../agpm_dirs"}
+amisgitpm = {path = "../amisgitpm"}

@@ -37,7 +37,8 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInte
         self.get_mut_store()
             .add(project.clone())
             .map_err(Self::map_store_error)?;
-        self.mv_build(&project, &git_dir)?;
+        self.mv(&project, &git_dir)?;
+        self.build(&project)?;
         Ok(())
     }
     fn i_list(&self, prj_names: &[&str]) -> Result<(), Self::Error> {
@@ -58,9 +59,9 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInte
         }
         Ok(())
     }
-    fn i_edit(&mut self, package: &str) -> Result<(), Self::Error> {
+    fn i_edit(&mut self, project: &str) -> Result<(), Self::Error> {
         let inter = I::new().map_err(Self::map_inter_error)?;
-        if let Some(element) = self.get_store().get_clone(package) {
+        if let Some(element) = self.get_store().get_clone(project) {
             let old_name = element.get_name().to_owned();
             let prj = inter.edit(element).map_err(Self::map_inter_error)?;
             self.edit(&old_name, prj)?;

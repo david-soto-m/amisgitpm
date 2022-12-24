@@ -1,10 +1,10 @@
 # The Traits
 
-This package only provides traits. The idea behind this is that a complete
+This project only provides traits. The idea behind this is that a complete
 implementation can have pieces from several other implementations and still
 work, only having to rewrite parts of it.
 
-A package manager executable that implements all the traits can do six things:
+A project manager executable that implements all the traits can do six things:
 
 1. Install from an URL
 2. Know what has been installed
@@ -24,7 +24,7 @@ that the other traits have really easy implementations
 
 The `PMProgramatic` and the `PMInteractive` define methods to achive the six
 tasks in different ways. `PMProgramatic` is oriented towards being an API for
-programmers interacting with the package manager, and `PMInteractive` is
+programmers interacting with the project manager, and `PMInteractive` is
 oriented towards being used by a CLI application or some other way to interact
 with final users.
 
@@ -49,7 +49,7 @@ A structure that implements this trait is the `agpm_dirs::PMDirsImpl`
 The store is how the project configurations are stored. It holds two traits
 `ProjectT` and `ProjectStore`
 
-The first is a trait that allows the package manager traits to interact with
+The first is a trait that allows the project manager traits to interact with
 individual project configurations and setups.
 
 The second trait allows project managers to store new projects, and delete them.

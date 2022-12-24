@@ -1,6 +1,6 @@
-//! This crate defines the traits for a package manager.
+//! This crate defines the traits for a project manager.
 //!
-//! An amisgitpm compliant package manager must do six tasks
+//! An amisgitpm compliant project manager must do six tasks
 //!
 //! 1. Install from an URL
 //! 2. Know what has been installed
@@ -11,7 +11,7 @@
 //!
 //! The `PMOperations` is a trait that makes easy implementing the other traits
 //! easier or automatic. It does no "high level" operation, but is concerned with
-//! the procedures to make the package manager work. Most of the methods that
+//! the procedures to make the project manager work. Most of the methods that
 //! are not provided are very straight forward to implement.
 //!
 //! The API facing traits is `PMProgramatic` It is completely provided for you. It
@@ -56,7 +56,7 @@ impl std::fmt::Display for CommonPMErrors {
     }
 }
 
-/// A trait that concerns itself with the "low level" operations of the package
+/// A trait that concerns itself with the "low level" operations of the project
 /// manager, with how things are done.
 pub trait PMOperations
 where
@@ -71,23 +71,23 @@ where
     /// A type that can hold all the errors originated from the different functions.
     /// It's the same for the `PMOperations` and `PMInteractive`
     type Error: std::error::Error + From<std::io::Error> + From<CommonPMErrors> + From<git2::Error>;
-    /// Create a package manager struct, type or w\e
+    /// Create a project manager struct, type or w\e
     fn new() -> Result<Self, Self::Error>;
-    /// Map the errors created by your store to package manager errors
+    /// Map the errors created by your store to project manager errors
     /// Typically
     /// ```ignore
     ///Self::Error::Store(err)
     ///```
     fn map_store_error(err: <Self::Store as ProjectStore<Self::Project>>::Error) -> Self::Error;
-    /// Map the errors produced by your `PMDirs` implementer to package manager errors
+    /// Map the errors produced by your `PMDirs` implementer to project manager errors
     /// Typically
     /// ```ignore
     ///Self::Error::Dirs(err)
     ///```
     fn map_dir_error(err: <Self::Dirs as PMDirs>::Error) -> Self::Error;
     /// Provide a reference to whatever store you are using.
-    /// If you are using a structure to implement the package manager and you
-    /// want your package manager to hold within itself a store then its a easy as
+    /// If you are using a structure to implement the project manager and you
+    /// want your project manager to hold within itself a store then its a easy as
     /// ```ignore
     /// &self.store
     /// ```
@@ -134,16 +134,22 @@ where
     }
 
     /// Move from wherever to the projects subdirectory in the sources directory
-    /// and then build from that directory.
-    fn mv_build(&self, prj: &Self::Project, path: &Path) -> Result<(), Self::Error> {
+    fn mv(&self, prj: &Self::Project, path: &Path) -> Result<(), Self::Error> {
         let src_dir = self.get_dirs().src().join(prj.get_dir());
         if src_dir.exists() {
             std::fs::remove_dir_all(&src_dir)?;
         }
         self.copy_directory(path, &src_dir)?;
         std::fs::remove_dir_all(path)?;
-        self.script_runner(prj.get_dir(), prj.get_install())?;
         Ok(())
+    }
+    /// Run the build script from the `src()` directory.
+    fn build(&self, prj: &Self::Project) -> Result<(), Self::Error> {
+        self.script_runner(prj.get_dir(), prj.get_install())
+    }
+    /// Run the uninstall script from the `src()` directory
+    fn unbuild(&self, prj: &Self::Project) -> Result<(), Self::Error> {
+        self.script_runner(prj.get_dir(), prj.get_uninstall())
     }
     /// Update a repo, getting the latest changes if they can be fast forwarded to,
     /// and ensuring that the correct reference is updated
@@ -183,17 +189,18 @@ pub trait PMProgrammatic: PMOperations {
         }
         let (repo, git_dir) = self.download(&prj)?;
         self.switch_branch(&prj, &repo)?;
+        self.mv(&prj, &git_dir)?;
         self.get_mut_store()
             .add(prj.clone())
             .map_err(Self::map_store_error)?;
-        self.mv_build(&prj, &git_dir)?;
+        self.build(&prj)?;
         Ok(())
     }
     /// Uninstall a project given it's name
     fn uninstall(&mut self, prj_name: &str) -> Result<(), Self::Error> {
         let prj = self.get_one(prj_name)?;
         let dir = &prj.get_dir();
-        self.script_runner(dir, prj.get_install())?;
+        self.unbuild(&prj)?;
         let src_dir = self.get_dirs().src().join(dir);
         std::fs::remove_dir_all(src_dir)?;
         let old_dir = self.get_dirs().old().join(dir);
@@ -217,7 +224,8 @@ pub trait PMProgrammatic: PMOperations {
         let repo = Repository::open(&git_dir)?;
         self.switch_branch(prj, &repo)?;
         self.update_repo(prj, &repo)?;
-        self.mv_build(prj, &git_dir)?;
+        self.mv(prj, &git_dir)?;
+        self.build(prj)?;
         Ok(())
     }
     /// Install the older version of a project given it's name
@@ -270,21 +278,22 @@ pub trait PMInteractive: PMProgrammatic {
     /// self.get_mut_store()
     ///     .add(project.clone())
     ///     .map_err(Self::map_store_error)?;
-    /// self.mv_build(&project, &git_dir)?;
+    /// self.mv(&project, &git_dir)?;
+    /// self.build(&project)?;
     /// Ok(())
     /// ```
     fn i_install(&mut self, url: &str) -> Result<(), Self::Error>;
     /// This function should give the available information of the projects
     fn i_list(&self, prj_names: &[&str]) -> Result<(), Self::Error>;
     /// Edit a projects information and store that
-    fn i_edit(&mut self, package: &str) -> Result<(), Self::Error>;
+    fn i_edit(&mut self, project: &str) -> Result<(), Self::Error>;
     /// Update the projects, (Possibly a forwarding of the `PMBasics` update
-    /// method applied to each of the packages)
+    /// method applied to each of the projects)
     fn i_update(&self, prj_names: &[&str]) -> Result<(), Self::Error>;
     /// Take an the last version of a project, set it as the current and build
     /// and install it (Possibly just a forwarding of the `PMBasics` restore method)
     fn i_restore(self, prj_names: &[&str]) -> Result<(), Self::Error>;
     /// Uninstall a project and delete the related information that the
-    /// package manager has about it. (Possibly a forwarding of the `PMBasics` uninstall method)
+    /// project manager has about it. (Possibly a forwarding of the `PMBasics` uninstall method)
     fn i_uninstall(&mut self, prj_names: &[&str]) -> Result<(), Self::Error>;
 }

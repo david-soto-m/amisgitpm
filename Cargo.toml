@@ -6,9 +6,12 @@ members = [
     "agpm_store",
     "agpm_project",
     "agpm_interactions",
+    "agpm_suggestions",
     "agpm",
     "tests"
 ]
+exclude = ["test_sandbox"]
+
 
 [workspace.package]
 license = "Unlicense OR CC0-1.0 OR MIT"

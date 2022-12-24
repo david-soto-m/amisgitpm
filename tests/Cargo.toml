@@ -6,10 +6,12 @@ publish = false
 
 [dev-dependencies]
 amisgitpm = {path = "../amisgitpm"}
+agpm_project = {path = "../agpm_project"}
+agpm_interactions = {path = "../agpm_interactions"}
 agpm_pm = {path = "../agpm_pm"}
-agpm_dirs = {path = "../agpm_dirs"}
 agpm_store = {path = "../agpm_store"}
 thiserror = "^1.0"
+directories = "^4.0" # config and local and stuff
 
 
 
