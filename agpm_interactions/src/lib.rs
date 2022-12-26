@@ -7,7 +7,7 @@
 use agpm_pm::Interactions;
 use agpm_project::{Project, UpdatePolicy};
 #[cfg(feature = "suggestions")]
-use agpm_suggestions::SuggesionsDirs;
+use agpm_suggestions::SuggestionsDirs;
 use amisgitpm::{PMDirs, ProjectStore};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
@@ -21,7 +21,7 @@ pub use error::InteractError;
 /// This struct implements the [`agpm_pm::Interactions`] trait. To that purpose
 pub struct Interactor<
     #[cfg(not(feature = "suggestions"))] T: PMDirs,
-    #[cfg(feature = "suggestions")] T: PMDirs + SuggesionsDirs,
+    #[cfg(feature = "suggestions")] T: PMDirs + SuggestionsDirs,
 > {
     t: Term,
     dirs: PhantomData<T>,
@@ -29,11 +29,12 @@ pub struct Interactor<
 
 impl<
         #[cfg(not(feature = "suggestions"))] T: PMDirs,
-        #[cfg(feature = "suggestions")] T: PMDirs + SuggesionsDirs,
+        #[cfg(feature = "suggestions")] T: PMDirs + SuggestionsDirs,
     > Interactor<T>
 {
     fn get_sugg(&self, sug: &Vec<Vec<String>>, info: &str) -> Result<Vec<String>, InteractError> {
         let mut edit_string = String::new();
+        self.t.clear_screen()?;
         if !sug.is_empty() {
             println!("{}", info);
             let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
@@ -128,7 +129,7 @@ when you are done press {}", style("all").bold(), style("space").bold(), style("
 
 impl<
         #[cfg(not(feature = "suggestions"))] T: PMDirs,
-        #[cfg(feature = "suggestions")] T: PMDirs + SuggesionsDirs,
+        #[cfg(feature = "suggestions")] T: PMDirs + SuggestionsDirs,
         ST: ProjectStore<Project>,
     > Interactions<Project, ST> for Interactor<T>
 {

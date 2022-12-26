@@ -197,8 +197,8 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     /// Uninstall a project given it's name
-    fn uninstall(&mut self, prj_name: &str) -> Result<(), Self::Error> {
-        let prj = self.get_one(prj_name)?;
+    fn uninstall<T: AsRef<str>>(&mut self, prj_name: T) -> Result<(), Self::Error> {
+        let prj = self.get_one(prj_name.as_ref())?;
         let dir = &prj.get_dir();
         self.unbuild(&prj)?;
         let src_dir = self.get_dirs().src().join(dir);
@@ -208,13 +208,13 @@ pub trait PMProgrammatic: PMOperations {
             std::fs::remove_dir_all(old_dir)?;
         }
         self.get_mut_store()
-            .remove(prj_name)
+            .remove(prj_name.as_ref())
             .map_err(Self::map_store_error)?;
         Ok(())
     }
     /// Update a project given it's name
-    fn update(&self, prj_name: &str) -> Result<(), Self::Error> {
-        let prj = self.get_one(prj_name)?;
+    fn update<T: AsRef<str>>(&self, prj_name: T) -> Result<(), Self::Error> {
+        let prj = self.get_one(prj_name.as_ref())?;
         let dir = prj.get_dir();
         let git_dir = self.get_dirs().git().join(dir);
         let old_dir = self.get_dirs().old().join(dir);
@@ -229,8 +229,8 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     /// Install the older version of a project given it's name
-    fn restore(&self, prj_name: &str) -> Result<(), Self::Error> {
-        let prj = self.get_one(prj_name)?;
+    fn restore<T: AsRef<str>>(&self, prj_name: T) -> Result<(), Self::Error> {
+        let prj = self.get_one(prj_name.as_ref())?;
         let dir = prj.get_dir();
         let old_dir = self.get_dirs().old().join(dir);
         let src_dir = self.get_dirs().src().join(dir);
@@ -240,17 +240,17 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     ///
-    fn edit(&mut self, prj_name: &str, prj: Self::Project) -> Result<(), Self::Error> {
+    fn edit<T: AsRef<str>>(&mut self, prj_name: T, prj: Self::Project) -> Result<(), Self::Error> {
         self.get_mut_store()
-            .edit(prj_name, prj)
+            .edit(prj_name.as_ref(), prj)
             .map_err(Self::map_store_error)?;
         Ok(())
     }
     /// Get the project configuration, given it's name
-    fn get_one(&self, prj_name: &str) -> Result<&Self::Project, Self::Error> {
+    fn get_one<T: AsRef<str>>(&self, prj_name: T) -> Result<&Self::Project, Self::Error> {
         Ok(self
             .get_store()
-            .get_ref(prj_name)
+            .get_ref(prj_name.as_ref())
             .ok_or(CommonPMErrors::NonExisting)?)
     }
     /// Get a list of references to all the projects in storage
@@ -282,18 +282,22 @@ pub trait PMInteractive: PMProgrammatic {
     /// self.build(&project)?;
     /// Ok(())
     /// ```
-    fn i_install(&mut self, url: &str) -> Result<(), Self::Error>;
+    fn i_install<T: AsRef<str>>(&mut self, url: T) -> Result<(), Self::Error>;
     /// This function should give the available information of the projects
-    fn i_list(&self, prj_names: &[&str]) -> Result<(), Self::Error>;
+    /// If the list is empty it's suggested to print all the projects information
+    fn i_list<T: AsRef<str>, Q: AsRef<[T]>>(&self, prj_names: Q) -> Result<(), Self::Error>;
     /// Edit a projects information and store that
-    fn i_edit(&mut self, project: &str) -> Result<(), Self::Error>;
+    fn i_edit<T: AsRef<str>>(&mut self, project: T) -> Result<(), Self::Error>;
     /// Update the projects, (Possibly a forwarding of the `PMBasics` update
     /// method applied to each of the projects)
-    fn i_update(&self, prj_names: &[&str]) -> Result<(), Self::Error>;
+    fn i_update<T: AsRef<str>, Q: AsRef<[T]>>(&self, prj_names: Q) -> Result<(), Self::Error>;
     /// Take an the last version of a project, set it as the current and build
     /// and install it (Possibly just a forwarding of the `PMBasics` restore method)
-    fn i_restore(self, prj_names: &[&str]) -> Result<(), Self::Error>;
+    fn i_restore<T: AsRef<str>, Q: AsRef<[T]>>(self, prj_names: Q) -> Result<(), Self::Error>;
     /// Uninstall a project and delete the related information that the
     /// project manager has about it. (Possibly a forwarding of the `PMBasics` uninstall method)
-    fn i_uninstall(&mut self, prj_names: &[&str]) -> Result<(), Self::Error>;
+    fn i_uninstall<T: AsRef<str>, Q: AsRef<[T]>>(
+        &mut self,
+        prj_names: Q,
+    ) -> Result<(), Self::Error>;
 }

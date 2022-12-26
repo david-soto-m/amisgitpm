@@ -20,7 +20,9 @@ pub struct Cli {
 /// This are the possible commands
 pub enum Commands {
     /// Install a new git repo. It installs from URLs of two kinds.
+    ///
     /// 1. git clone URL eg. `https://github.com/helix-editor/helix.git`
+    ///
     /// 2. Local git repo URL. `///file:///home/user/Path/to/git/project`
     Install {
         #[clap(value_parser)]
@@ -44,23 +46,28 @@ pub enum Commands {
     /// Update project(s)
     Update {
         #[clap(value_parser)]
-        /// An optional project name to update independently.
+        /// An optional list of project names to update independently.
+        ///
         /// If not provided all projects are updated
-        project: String,
+        project: Vec<String>,
     },
+
+    /// Update the suggestions, downloading all of them, and substituting those
+    /// already present
+    UpdateSuggestions,
 
     /// Uninstall a project
     Uninstall {
         #[clap(value_parser)]
         /// The project name to uninstall
-        project: String,
+        project: Vec<String>,
     },
 
     /// Get the last version of the project
     Restore {
         #[clap(value_parser)]
         /// The project to downgrade
-        project: String,
+        project: Vec<String>,
     },
 
     /// Uninstall then install a project
@@ -94,7 +101,7 @@ pub enum Commands {
     List {
         #[clap(value_parser)]
         /// Packages from which to get detailed information
-        project: String,
+        project: Vec<String>,
     },
 
     /// Install amisgitpm with amisgitpm, check that everything is in place

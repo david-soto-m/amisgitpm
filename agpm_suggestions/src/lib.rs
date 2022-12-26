@@ -4,12 +4,13 @@
 //! structs and functions that are needed for that.
 use amisgitpm::PMDirs;
 use glob::{GlobError, PatternError};
-use json_tables::{Deserialize, Serialize, Table, TableError};
+use json_tables::{Deserialize, Serialize, Table, TableBuilderError, TableError};
 use regex::Regex;
+use reqwest::blocking;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-pub trait SuggesionsDirs: PMDirs {
+pub trait SuggestionsDirs: PMDirs {
     fn suggestions_dir(&self) -> PathBuf;
 }
 
@@ -36,7 +37,7 @@ fn get_build_suggestions(readme_file: &PathBuf) -> Result<Vec<Vec<String>>, Sugg
     markdown_extract::extract_from_path(readme_file, &regex).map_err(|e| e.into())
 }
 
-pub fn get_suggestions<P: SuggesionsDirs>(
+pub fn get_suggestions<P: SuggestionsDirs>(
     for_: impl AsRef<Path>,
 ) -> Result<(Vec<Vec<String>>, Vec<Vec<String>>), SuggestionsError> {
     let from = P::new()
@@ -52,7 +53,13 @@ pub fn get_suggestions<P: SuggesionsDirs>(
     )? {
         readme.append(&mut get_build_suggestions(&each?).unwrap_or_default());
     }
-    println!("{from:?}");
+    if !from.exists() {
+        println!(
+            "Downloading files needed for suggestions, their location is at:
+{from:?}"
+        );
+        download_resources::<P>()?
+    }
     match SuggestionsTable::new(from.as_ref()) {
         Ok(db) => {
             let db_sug = db.get_suggestions(for_.as_ref());
@@ -70,6 +77,49 @@ pub fn get_suggestions<P: SuggesionsDirs>(
         }
         Err(_) => Ok((readme, vec![])),
     }
+}
+
+/// Downloads all elements in the REGISTRY and stores them.
+///
+/// It either creates a new table at the SuggestionsDir or reads from an existing
+/// table, and writes into it.
+pub fn download_resources<P: SuggestionsDirs>() -> Result<(), SuggestionsError> {
+    let f_str = "https://raw.githubusercontent.com/david-soto-m/amisgitpm/main/agpm_suggestions/suggestions/";
+    const REGISTRY: [&str; 7] = [
+        "bash.json",
+        "cargo.json",
+        "meson.json",
+        "cmain.json",
+        "cmake.json",
+        "makefile.json",
+        "meson.json",
+    ];
+    let dir = P::new()
+        .map_err(|e| SuggestionsError::DirsError(e.to_string()))?
+        .suggestions_dir();
+
+    let mut table = match Table::<SuggestionsItem>::builder(&dir)
+        .set_auto_write()
+        .build()
+    {
+        Ok(table) => table,
+        Err(TableBuilderError::TableAlreadyExistsError) => {
+            Table::builder(&dir).set_auto_write().load()?
+        }
+        Err(a) => return Err(a.into()),
+    };
+    for file in REGISTRY {
+        let (name, _) = file.rsplit_once('.').unwrap(); // Guaranteed by me that this doesn't panic
+        let url = format!("{}{}", f_str, file);
+        let item: SuggestionsItem = blocking::get(url)?.json()?;
+        match table.get_mut_element(name) {
+            Some(el) => el.info = item,
+            None => {
+                table.push(name, item)?;
+            }
+        };
+    }
+    Ok(())
 }
 
 impl SuggestionsTable {
@@ -105,12 +155,17 @@ pub enum SuggestionsError {
     #[error(transparent)]
     FileOp(#[from] std::io::Error),
     /// The creation has had an error with a json_table
-
     #[error(transparent)]
     Table(#[from] TableError),
+    /// The creation has had an error while creating a json_table
+    #[error(transparent)]
+    TableBuild(#[from] TableBuilderError),
     /// Couldn't read file to determine if it matches pattern
     #[error(transparent)]
     Glob(#[from] GlobError),
+    /// Reqwest error, while downloading sources
+    #[error(transparent)]
+    Reqw(#[from] reqwest::Error),
     /// A glob pattern was bad
     #[error(transparent)]
     Pattern(#[from] PatternError),

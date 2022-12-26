@@ -23,9 +23,11 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMProg
 impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInteractive
     for PrjManager<P, D, PS, I>
 {
-    fn i_install(&mut self, url: &str) -> Result<(), Self::Error> {
+    fn i_install<T: AsRef<str>>(&mut self, url: T) -> Result<(), Self::Error> {
         let inter = I::new().map_err(Self::map_inter_error)?;
-        let prj_stub = inter.url_to_download(url).map_err(Self::map_inter_error)?;
+        let prj_stub = inter
+            .url_to_download(url.as_ref())
+            .map_err(Self::map_inter_error)?;
         let (repo, git_dir) = self.download(&prj_stub)?;
         let prj_stub = inter
             .repo_to_checkout_branch(prj_stub, &repo)
@@ -41,17 +43,17 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInte
         self.build(&project)?;
         Ok(())
     }
-    fn i_list(&self, prj_names: &[&str]) -> Result<(), Self::Error> {
+    fn i_list<T: AsRef<str>, Q: AsRef<[T]>>(&self, prj_names: Q) -> Result<(), Self::Error> {
         let inter = I::new().map_err(Self::map_inter_error)?;
-        if prj_names.is_empty() {
+        if prj_names.as_ref().is_empty() {
             inter
                 .list(self.get_store())
                 .map_err(Self::map_inter_error)?;
         } else {
-            prj_names.into_iter().try_for_each(|prj_name| {
+            prj_names.as_ref().into_iter().try_for_each(|prj_name| {
                 let project = self
                     .get_store()
-                    .get_ref(&prj_name)
+                    .get_ref(&prj_name.as_ref())
                     .ok_or(CommonPMErrors::NonExisting)?;
                 inter.list_one(project).map_err(Self::map_inter_error)?;
                 Ok::<_, Self::Error>(())
@@ -59,40 +61,43 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInte
         }
         Ok(())
     }
-    fn i_edit(&mut self, project: &str) -> Result<(), Self::Error> {
+    fn i_edit<T: AsRef<str>>(&mut self, project: T) -> Result<(), Self::Error> {
         let inter = I::new().map_err(Self::map_inter_error)?;
-        if let Some(element) = self.get_store().get_clone(project) {
+        if let Some(element) = self.get_store().get_clone(project.as_ref()) {
             let old_name = element.get_name().to_owned();
             let prj = inter.edit(element).map_err(Self::map_inter_error)?;
             self.edit(&old_name, prj)?;
         }
         Ok(())
     }
-    fn i_update(&self, prj_names: &[&str]) -> Result<(), Self::Error> {
+    fn i_update<T: AsRef<str>, Q: AsRef<[T]>>(&self, prj_names: Q) -> Result<(), Self::Error> {
         let inter = I::new().map_err(Self::map_inter_error)?;
-        if prj_names.is_empty() {
+        if prj_names.as_ref().is_empty() {
             self.get_store()
                 .iter()
                 .filter(|e| inter.update_confirm(e))
                 .try_for_each(|e| self.update(&e.get_name()))?;
         } else {
-            for project in prj_names {
+            for project in prj_names.as_ref() {
                 self.get_store()
-                    .get_ref(&project)
+                    .get_ref(&project.as_ref())
                     .ok_or(CommonPMErrors::NonExisting)?;
-                self.update(&project)?;
+                self.update(&project.as_ref())?;
             }
         }
         Ok(())
     }
-    fn i_restore(self, prj_names: &[&str]) -> Result<(), Self::Error> {
-        for prj in prj_names {
+    fn i_restore<T: AsRef<str>, Q: AsRef<[T]>>(self, prj_names: Q) -> Result<(), Self::Error> {
+        for prj in prj_names.as_ref() {
             self.restore(prj)?
         }
         Ok(())
     }
-    fn i_uninstall(&mut self, prj_names: &[&str]) -> Result<(), Self::Error> {
-        for prj in prj_names {
+    fn i_uninstall<T: AsRef<str>, Q: AsRef<[T]>>(
+        &mut self,
+        prj_names: Q,
+    ) -> Result<(), Self::Error> {
+        for prj in prj_names.as_ref() {
             self.uninstall(prj)?
         }
         Ok(())
@@ -106,20 +111,23 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PrjMan
 
     /// Uninstall a project, and then install it again
     /// Have you tried turning it off and on again?
-    pub fn reinstall(&mut self, prj_name: &str) -> Result<(), <Self as PMOperations>::Error> {
+    pub fn reinstall<T: AsRef<str>>(
+        &mut self,
+        prj_name: T,
+    ) -> Result<(), <Self as PMOperations>::Error> {
         let prj = self
             .get_store()
-            .get_clone(prj_name)
+            .get_clone(prj_name.as_ref())
             .ok_or(CommonPMErrors::NonExisting)?;
         self.uninstall(prj_name)?;
         self.install(prj)?;
         Ok(())
     }
     /// Run the build script over an existing project.
-    pub fn rebuild(&self, prj_name: &str) -> Result<(), <Self as PMOperations>::Error> {
+    pub fn rebuild<T: AsRef<str>>(&self, prj_name: T) -> Result<(), <Self as PMOperations>::Error> {
         let prj = self
             .get_store()
-            .get_ref(prj_name)
+            .get_ref(prj_name.as_ref())
             .ok_or(CommonPMErrors::NonExisting)?;
         self.script_runner(prj.get_dir(), prj.get_install())?;
         Ok(())

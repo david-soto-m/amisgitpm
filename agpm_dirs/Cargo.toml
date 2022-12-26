@@ -9,3 +9,8 @@ edition = "2021"
 amisgitpm = {path = "../amisgitpm"}
 directories = "^4.0" # config and local and stuff
 thiserror = "^1.0"
+agpm_suggestions = {path = "../agpm_suggestions", optional=true}
+
+
+[features]
+suggestions = ["agpm_suggestions"]

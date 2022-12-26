@@ -10,7 +10,8 @@ clap = { version = "^4", features = ["derive"] } # arguments
 color-eyre = { version = "^0.6.2", default-features = false}
 amisgitpm = {path = "../amisgitpm"}
 agpm_project = {path = "../agpm_project"}
-agpm_dirs = {path = "../agpm_dirs"}
-agpm_interactions = {path = "../agpm_interactions"}
+agpm_dirs = {path = "../agpm_dirs", features=["suggestions"]}
+agpm_interactions = {path = "../agpm_interactions", features=["suggestions"]}
+agpm_suggestions = {path = "../agpm_suggestions"}
 agpm_pm = {path = "../agpm_pm"}
 agpm_store = {path = "../agpm_store"}

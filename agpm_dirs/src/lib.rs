@@ -41,13 +41,16 @@ impl PMDirs for PMDirsImpl {
 }
 
 impl PMDirsImpl {
-    /// An extra function so that its easy to use with suggestions
-    pub fn suggestions_dir(&self) -> PathBuf {
-        self.p_dirs.config_dir().join("suggestions")
-    }
     /// Reference access to the underlying ProjectDirs structure
     pub fn get_pdirs(&self) -> &ProjectDirs {
         &self.p_dirs
+    }
+}
+
+impl agpm_suggestions::SuggestionsDirs for PMDirsImpl {
+    /// An extra function so that its easy to use with suggestions
+    fn suggestions_dir(&self) -> PathBuf {
+        self.p_dirs.config_dir().join("suggestions")
     }
 }
 
