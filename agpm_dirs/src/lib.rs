@@ -47,6 +47,7 @@ impl PMDirsImpl {
     }
 }
 
+#[cfg(feature="suggestions")]
 impl agpm_suggestions::SuggestionsDirs for PMDirsImpl {
     /// An extra function so that its easy to use with suggestions
     fn suggestions_dir(&self) -> PathBuf {

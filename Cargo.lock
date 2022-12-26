@@ -1360,6 +1360,7 @@ dependencies = [
  "agpm_pm",
  "agpm_project",
  "agpm_store",
+ "agpm_suggestions",
  "amisgitpm",
  "directories",
  "thiserror",

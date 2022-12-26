@@ -7,9 +7,9 @@ use agpm_pm::PrjManager;
 pub use agpm_project::{Project, UpdatePolicy};
 use agpm_store::Store;
 
-type Interacts = Interactor<TestDirs>;
-type ProjectsStore = Store<TestDirs, Project>;
-type ProjectManager = PrjManager<Project, TestDirs, ProjectsStore, Interacts>;
+type TestInteracts = Interactor<TestDirs>;
+type TestProjectsStore = Store<TestDirs, Project>;
+type TestProjectManager = PrjManager<Project, TestDirs, TestProjectsStore, TestInteracts>;
 
 #[derive(Debug, Error)]
 enum EmptyError {}
@@ -34,6 +34,15 @@ impl PMDirs for TestDirs {
     }
 }
 
+/// This is needed because the interactions crate is imported with the feature
+/// suggestions
+impl agpm_suggestions::SuggestionsDirs for TestDirs{
+    fn suggestions_dir(&self) -> PathBuf {
+        Path::new("../test_sandbox/config/suggestions").to_path_buf()
+
+    }
+}
+
 impl TestDirs {
     fn bin(&self) -> PathBuf {
         Path::new("../test_sandbox/bin").to_path_buf()
@@ -53,7 +62,7 @@ mod tests {
 
     #[test]
     fn install_uninstall_project() {
-        let mut pm = ProjectManager::new().unwrap();
+        let mut pm = TestProjectManager::new().unwrap();
         pm.get_dirs().projects_db();
         let prj = Project {
             name: "Hello-crate".into(),

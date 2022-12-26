@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 mod error;
 pub use error::PMError;
 mod interactions;
-mod operations;
+pub mod operations;
 pub use interactions::Interactions;
 
 pub struct PrjManager<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> {
