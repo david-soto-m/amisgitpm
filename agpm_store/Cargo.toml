@@ -3,7 +3,8 @@ name = "agpm_store"
 version = "0.0.1"
 edition = "2021"
 description = "An implementor of the ProjectStore trait of amisgitpm"
-
+license.workspace = true
+repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

@@ -3,7 +3,8 @@ name = "agpm_pm"
 version = "0.0.1"
 edition = "2021"
 description = "An implementor for the three traits that define a Project Manager"
-
+license.workspace = true
+repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

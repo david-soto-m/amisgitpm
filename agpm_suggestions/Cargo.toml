@@ -3,7 +3,8 @@ name = "agpm_suggestions"
 version = "0.0.1"
 edition = "2021"
 description = "A way to provide suggestions for building projects"
-
+license.workspace = true
+repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

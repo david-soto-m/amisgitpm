@@ -15,4 +15,4 @@ exclude = ["test_sandbox"]
 
 [workspace.package]
 license = "Unlicense OR CC0-1.0 OR MIT"
-repository = "https://github.com/david-soto-m/"
+repository = "https://github.com/david-soto-m/amisgitpm"
