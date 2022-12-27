@@ -1,6 +1,6 @@
 [package]
 name = "agpm"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "A command line interface to a amisgitpm project manager"
 license.workspace = true

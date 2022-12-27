@@ -183,13 +183,14 @@ and their subdirectories run again.",
             _ => eyre!(e).wrap_err(NO_FIX),
         })?,
         Commands::Bootstrap => {
+            println!("Using the manager to install the manager");
             let prj = Project {
                 name: "amisgitpm".into(),
                 dir: "amisgitpm".into(),
                 url: "https://github.com/david-soto-m/amisgitpm.git".into(),
                 ref_string: "refs/heads/main".into(),
                 update_policy: UpdatePolicy::Always,
-                install_script: vec!["cargo install --path . --root ~/.local/".into()],
+                install_script: vec!["cargo install --path ./agpm --root ~/.local/".into()],
                 uninstall_script: vec!["cargo uninstall amisgitpm --root ~/.local/".into()],
             };
             pm.install(prj)?;
