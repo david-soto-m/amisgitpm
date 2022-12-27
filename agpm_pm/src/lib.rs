@@ -29,7 +29,6 @@ impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS
     for PrjManager<P, D, PS, I>
 {
 }
-
 impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInteractive
     for PrjManager<P, D, PS, I>
 {
@@ -89,9 +88,6 @@ impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS
                 .try_for_each(|e| self.update(e.get_name()))?;
         } else {
             for project in prj_names.as_ref() {
-                self.get_store()
-                    .get_ref(project.as_ref())
-                    .ok_or(CommonPMErrors::NonExisting)?;
                 self.update(project.as_ref())?;
             }
         }

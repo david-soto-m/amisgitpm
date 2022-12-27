@@ -166,7 +166,8 @@ where
         self.script_runner(prj.get_dir(), prj.get_uninstall())
     }
     /// Update a repo, getting the latest changes if they can be fast forwarded to,
-    /// and ensuring that the correct reference is updated
+    /// and ensuring that the correct reference is updated. If any updates have
+    /// been applied returns True else false
     /// # Errors
     /// - Getting the remotes
     /// - Fetching the remotes
@@ -176,7 +177,7 @@ where
     /// - If there is no possibility of solving with Fast Forward, then -> `CommonPMErrors::ImposibleUpdate`
     /// - Resolving the merge with Fast-Forward strategy
     /// - Seting the head to the new head
-    fn update_repo(&self, prj: &Self::Project, repo: &Repository) -> Result<(), Self::Error> {
+    fn update_repo(&self, prj: &Self::Project, repo: &Repository) -> Result<bool, Self::Error> {
         let remotes = repo.remotes()?;
         if !remotes.is_empty() {
             repo.find_remote(remotes.get(0).unwrap_or("origin"))?
@@ -186,7 +187,7 @@ where
         let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
         let analysis = repo.merge_analysis(&[&fetch_commit])?;
         if analysis.0.is_up_to_date() {
-            return Ok(()); // early return
+            return Ok(false); // early return
         } else if analysis.0.is_fast_forward() {
             let mut reference = repo.find_reference(prj.get_ref_string())?;
             reference.set_target(fetch_commit.id(), "Fast-Forward")?;
@@ -195,7 +196,7 @@ where
         } else {
             Err(CommonPMErrors::ImposibleUpdate)?;
         }
-        Ok(())
+        Ok(true)
     }
     /// Run a script to install or uninstall a project
     fn script_runner<T: AsRef<str>, Q: AsRef<[T]>>(
@@ -268,13 +269,16 @@ pub trait PMProgrammatic: PMOperations {
         let git_dir = self.get_dirs().git().join(dir);
         let old_dir = self.get_dirs().old().join(dir);
         let src_dir = self.get_dirs().src().join(dir);
-        self.copy_directory(&src_dir, old_dir)?;
+        self.copy_directory(&src_dir, &old_dir)?;
         self.copy_directory(&src_dir, &git_dir)?;
         let repo = Repository::open(&git_dir)?;
         self.switch_branch(prj, &repo)?;
-        self.update_repo(prj, &repo)?;
-        self.mv(prj, &git_dir)?;
-        self.build(prj)?;
+        if self.update_repo(prj, &repo)?{
+            self.mv(prj, &git_dir)?;
+            self.build(prj)?;
+        } else {
+            std::fs::remove_dir_all(git_dir)?;
+        }
         Ok(())
     }
     /// Install the older version of a project given it's name

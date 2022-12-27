@@ -47,7 +47,7 @@ impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS
             copy_inside: true,
             ..Default::default()
         };
-        dir::copy(from, to, &opts)?;
+        dir::copy(from, to, &opts).map_err(|e|{ println!("{e}"); e})?;
         Ok(())
     }
     fn script_runner<T: AsRef<str>, Q: AsRef<[T]>>(

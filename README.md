@@ -76,6 +76,5 @@ Currently, the testing is linux dependent
 # Install
 
 ```bash
-cargo b
 cargo r -- bootstrap
 ```
