@@ -8,16 +8,16 @@ repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-amisgitpm = {path = "../amisgitpm"}
-agpm_pm = {path = "../agpm_pm"}
-agpm_project = {path = "../agpm_project", features=["serde"]}
+amisgitpm = {version ="^0.0", path = "../amisgitpm"}
+agpm_pm = {version ="^0.0", path = "../agpm_pm"}
+agpm_project = {version ="^0.0", path = "../agpm_project", features=["serde"]}
 thiserror = "^1.0"
 dialoguer = "^0.10" # general cli utils
 console = "0.15.2"
 prettytable-rs = {version = "^0.9", default-features = false}
 git2 = "^0.15"
 serde_json = {version = "^1.0"}
-agpm_suggestions = {path = "../agpm_suggestions", optional=true}
+agpm_suggestions = {version ="^0.0", path = "../agpm_suggestions", optional=true}
 
 
 

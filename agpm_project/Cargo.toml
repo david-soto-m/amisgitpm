@@ -9,7 +9,7 @@ repository.workspace = true
 
 [dependencies]
 serde = {version = "^1.0", features = ["derive"], optional = true}
-amisgitpm = {path = "../amisgitpm"}
+amisgitpm = {version ="^0.0" , path = "../amisgitpm"}
 
 [features]
 serde = ["dep:serde"]

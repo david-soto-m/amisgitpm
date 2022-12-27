@@ -8,10 +8,10 @@ repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-amisgitpm = {path = "../amisgitpm"}
+amisgitpm = {version ="^0.0", path = "../amisgitpm"}
 directories = "^4.0" # config and local and stuff
 thiserror = "^1.0"
-agpm_suggestions = {path = "../agpm_suggestions", optional=true}
+agpm_suggestions = {version ="^0.0", path = "../agpm_suggestions", optional=true}
 
 
 [features]

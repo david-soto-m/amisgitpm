@@ -10,10 +10,10 @@ repository.workspace = true
 [dependencies]
 clap = { version = "^4", features = ["derive"] } # arguments
 color-eyre = { version = "^0.6.2", default-features = false}
-amisgitpm = {path = "../amisgitpm"}
-agpm_project = {path = "../agpm_project"}
-agpm_dirs = {path = "../agpm_dirs", features=["suggestions"]}
-agpm_interactions = {path = "../agpm_interactions", features=["suggestions"]}
-agpm_suggestions = {path = "../agpm_suggestions"}
-agpm_pm = {path = "../agpm_pm"}
-agpm_store = {path = "../agpm_store"}
+amisgitpm = {version ="^0.0", path = "../amisgitpm"}
+agpm_project = {version ="^0.0", path = "../agpm_project"}
+agpm_dirs = {version ="^0.0", path = "../agpm_dirs", features=["suggestions"]}
+agpm_interactions = {version ="^0.0", path = "../agpm_interactions", features=["suggestions"]}
+agpm_suggestions = {version ="^0.0", path = "../agpm_suggestions"}
+agpm_pm = {version ="^0.0", path = "../agpm_pm"}
+agpm_store = {version ="^0.0", path = "../agpm_store"}

@@ -8,7 +8,7 @@ repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-amisgitpm = {path = "../amisgitpm"}
+amisgitpm = {version ="^0.0", path = "../amisgitpm"}
 glob = "^0.3"
 regex = "^1.6"
 markdown-extract = "^2.0"
