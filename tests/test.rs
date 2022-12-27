@@ -217,7 +217,7 @@ mod tests {
         .unwrap();
         let epoch2 = epoch2.trim().parse::<i64>().unwrap();
         assert!(epoch2 > epoch);
-        let mut epoch3= String::new();
+        let mut epoch3 = String::new();
         pm.restore("git_upd").unwrap();
         std::fs::File::open(
             TestDirs::new()
@@ -225,7 +225,8 @@ mod tests {
                 .src()
                 .join("git_upd")
                 .join("dates.txt"),
-        ).unwrap()
+        )
+        .unwrap()
         .read_to_string(&mut epoch3)
         .unwrap();
         let epoch3 = epoch3.trim().parse::<i64>().unwrap();
@@ -243,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn get_one_get_many_edit(){
+    fn get_one_get_many_edit() {
         let dir = std::fs::canonicalize(Path::new("./projects/setable")).unwrap();
         assert_eq!(
             Exec::shell("bash 0_start.sh")
@@ -292,5 +293,4 @@ mod tests {
             true
         );
     }
-
 }

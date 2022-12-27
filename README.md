@@ -17,7 +17,7 @@ manually download the new version and build it.
 5. I wanted to be able to always go back to the previous version if things
 stopped working.
 6. I wanted to uninstall the software once I was done with it.
-7. I wanted to install any prpject at any level of development, so it couldn't
+7. I wanted to install any project at any level of development, so it couldn't
 be a managed package manager and it couldn't rely on published releases.
 
 This requirements came from using the [Helix editor](https://helix-editor.com/)
