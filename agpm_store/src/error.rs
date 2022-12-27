@@ -4,7 +4,7 @@ use thiserror::Error;
 /// An error for the [`ProjectStore`](amisgitpm::ProjectStore) struct
 #[non_exhaustive]
 #[derive(Debug, Error)]
-pub enum ProjectStoreError<D: std::error::Error> {
+pub enum ProjectStoreError<D> {
     /// An error occurred with the tables
     #[error(transparent)]
     Table(#[from] TableError),

@@ -1,8 +1,7 @@
 #![warn(missing_docs)]
-//! A module to regulate the information for installed projects and
-//! how installed projects are stored and internally queried.
+#![doc = include_str!("../README.md")]
 
-use amisgitpm::{PMDirs, ProjectStore, ProjectT};
+use amisgitpm::{Directories, ProjectIface, ProjectStore};
 use json_tables::{Deserialize, Serialize, Table, TableError};
 use std::marker::PhantomData;
 
@@ -11,18 +10,18 @@ pub use error::ProjectStoreError;
 
 /// A struct that implements the [`ProjectStore`](amisgitpm::ProjectStore)
 /// trait using a [`json_tables::Table`]
-pub struct Store<D: PMDirs, T: ProjectT + Serialize + for<'d> Deserialize<'d>> {
+pub struct Store<D: Directories, T: ProjectIface + Serialize + for<'d> Deserialize<'d>> {
     table: Table<T>,
     dirs: PhantomData<D>,
 }
 
-impl<D: PMDirs, T> ProjectStore<T> for Store<D, T>
+impl<D: Directories, T> ProjectStore<T> for Store<D, T>
 where
-    T: ProjectT + Serialize + for<'d> Deserialize<'d>,
+    T: ProjectIface + Serialize + for<'d> Deserialize<'d>,
 {
     type Error = ProjectStoreError<D::Error>;
     fn new() -> Result<Self, Self::Error> {
-        let dirs = <D as PMDirs>::new().map_err(Self::Error::Dirs)?;
+        let dirs = <D as Directories>::new().map_err(Self::Error::Dirs)?;
         match Table::builder(dirs.projects_db()).load() {
             Ok(table) => Ok(Store {
                 table,

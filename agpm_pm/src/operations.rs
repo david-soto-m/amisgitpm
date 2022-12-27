@@ -1,11 +1,11 @@
 use crate::{Interactions, PMError, PrjManager};
-use amisgitpm::{PMDirs, PMOperations, ProjectStore, ProjectT};
+use amisgitpm::{Directories, PMOperations, ProjectIface, ProjectStore};
 use fs_extra::dir::{self, CopyOptions};
 use std::marker::PhantomData;
 use std::path::Path;
 use subprocess::Exec;
 
-impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMOperations
+impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS>> PMOperations
     for PrjManager<P, D, PS, I>
 {
     // type Project =;
@@ -25,7 +25,7 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMOper
     fn map_store_error(err: <Self::Store as ProjectStore<P>>::Error) -> Self::Error {
         Self::Error::Store(err)
     }
-    fn map_dir_error(err: <Self::Dirs as PMDirs>::Error) -> Self::Error {
+    fn map_dir_error(err: <Self::Dirs as Directories>::Error) -> Self::Error {
         Self::Error::Dirs(err)
     }
     fn get_store(&self) -> &Self::Store {
@@ -50,14 +50,19 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMOper
         dir::copy(from, to, &opts)?;
         Ok(())
     }
-    fn script_runner(&self, dir: &str, script: &[String]) -> Result<(), Self::Error> {
+    fn script_runner<T: AsRef<str>, Q: AsRef<[T]>>(
+        &self,
+        dir: &str,
+        script: Q,
+    ) -> Result<(), Self::Error> {
         let src_dir = self.dirs.src().join(dir);
+        let script: Vec<&str> = script.as_ref().iter().map(|e| e.as_ref()).collect();
         if !Exec::shell(script.join("&&"))
-            .cwd(&src_dir)
+            .cwd(src_dir)
             .join()?
             .success()
         {
-            Err(Self::Error::Exec)?
+            Err(Self::Error::Exec)?;
         }
         Ok(())
     }

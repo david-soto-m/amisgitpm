@@ -22,7 +22,7 @@
 //! `PMProgramatic` or reimplement some other using `PMOperations`
 //!
 
-use crate::{PMDirs, ProjectStore, ProjectT};
+use crate::{Directories, ProjectIface, ProjectStore};
 use git2::Repository;
 use std::path::{Path, PathBuf};
 
@@ -63,15 +63,15 @@ where
     Self: Sized,
 {
     /// A type that implements the `PMDirs` trait
-    type Dirs: PMDirs;
+    type Dirs: Directories;
     /// A type that implements the `ProjectStore` trait for projects of type `Self::Project`
     type Store: ProjectStore<Self::Project>;
     /// A type that implements the `ProjectT` trait
-    type Project: ProjectT;
+    type Project: ProjectIface;
     /// A type that can hold all the errors originated from the different functions.
     /// It's the same for the `PMOperations` and `PMInteractive`
     type Error: std::error::Error + From<std::io::Error> + From<CommonPMErrors> + From<git2::Error>;
-    /// Create a project manager struct, type or w\e
+    /// Create a project manager struct, type or whatever
     fn new() -> Result<Self, Self::Error>;
     /// Map the errors created by your store to project manager errors
     /// Typically
@@ -84,7 +84,7 @@ where
     /// ```ignore
     ///Self::Error::Dirs(err)
     ///```
-    fn map_dir_error(err: <Self::Dirs as PMDirs>::Error) -> Self::Error;
+    fn map_dir_error(err: <Self::Dirs as Directories>::Error) -> Self::Error;
     /// Provide a reference to whatever store you are using.
     /// If you are using a structure to implement the project manager and you
     /// want your project manager to hold within itself a store then its a easy as
@@ -94,7 +94,7 @@ where
     fn get_store(&self) -> &Self::Store;
     /// Provide a mutable reference to the same store
     fn get_mut_store(&mut self) -> &mut Self::Store;
-    /// Provide a reference to whatever mecanism you are using to implement `PMDirs`
+    /// Provide a reference to whatever mechanism you are using to implement `Directories`
     fn get_dirs(&self) -> &Self::Dirs;
     /// Copy a directory completely from one place to another. With the `fs_extra` crate
     /// this function is as easy as
@@ -115,13 +115,20 @@ where
     ) -> Result<(), Self::Error>;
 
     /// Clone a project from the projects url
+    /// # Errors
+    /// - Failure cloning the repo.
     fn download(&self, prj: &Self::Project) -> Result<(Repository, PathBuf), Self::Error> {
         let git_dir = self.get_dirs().git().join(prj.get_dir());
         let repo = Repository::clone(prj.get_url(), &git_dir)?;
         Ok((repo, git_dir))
     }
 
-    /// change to the branch designated by the project's reference
+    /// Change to the branch designated by the project's reference
+    /// # Errors
+    /// - Finding the object `prj.get_ref_string()` in the repo
+    /// - Checking out the tree with that object
+    /// - If there is no reference to set the head to -> `CommonPMErrors::BadRef`
+    /// - Setting the head to the head of the reference
     fn switch_branch(&self, prj: &Self::Project, repo: &Repository) -> Result<(), Self::Error> {
         let (obj, refe) = repo.revparse_ext(prj.get_ref_string())?;
         repo.checkout_tree(&obj, None)?;
@@ -134,6 +141,9 @@ where
     }
 
     /// Move from wherever to the projects subdirectory in the sources directory
+    /// # Errors
+    /// - Deleting the directories (in established in `Dirs::new().unwrap().src` or `path`)
+    /// - Copying the directories
     fn mv(&self, prj: &Self::Project, path: &Path) -> Result<(), Self::Error> {
         let src_dir = self.get_dirs().src().join(prj.get_dir());
         if src_dir.exists() {
@@ -144,15 +154,28 @@ where
         Ok(())
     }
     /// Run the build script from the `src()` directory.
+    /// # Errors
+    /// - Script runner failure
     fn build(&self, prj: &Self::Project) -> Result<(), Self::Error> {
         self.script_runner(prj.get_dir(), prj.get_install())
     }
     /// Run the uninstall script from the `src()` directory
+    /// # Errors
+    /// - Script runner failure
     fn unbuild(&self, prj: &Self::Project) -> Result<(), Self::Error> {
         self.script_runner(prj.get_dir(), prj.get_uninstall())
     }
     /// Update a repo, getting the latest changes if they can be fast forwarded to,
     /// and ensuring that the correct reference is updated
+    /// # Errors
+    /// - Getting the remotes
+    /// - Fetching the remotes
+    /// - Finding the reference `"FETCH_HEAD"`
+    /// - Getting the commit to said reference
+    /// - Analyzing the merge
+    /// - If there is no possibility of solving with Fast Forward, then -> `CommonPMErrors::ImposibleUpdate`
+    /// - Resolving the merge with Fast-Forward strategy
+    /// - Seting the head to the new head
     fn update_repo(&self, prj: &Self::Project, repo: &Repository) -> Result<(), Self::Error> {
         let remotes = repo.remotes()?;
         if !remotes.is_empty() {
@@ -174,15 +197,24 @@ where
         }
         Ok(())
     }
-    /// Run a script to install or uninstall a project. It should run it from the
-    ///
-    fn script_runner(&self, dir: &str, script: &[String]) -> Result<(), Self::Error>;
+    /// Run a script to install or uninstall a project
+    fn script_runner<T: AsRef<str>, Q: AsRef<[T]>>(
+        &self,
+        dir: &str,
+        script: Q,
+    ) -> Result<(), Self::Error>;
 }
 
 /// A trait that implement the six tasks based on the `PMOperations` trait.
 /// It is designed for programtic use of the project
 pub trait PMProgrammatic: PMOperations {
     /// Install a project from a known Project in which all parameters are known
+    /// # Errors
+    /// - If there is a project with that name or directory already in use -> `CommonPMErrors::AlreadyExisting`
+    /// - Switching branches
+    /// - Moving dirs
+    /// - Adding to the store
+    /// - Building the project
     fn install(&mut self, prj: Self::Project) -> Result<(), Self::Error> {
         if !self.get_store().check_unique(prj.get_name(), prj.get_dir()) {
             Err(CommonPMErrors::AlreadyExisting)?;
@@ -197,10 +229,17 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     /// Uninstall a project given it's name
+    /// # Errors
+    /// - Unable to get the project -> `CommonPMErrors::NonExisting`
+    /// - Unable to run the uninstall script
+    /// - Unable to delete directories -> Normally permissions errors.
+    /// - Unable to remove from store.
     fn uninstall<T: AsRef<str>>(&mut self, prj_name: T) -> Result<(), Self::Error> {
-        let prj = self.get_one(prj_name.as_ref())?;
+        let prj = self
+            .get_one(prj_name.as_ref())
+            .ok_or(CommonPMErrors::NonExisting)?;
         let dir = &prj.get_dir();
-        self.unbuild(&prj)?;
+        self.unbuild(prj)?;
         let src_dir = self.get_dirs().src().join(dir);
         std::fs::remove_dir_all(src_dir)?;
         let old_dir = self.get_dirs().old().join(dir);
@@ -213,13 +252,23 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     /// Update a project given it's name
+    /// # Errors
+    /// - Unable to get the project -> `CommonPMErrors::NonExisting`
+    /// - Unable to copy directories
+    /// - Unable to open the repo
+    /// - Unable to switch to the established branch
+    /// - Unable to update the repo
+    /// - Unable to move the project
+    /// - Unable to build the project
     fn update<T: AsRef<str>>(&self, prj_name: T) -> Result<(), Self::Error> {
-        let prj = self.get_one(prj_name.as_ref())?;
+        let prj = self
+            .get_one(prj_name.as_ref())
+            .ok_or(CommonPMErrors::NonExisting)?;
         let dir = prj.get_dir();
         let git_dir = self.get_dirs().git().join(dir);
         let old_dir = self.get_dirs().old().join(dir);
         let src_dir = self.get_dirs().src().join(dir);
-        self.copy_directory(&src_dir, &old_dir)?;
+        self.copy_directory(&src_dir, old_dir)?;
         self.copy_directory(&src_dir, &git_dir)?;
         let repo = Repository::open(&git_dir)?;
         self.switch_branch(prj, &repo)?;
@@ -229,17 +278,26 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     /// Install the older version of a project given it's name
+    /// # Errors
+    /// - Unable to get the project -> `CommonPMErrors::NonExisting`
+    /// - Unable to remove the src directory
+    /// -  Unable to copy the directory from old to new
+    /// - Unable to build the project
     fn restore<T: AsRef<str>>(&self, prj_name: T) -> Result<(), Self::Error> {
-        let prj = self.get_one(prj_name.as_ref())?;
+        let prj = self
+            .get_one(prj_name.as_ref())
+            .ok_or(CommonPMErrors::NonExisting)?;
         let dir = prj.get_dir();
         let old_dir = self.get_dirs().old().join(dir);
         let src_dir = self.get_dirs().src().join(dir);
         std::fs::remove_dir_all(&src_dir)?;
-        self.copy_directory(&old_dir, &src_dir)?;
-        self.script_runner(prj.get_dir(), prj.get_install())?;
+        self.copy_directory(old_dir, &src_dir)?;
+        self.build(prj)?;
         Ok(())
     }
-    ///
+    /// Substitute the contents of a project with name `prj_name` with the contents in `prj`
+    /// # Errors
+    /// - Store error getting the project or substituting it.
     fn edit<T: AsRef<str>>(&mut self, prj_name: T, prj: Self::Project) -> Result<(), Self::Error> {
         self.get_mut_store()
             .edit(prj_name.as_ref(), prj)
@@ -247,11 +305,8 @@ pub trait PMProgrammatic: PMOperations {
         Ok(())
     }
     /// Get the project configuration, given it's name
-    fn get_one<T: AsRef<str>>(&self, prj_name: T) -> Result<&Self::Project, Self::Error> {
-        Ok(self
-            .get_store()
-            .get_ref(prj_name.as_ref())
-            .ok_or(CommonPMErrors::NonExisting)?)
+    fn get_one<T: AsRef<str>>(&self, prj_name: T) -> Option<&Self::Project> {
+        self.get_store().get_ref(prj_name.as_ref())
     }
     /// Get a list of references to all the projects in storage
     fn get_all(&self) -> Vec<&Self::Project> {

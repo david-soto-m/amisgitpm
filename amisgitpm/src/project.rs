@@ -2,7 +2,7 @@
 //! project managers.
 
 /// A trait that is used to know to set up a project
-pub trait ProjectT: Clone {
+pub trait ProjectIface: Clone {
     /// Get the name of the project
     fn get_name(&self) -> &str;
     /// Get the directory name to use for this project
@@ -20,7 +20,7 @@ pub trait ProjectT: Clone {
 /// How to interact with however your projects are stored
 /// The idea is that you can implement this trait with any technology you want
 /// to use. Any kind of database, a xml document, a collection of json docs...
-pub trait ProjectStore<T: ProjectT>
+pub trait ProjectStore<T: ProjectIface>
 where
     Self: Sized,
 {
@@ -37,6 +37,9 @@ where
     /// Return a cloned instance of a project in the store
     fn get_clone(&self, prj_name: &str) -> Option<T>;
     /// Replace the project that used to go by the `old_prj_name` name with the `new_prj` item
+    /// # Errors
+    /// This function will return an error when there is a problem removing an item or adding a
+    /// new item
     fn edit(&mut self, old_prj_name: &str, new_prj: T) -> Result<(), Self::Error> {
         self.remove(old_prj_name)?;
         self.add(new_prj)?;

@@ -13,6 +13,7 @@ agpm_suggestions = {path = "../agpm_suggestions"}
 agpm_store = {path = "../agpm_store"}
 thiserror = "^1.0"
 directories = "^4.0" # config and local and stuff
+subprocess = "^0.2"
 
 
 

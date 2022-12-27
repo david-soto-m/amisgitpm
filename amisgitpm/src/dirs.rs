@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 
 /// A trait to standarize the directories that are used in the crate
-pub trait PMDirs
+pub trait Directories
 where
     Self: Sized,
 {

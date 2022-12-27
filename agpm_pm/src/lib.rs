@@ -1,26 +1,36 @@
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
+
 use amisgitpm::{
-    CommonPMErrors, PMDirs, PMInteractive, PMOperations, PMProgrammatic, ProjectStore, ProjectT,
+    CommonPMErrors, Directories, PMInteractive, PMOperations, PMProgrammatic, ProjectIface,
+    ProjectStore,
 };
 use std::marker::PhantomData;
 mod error;
 pub use error::PMError;
 mod interactions;
-pub mod operations;
+mod operations;
 pub use interactions::Interactions;
 
-pub struct PrjManager<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> {
+/// The implementor of the three project manager traits `PMOperations`, `PMInteractive` and `PMProgrammatic`
+///
+/// It's generic over the `ProjectIface`, `ProjectStore`, the `Directories` and `Interactions`.
+/// This way the it can be used in other code, just changing the `Interactions` implementor you
+/// can swap all the pieces and still get a functional `PrjManager`
+pub struct PrjManager<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS>>
+{
     dirs: D,
     store: PS,
     inter_data: PhantomData<I>,
     p_data: PhantomData<P>,
 }
 
-impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMProgrammatic
+impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS>> PMProgrammatic
     for PrjManager<P, D, PS, I>
 {
 }
 
-impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInteractive
+impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInteractive
     for PrjManager<P, D, PS, I>
 {
     fn i_install<T: AsRef<str>>(&mut self, url: T) -> Result<(), Self::Error> {
@@ -50,10 +60,10 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInte
                 .list(self.get_store())
                 .map_err(Self::map_inter_error)?;
         } else {
-            prj_names.as_ref().into_iter().try_for_each(|prj_name| {
+            prj_names.as_ref().iter().try_for_each(|prj_name| {
                 let project = self
                     .get_store()
-                    .get_ref(&prj_name.as_ref())
+                    .get_ref(prj_name.as_ref())
                     .ok_or(CommonPMErrors::NonExisting)?;
                 inter.list_one(project).map_err(Self::map_inter_error)?;
                 Ok::<_, Self::Error>(())
@@ -76,20 +86,20 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInte
             self.get_store()
                 .iter()
                 .filter(|e| inter.update_confirm(e))
-                .try_for_each(|e| self.update(&e.get_name()))?;
+                .try_for_each(|e| self.update(e.get_name()))?;
         } else {
             for project in prj_names.as_ref() {
                 self.get_store()
-                    .get_ref(&project.as_ref())
+                    .get_ref(project.as_ref())
                     .ok_or(CommonPMErrors::NonExisting)?;
-                self.update(&project.as_ref())?;
+                self.update(project.as_ref())?;
             }
         }
         Ok(())
     }
     fn i_restore<T: AsRef<str>, Q: AsRef<[T]>>(self, prj_names: Q) -> Result<(), Self::Error> {
         for prj in prj_names.as_ref() {
-            self.restore(prj)?
+            self.restore(prj)?;
         }
         Ok(())
     }
@@ -98,13 +108,15 @@ impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PMInte
         prj_names: Q,
     ) -> Result<(), Self::Error> {
         for prj in prj_names.as_ref() {
-            self.uninstall(prj)?
+            self.uninstall(prj)?;
         }
         Ok(())
     }
 }
 
-impl<P: ProjectT, D: PMDirs, PS: ProjectStore<P>, I: Interactions<P, PS>> PrjManager<P, D, PS, I> {
+impl<P: ProjectIface, D: Directories, PS: ProjectStore<P>, I: Interactions<P, PS>>
+    PrjManager<P, D, PS, I>
+{
     fn map_inter_error(e: I::Error) -> <Self as PMOperations>::Error {
         <Self as PMOperations>::Error::Interact(e)
     }

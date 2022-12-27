@@ -1,14 +1,11 @@
 #![warn(missing_docs)]
-
-//! This crate implements the [`agpm_pm::Interactions`] trait with the
-//! [`Interactor`] struct. It brings some suggestions with the a private
-//! `Suggestions` type.
+#![doc = include_str!("../README.md")]
 
 use agpm_pm::Interactions;
 use agpm_project::{Project, UpdatePolicy};
 #[cfg(feature = "suggestions")]
 use agpm_suggestions::SuggestionsDirs;
-use amisgitpm::{PMDirs, ProjectStore};
+use amisgitpm::{Directories, ProjectStore};
 use console::{style, Term};
 use dialoguer::{Confirm, Editor, Input, MultiSelect, Select};
 use git2::{BranchType, Repository};
@@ -20,23 +17,23 @@ pub use error::InteractError;
 
 /// This struct implements the [`agpm_pm::Interactions`] trait. To that purpose
 pub struct Interactor<
-    #[cfg(not(feature = "suggestions"))] T: PMDirs,
-    #[cfg(feature = "suggestions")] T: PMDirs + SuggestionsDirs,
+    #[cfg(not(feature = "suggestions"))] T: Directories,
+    #[cfg(feature = "suggestions")] T: Directories + SuggestionsDirs,
 > {
     t: Term,
     dirs: PhantomData<T>,
 }
 
 impl<
-        #[cfg(not(feature = "suggestions"))] T: PMDirs,
-        #[cfg(feature = "suggestions")] T: PMDirs + SuggestionsDirs,
+        #[cfg(not(feature = "suggestions"))] T: Directories,
+        #[cfg(feature = "suggestions")] T: Directories + SuggestionsDirs,
     > Interactor<T>
 {
     fn get_sugg(&self, sug: &Vec<Vec<String>>, info: &str) -> Result<Vec<String>, InteractError> {
         let mut edit_string = String::new();
         self.t.clear_screen()?;
         if !sug.is_empty() {
-            println!("{}", info);
+            println!("{info}");
             let mut choices = sug.iter().map(|a| a[0].clone()).collect::<Vec<String>>();
             choices.push("Stop previews".into());
             loop {
@@ -128,8 +125,8 @@ when you are done press {}", style("all").bold(), style("space").bold(), style("
 }
 
 impl<
-        #[cfg(not(feature = "suggestions"))] T: PMDirs,
-        #[cfg(feature = "suggestions")] T: PMDirs + SuggestionsDirs,
+        #[cfg(not(feature = "suggestions"))] T: Directories,
+        #[cfg(feature = "suggestions")] T: Directories + SuggestionsDirs,
         ST: ProjectStore<Project>,
     > Interactions<Project, ST> for Interactor<T>
 {
@@ -266,7 +263,7 @@ commands you might want to do something like this `command-to-detach & cd .`",
         Ok(())
     }
     fn list_one(&self, prj: &Project) -> Result<(), Self::Error> {
-        println!("{:#?}", prj);
+        println!("{prj:#?}");
         Ok(())
     }
     fn update_confirm(&self, prj: &Project) -> bool {

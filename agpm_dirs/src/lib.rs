@@ -1,19 +1,17 @@
 #![warn(missing_docs)]
-//! In this crate the `PMDirsImpl` structure implements the `PMDirs` trait.
-//! It uses the [`directories::ProjectDirs`] structure to use the default
-//! locations for the different OSes.
+#![doc = include_str!("../README.md")]
 
-use amisgitpm::PMDirs;
+use amisgitpm::Directories;
 use directories::ProjectDirs;
 use std::path::PathBuf;
 use thiserror::Error;
 
-/// An implementor for the [`PMDirs`](amisgitpm::PMDirs) trait
-pub struct PMDirsImpl {
+/// An implementor for the [`Directories`](amisgitpm::Directories) trait
+pub struct Dirs {
     p_dirs: ProjectDirs,
 }
 
-impl PMDirs for PMDirsImpl {
+impl Directories for Dirs {
     type Error = DirError;
     ///
     fn new() -> Result<Self, Self::Error> {
@@ -40,17 +38,17 @@ impl PMDirs for PMDirsImpl {
     }
 }
 
-impl PMDirsImpl {
-    /// Reference access to the underlying ProjectDirs structure
+impl Dirs {
+    /// Reference access to the underlying `ProjectDirs` structure
     pub fn get_pdirs(&self) -> &ProjectDirs {
         &self.p_dirs
     }
 }
 
-#[cfg(feature="suggestions")]
-impl agpm_suggestions::SuggestionsDirs for PMDirsImpl {
+#[cfg(feature = "suggestions")]
+impl agpm_suggestions::SuggestionsDirs for Dirs {
     /// An extra function so that its easy to use with suggestions
-    fn suggestions_dir(&self) -> PathBuf {
+    fn suggestions(&self) -> PathBuf {
         self.p_dirs.config_dir().join("suggestions")
     }
 }

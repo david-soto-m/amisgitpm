@@ -1,11 +1,12 @@
-use amisgitpm::PMDirs;
-use std::path::{Path, PathBuf};
-use thiserror::Error;
-
 use agpm_interactions::Interactor;
 use agpm_pm::PrjManager;
-pub use agpm_project::{Project, UpdatePolicy};
+use agpm_project::{Project, UpdatePolicy};
 use agpm_store::Store;
+use amisgitpm::Directories;
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use subprocess::Exec;
+use thiserror::Error;
 
 type TestInteracts = Interactor<TestDirs>;
 type TestProjectsStore = Store<TestDirs, Project>;
@@ -15,7 +16,7 @@ type TestProjectManager = PrjManager<Project, TestDirs, TestProjectsStore, TestI
 enum EmptyError {}
 
 struct TestDirs {}
-impl PMDirs for TestDirs {
+impl Directories for TestDirs {
     type Error = EmptyError;
     fn new() -> Result<Self, Self::Error> {
         Ok(Self {})
@@ -36,10 +37,9 @@ impl PMDirs for TestDirs {
 
 /// This is needed because the interactions crate is imported with the feature
 /// suggestions
-impl agpm_suggestions::SuggestionsDirs for TestDirs{
-    fn suggestions_dir(&self) -> PathBuf {
+impl agpm_suggestions::SuggestionsDirs for TestDirs {
+    fn suggestions(&self) -> PathBuf {
         Path::new("../test_sandbox/config/suggestions").to_path_buf()
-
     }
 }
 
@@ -90,69 +90,74 @@ mod tests {
         );
         pm.uninstall(&prj.name).unwrap();
     }
-    // #[test]
-    // fn updates() {
-    //     let dir = canonicalize(PathBuf::from(".").join("tests/projects/git_upd")).unwrap();
-    //     assert_eq!(
-    //         Exec::shell("bash 0_start.sh")
-    //             .cwd(&dir)
-    //             .join()
-    //             .unwrap()
-    //             .success(),
-    //         true
-    //     );
-    //     let mut url: String = "file://".into();
-    //     url.push_str(&dir.to_str().unwrap());
-    //     let prj = Project {
-    //         name: "git_upd".into(),
-    //         dir: "git_upd".into(),
-    //         url,
-    //         ref_string: "refs/heads/main".into(),
-    //         update_policy: UpdatePolicy::Always,
-    //         install_script: vec![],
-    //         uninstall_script: vec![],
-    //     };
-    //     let pm = PackageManagerDefault::new().unwrap();
-    //     let a = <PackageManagerDefault as PackageManagementBase>::Dirs::new();
-    //     pm.install(&prj).unwrap();
-    //     let mut epoch = String::new();
-    //     std::fs::File::open(dir.join("dates.txt"))
-    //         .unwrap()
-    //         .read_to_string(&mut epoch)
-    //         .unwrap();
-    //     let epoch = epoch.trim().parse::<i64>().unwrap();
-    //     std::thread::sleep(std::time::Duration::from_secs(1));
-    //     assert_eq!(
-    //         Exec::shell("bash 1_update.sh")
-    //             .cwd(&dir)
-    //             .join()
-    //             .unwrap()
-    //             .success(),
-    //         true
-    //     );
-    //     let mut epoch2 = String::new();
-    //     std::fs::File::open(dir.join("dates.txt"))
-    //         .unwrap()
-    //         .read_to_string(&mut epoch2)
-    //         .unwrap();
-    //     let epoch2 = epoch2.trim().parse::<i64>().unwrap();
-    //     assert!(epoch2 > epoch);
-    //     pm.update("git_upd").unwrap();
-    //     let mut epoch2 = String::new();
-    //     std::fs::File::open(a.src_dirs().join("git_upd").join("dates.txt"))
-    //         .unwrap()
-    //         .read_to_string(&mut epoch2)
-    //         .unwrap();
-    //     let epoch2 = epoch2.trim().parse::<i64>().unwrap();
-    //     assert!(epoch2 > epoch);
-    //     assert_eq!(
-    //         Exec::shell("bash 2_finish.sh")
-    //             .cwd(&dir)
-    //             .join()
-    //             .unwrap()
-    //             .success(),
-    //         true
-    //     );
-    //     pm.uninstall("git_upd").unwrap();
-    // }
+    #[test]
+    fn updates() {
+        let dir = std::fs::canonicalize(Path::new("./projects/git_upd")).unwrap();
+        assert_eq!(
+            Exec::shell("bash 0_start.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        let mut url: String = "file://".into();
+        url.push_str(&dir.to_str().unwrap());
+        let prj = Project {
+            name: "git_upd".into(),
+            dir: "git_upd".into(),
+            url,
+            ref_string: "refs/heads/main".into(),
+            update_policy: UpdatePolicy::Always,
+            install_script: vec![],
+            uninstall_script: vec![],
+        };
+        let mut pm = TestProjectManager::new().unwrap();
+        pm.install(prj).unwrap();
+        let mut epoch = String::new();
+        std::fs::File::open(dir.join("dates.txt"))
+            .unwrap()
+            .read_to_string(&mut epoch)
+            .unwrap();
+        let epoch = epoch.trim().parse::<i64>().unwrap();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        assert_eq!(
+            Exec::shell("bash 1_update.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        let mut epoch2 = String::new();
+        std::fs::File::open(dir.join("dates.txt"))
+            .unwrap()
+            .read_to_string(&mut epoch2)
+            .unwrap();
+        let epoch2 = epoch2.trim().parse::<i64>().unwrap();
+        assert!(epoch2 > epoch);
+        pm.update("git_upd").unwrap();
+        let mut epoch2 = String::new();
+        std::fs::File::open(
+            TestDirs::new()
+                .unwrap()
+                .src()
+                .join("git_upd")
+                .join("dates.txt"),
+        )
+        .unwrap()
+        .read_to_string(&mut epoch2)
+        .unwrap();
+        let epoch2 = epoch2.trim().parse::<i64>().unwrap();
+        assert!(epoch2 > epoch);
+        assert_eq!(
+            Exec::shell("bash 2_finish.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        pm.uninstall("git_upd").unwrap();
+    }
 }

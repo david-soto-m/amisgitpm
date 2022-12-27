@@ -1,4 +1,7 @@
-use amisgitpm::ProjectT;
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
+
+use amisgitpm::ProjectIface;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -52,7 +55,7 @@ pub struct Project {
     pub uninstall_script: Vec<String>,
 }
 
-impl ProjectT for Project {
+impl ProjectIface for Project {
     fn get_name(&self) -> &str {
         &self.name
     }

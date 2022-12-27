@@ -49,13 +49,7 @@ shouldn't really be interacting with the repos this shouldn't be a mayor
 problem, but it's a bummer
 
 
-# TODO
-
-- Make everything work again
-- Document, Document, and Document
-- Test everything
-
-# Developing
+# Architecture
 
 This project is kind of two different things rolled into one. On the one hand
 there is the `amisgitpm` and on the other one, every other workspace,
@@ -64,9 +58,20 @@ for convenience we will call it `agpm`.
 `amisgitpm` is a collection of traits, that when implemented and combined can
 potentially result in a working ""project manager"".
 
-<!-- TODO: Finish this section -->
+`agpm_pm`, `agpm_store`, `agpm_dirs`, `agpm_project` are generic implementations
+of the traits defined in `amisgitpm`. `agpm_pm` defines an extra trait to
+`Interactions`, to separate the nitty-gritty implementation detail of the
+interactions from the implementation of the `PMInteractive` trait. That's where
+`agpm_interactions` and `agpm_suggestions` come into play. They offer an
+implementation with some extra optional features in `agpm_suggestions`.
 
+`agpm` is a crate that glues all the parts together so that they are one
+concrete implementation that uses all the parts I just described. It makes the
+concrete types used available through its `lib.rs file`.
 
-# Building
+# Install
 
-<!-- TODO: Finish this section -->
+```bash
+cargo b
+cargo r -- bootstrap
+```

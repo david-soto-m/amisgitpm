@@ -1,9 +1,9 @@
 #![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
 
-//! This crate define traits for
 pub mod project;
-pub use project::{ProjectStore, ProjectT};
+pub use project::{ProjectIface, ProjectStore};
 pub mod dirs;
-pub use dirs::PMDirs;
+pub use dirs::Directories;
 pub mod pm;
 pub use pm::{CommonPMErrors, PMInteractive, PMOperations, PMProgrammatic};

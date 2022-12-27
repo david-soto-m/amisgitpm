@@ -1,8 +1,7 @@
-//! This module defines the trait that enables getting build suggestions.
-//!
-//! It also defines a struct that implements the trait and the auxiliary
-//! structs and functions that are needed for that.
-use amisgitpm::PMDirs;
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
+
+use amisgitpm::Directories;
 use glob::{GlobError, PatternError};
 use json_tables::{Deserialize, Serialize, Table, TableBuilderError, TableError};
 use regex::Regex;
@@ -10,12 +9,21 @@ use reqwest::blocking;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-pub trait SuggestionsDirs: PMDirs {
-    fn suggestions_dir(&self) -> PathBuf;
+const REGISTRY: [&str; 6] = [
+    "bash.json",
+    "cargo.json",
+    "meson.json",
+    "cmain.json",
+    "cmake.json",
+    "makefile.json",
+];
+
+/// A trait to get a suggestions directory for the DB
+pub trait SuggestionsDirs: Directories {
+    /// Get the suggestions directory
+    fn suggestions(&self) -> PathBuf;
 }
 
-/// This function examines a given markdown file for headers that matches with
-/// the case insensitive regex `(compil|instal|build)`
 /// A structure that holds the information needed to detect and suggest
 /// some build instructions
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -37,12 +45,26 @@ fn get_build_suggestions(readme_file: &PathBuf) -> Result<Vec<Vec<String>>, Sugg
     markdown_extract::extract_from_path(readme_file, &regex).map_err(|e| e.into())
 }
 
+type InstallSugs = Vec<Vec<String>>;
+type UninstallSugs = Vec<Vec<String>>;
+type Suggestions = (InstallSugs, UninstallSugs);
+
+/// Get the suggestions for a given path to a project directory
+///
+/// There all paths conforming to *.md will be examined according to the following regular expresion
+/// `r"((?i)compil|instal|build)"` in any of their headings
+///
+/// They will also be examined for conformities with the any known structures in the suggestions db
+/// such as being a cargo project or having a Makefile.
+///
+/// # Errors
+/// - Can't convert a path to a utf8 encoded str
 pub fn get_suggestions<P: SuggestionsDirs>(
     for_: impl AsRef<Path>,
-) -> Result<(Vec<Vec<String>>, Vec<Vec<String>>), SuggestionsError> {
+) -> Result<Suggestions, SuggestionsError> {
     let from = P::new()
         .map_err(|e| SuggestionsError::DirsError(e.to_string()))?
-        .suggestions_dir();
+        .suggestions();
 
     let mut readme: Vec<Vec<String>> = vec![];
     for each in glob::glob(
@@ -52,13 +74,6 @@ pub fn get_suggestions<P: SuggestionsDirs>(
             .ok_or(SuggestionsError::Path)?,
     )? {
         readme.append(&mut get_build_suggestions(&each?).unwrap_or_default());
-    }
-    if !from.exists() {
-        println!(
-            "Downloading files needed for suggestions, their location is at:
-{from:?}"
-        );
-        download_resources::<P>()?
     }
     match SuggestionsTable::new(from.as_ref()) {
         Ok(db) => {
@@ -81,22 +96,16 @@ pub fn get_suggestions<P: SuggestionsDirs>(
 
 /// Downloads all elements in the REGISTRY and stores them.
 ///
-/// It either creates a new table at the SuggestionsDir or reads from an existing
+/// It either creates a new table at the `SuggestionsDir` or reads from an existing
 /// table, and writes into it.
+/// # Panics
+/// Not really, but it does have an unwrap where if there is a `REGISTRY` file that
+/// doesn't have .json it would panic, but there isn't.
 pub fn download_resources<P: SuggestionsDirs>() -> Result<(), SuggestionsError> {
     let f_str = "https://raw.githubusercontent.com/david-soto-m/amisgitpm/main/agpm_suggestions/suggestions/";
-    const REGISTRY: [&str; 7] = [
-        "bash.json",
-        "cargo.json",
-        "meson.json",
-        "cmain.json",
-        "cmake.json",
-        "makefile.json",
-        "meson.json",
-    ];
     let dir = P::new()
         .map_err(|e| SuggestionsError::DirsError(e.to_string()))?
-        .suggestions_dir();
+        .suggestions();
 
     let mut table = match Table::<SuggestionsItem>::builder(&dir)
         .set_auto_write()
@@ -110,7 +119,7 @@ pub fn download_resources<P: SuggestionsDirs>() -> Result<(), SuggestionsError> 
     };
     for file in REGISTRY {
         let (name, _) = file.rsplit_once('.').unwrap(); // Guaranteed by me that this doesn't panic
-        let url = format!("{}{}", f_str, file);
+        let url = format!("{f_str}{file}");
         let item: SuggestionsItem = blocking::get(url)?.json()?;
         match table.get_mut_element(name) {
             Some(el) => el.info = item,

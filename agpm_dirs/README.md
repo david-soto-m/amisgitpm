@@ -1,5 +1,5 @@
 # agpm_dirs
 
-An implementation of the `amisgitpm::PMDirs` trait based on the
-`directories` crate. It is supposedly cross platform, but as of the last moment
-this README was written, it hasn't actually been tested on a Windows nor MacOS.
+In this crate the `Dirs` structure implements the [`amisgitpm::Directories`] trait.
+It uses the [`directories::ProjectDirs`] structure to use the default
+locations for the different OSes.

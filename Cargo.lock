@@ -1363,6 +1363,7 @@ dependencies = [
  "agpm_suggestions",
  "amisgitpm",
  "directories",
+ "subprocess",
  "thiserror",
 ]
 
