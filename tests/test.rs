@@ -54,11 +54,6 @@ mod tests {
     use crate::*;
     use agpm_pm::PMError;
     use amisgitpm::{PMOperations, PMProgrammatic};
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
 
     #[test]
     fn install_uninstall_project() {
@@ -90,8 +85,80 @@ mod tests {
         );
         pm.uninstall(&prj.name).unwrap();
     }
+
     #[test]
     fn updates() {
+        let dir = std::fs::canonicalize(Path::new("./projects/git_upd2")).unwrap();
+        assert_eq!(
+            Exec::shell("bash 0_start.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        let mut url: String = "file://".into();
+        url.push_str(&dir.to_str().unwrap());
+        let prj = Project {
+            name: "git_upd2".into(),
+            dir: "git_upd2".into(),
+            url,
+            ref_string: "refs/heads/main".into(),
+            update_policy: UpdatePolicy::Always,
+            install_script: vec![],
+            uninstall_script: vec![],
+        };
+        let mut pm = TestProjectManager::new().unwrap();
+        pm.install(prj).unwrap();
+        let mut epoch = String::new();
+        std::fs::File::open(dir.join("dates.txt"))
+            .unwrap()
+            .read_to_string(&mut epoch)
+            .unwrap();
+        let epoch = epoch.trim().parse::<i64>().unwrap();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        assert_eq!(
+            Exec::shell("bash 1_update.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        let mut epoch2 = String::new();
+        std::fs::File::open(dir.join("dates.txt"))
+            .unwrap()
+            .read_to_string(&mut epoch2)
+            .unwrap();
+        let epoch2 = epoch2.trim().parse::<i64>().unwrap();
+        assert!(epoch2 > epoch);
+        pm.update("git_upd2").unwrap();
+        let mut epoch2 = String::new();
+        std::fs::File::open(
+            TestDirs::new()
+                .unwrap()
+                .src()
+                .join("git_upd2")
+                .join("dates.txt"),
+        )
+        .unwrap()
+        .read_to_string(&mut epoch2)
+        .unwrap();
+        let epoch2 = epoch2.trim().parse::<i64>().unwrap();
+        assert!(epoch2 > epoch);
+        assert_eq!(
+            Exec::shell("bash 2_finish.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        pm.uninstall("git_upd2").unwrap();
+    }
+
+    #[test]
+    fn update_downgrade() {
         let dir = std::fs::canonicalize(Path::new("./projects/git_upd")).unwrap();
         assert_eq!(
             Exec::shell("bash 0_start.sh")
@@ -150,6 +217,20 @@ mod tests {
         .unwrap();
         let epoch2 = epoch2.trim().parse::<i64>().unwrap();
         assert!(epoch2 > epoch);
+        let mut epoch3= String::new();
+        pm.restore("git_upd").unwrap();
+        std::fs::File::open(
+            TestDirs::new()
+                .unwrap()
+                .src()
+                .join("git_upd")
+                .join("dates.txt"),
+        ).unwrap()
+        .read_to_string(&mut epoch3)
+        .unwrap();
+        let epoch3 = epoch3.trim().parse::<i64>().unwrap();
+        assert!(epoch3 < epoch2);
+        assert_eq!(epoch3, epoch);
         assert_eq!(
             Exec::shell("bash 2_finish.sh")
                 .cwd(&dir)
@@ -160,4 +241,56 @@ mod tests {
         );
         pm.uninstall("git_upd").unwrap();
     }
+
+    #[test]
+    fn get_one_get_many_edit(){
+        let dir = std::fs::canonicalize(Path::new("./projects/setable")).unwrap();
+        assert_eq!(
+            Exec::shell("bash 0_start.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+        let mut url: String = "file://".into();
+        url.push_str(&dir.to_str().unwrap());
+        let mut prj = Project {
+            name: "a".into(),
+            dir: "a".into(),
+            url,
+            ref_string: "refs/heads/main".into(),
+            update_policy: UpdatePolicy::Always,
+            install_script: vec![],
+            uninstall_script: vec![],
+        };
+        let mut pm = TestProjectManager::new().unwrap();
+        pm.install(prj.clone()).unwrap();
+        prj.name = "b".into();
+        prj.dir = "b".into();
+        pm.install(prj.clone()).unwrap();
+        prj.name = "c".into();
+        prj.dir = "c".into();
+        pm.install(prj.clone()).unwrap();
+        pm.get_one("a").unwrap();
+        pm.get_one("b").unwrap();
+        pm.get_one("c").unwrap();
+        assert!(pm.get_all().len() >= 3); // because they are in parallel, we can only be sure that is greater than three
+        prj.name = "d".into();
+        prj.dir = "a".into();
+        pm.edit("a", prj).unwrap();
+        pm.get_one("d").unwrap();
+        pm.uninstall("d").unwrap();
+        pm.uninstall("b").unwrap();
+        pm.uninstall("c").unwrap();
+        assert_eq!(
+            Exec::shell("bash 2_finish.sh")
+                .cwd(&dir)
+                .join()
+                .unwrap()
+                .success(),
+            true
+        );
+    }
+
 }

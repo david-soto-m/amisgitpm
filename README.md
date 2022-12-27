@@ -69,6 +69,10 @@ implementation with some extra optional features in `agpm_suggestions`.
 concrete implementation that uses all the parts I just described. It makes the
 concrete types used available through its `lib.rs file`.
 
+# Development
+
+Currently, the testing is linux dependent
+
 # Install
 
 ```bash
